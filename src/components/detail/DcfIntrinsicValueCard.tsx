@@ -4,21 +4,28 @@ import { useAppConfig } from '../../context/ThemeLanguageContext';
 
 interface DcfIntrinsicValueCardProps {
   currentPrice?: number;
+  currency?: 'USD' | 'KRW';
 }
 
 export const DcfIntrinsicValueCard: React.FC<DcfIntrinsicValueCardProps> = ({
   currentPrice = 224.20,
+  currency = currentPrice > 1000 ? 'KRW' : 'USD',
 }) => {
   const { t } = useAppConfig();
   const [growthRate, setGrowthRate] = useState<number>(8.5);
   const [wacc, setWacc] = useState<number>(7.2);
 
   // Dynamic DCF fair value calculation based on sliders
-  const baseFairValue = 245.00;
+  const baseFairValue = currentPrice * 1.12;
   const growthMultiplier = 1 + (growthRate - 8.5) * 0.04;
   const waccMultiplier = 1 - (wacc - 7.2) * 0.05;
   const calculatedFairValue = baseFairValue * growthMultiplier * waccMultiplier;
   const upsidePct = ((calculatedFairValue - currentPrice) / currentPrice) * 100;
+
+  const fairValueFormatted =
+    currency === 'USD'
+      ? `$${calculatedFairValue.toFixed(2)}`
+      : `${Math.round(calculatedFairValue).toLocaleString()}원`;
 
   return (
     <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl sm:rounded-3xl p-5 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between space-y-4 sm:space-y-5 transition-colors duration-300">
@@ -42,7 +49,7 @@ export const DcfIntrinsicValueCard: React.FC<DcfIntrinsicValueCardProps> = ({
           {t('fairValueEstimate')}
         </span>
         <div className="text-3xl sm:text-4xl font-bold font-mono text-[#0071E3] dark:text-[#2997FF] tracking-tight tabular-nums">
-          ${calculatedFairValue.toFixed(2)}
+          {fairValueFormatted}
         </div>
         <span className={`text-xs font-semibold mt-1 inline-block tabular-nums ${
           upsidePct >= 0 ? 'text-[#34C759]' : 'text-[#FF3B30]'

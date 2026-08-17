@@ -139,8 +139,8 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
 
                   <div className="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold font-mono bg-[#EAF8EE] dark:bg-[#34C759]/15 text-[#34C759] border border-[#34C759]/20 flex items-center gap-1 whitespace-nowrap">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#34C759]" />
-                    <span className="hidden sm:inline">{t('masterPass')}</span>
-                    <span className="sm:hidden">6/6 Pass</span>
+                    <span className="hidden sm:inline">6/6 {t('masterPass')}</span>
+                    <span className="sm:hidden">6/6 {t('pass')}</span>
                   </div>
 
                   {/* Desktop Search */}

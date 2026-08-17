@@ -45,7 +45,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({ stockId }) => 
           <Buffett6RuleDiagnosis stock={stock} />
         </div>
         <div className="lg:col-span-4">
-          <DcfIntrinsicValueCard currentPrice={stock.currentPrice} />
+          <DcfIntrinsicValueCard currentPrice={stock.currentPrice} currency={stock.currency} />
         </div>
       </div>
 

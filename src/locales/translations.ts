@@ -9,7 +9,7 @@ export const translations = {
     guide: '투자 원칙 가이드',
     searchPlaceholder: '종목명, 티커 검색...',
     searchTickerPlaceholder: '검색...',
-    masterPass: '6/6 마스터 통과',
+    masterPass: '마스터 통과',
     marketCapLabel: '시가총액',
 
     // Screener Page
@@ -17,7 +17,15 @@ export const translations = {
     stocksPassed: '종목 통과',
     buffettPassApplied: '워런 버핏 기준 적용 중',
     sp500: 'S&P 500',
-    tenYearYield: '10년물 국채금리',
+    tenYearYield: '미국채 10년물',
+    krMarketIndex: '한국 대표 지수',
+    usMarketIndex: '미국 대표 지수',
+    benchmarkRate: '글로벌 무위험 금리',
+    // Market Filters
+    allMarkets: '전체',
+    usStocks: '미국 주식',
+    krStocks: '한국 주식',
+    marketSelector: '시장 선택',
 
     // Presets
     buffettPerfection: '버핏 마스터',
@@ -82,8 +90,23 @@ export const translations = {
     formula: '산출 공식',
     disqualification: '탈락 / 제외 기준',
 
+    // Drawer & Quick View
+    quickStockDiagnosis: '종목 간편 진단',
+    viewFullAnalysis: '심층 분석 전체 페이지로 이동',
+    prevStock: '이전 종목',
+    nextStock: '다음 종목',
+    close: '닫기',
+    keyFinancialMetrics: '핵심 재무 지표 요약',
+    fiveYrRoic: '5년 ROIC',
+    fiveYrBpsCagr: '5년 BPS 성장률',
+    debtRatio: '부채비율',
+    economicMoat: '경제적 해자',
+    governanceRating: '거버넌스 등급',
+    ceoTenure: 'CEO 재임',
+    insiderAlignment: '주주 이익 일치도',
+
     // Footer
-    footerCopyright: '© 2024 Search Only Good Stock.',
+    footerCopyright: '© 2026 Search Only Good Stock.',
     privacy: '개인정보처리방침',
     terms: '이용약관',
     disclosure: '공시 정보',
@@ -97,7 +120,7 @@ export const translations = {
     guide: 'Guide',
     searchPlaceholder: 'Search ticker, company...',
     searchTickerPlaceholder: 'Search...',
-    masterPass: '6/6 Master Pass',
+    masterPass: 'Master Pass',
     marketCapLabel: 'Market Cap',
 
     // Screener Page
@@ -106,6 +129,15 @@ export const translations = {
     buffettPassApplied: 'Buffett Pass Applied',
     sp500: 'S&P 500',
     tenYearYield: '10Y Yield',
+    krMarketIndex: 'KR Benchmark Index',
+    usMarketIndex: 'US Benchmark Index',
+    benchmarkRate: 'Risk-Free Benchmark',
+
+    // Market Filters
+    allMarkets: 'All',
+    usStocks: 'US Stocks',
+    krStocks: 'KR Stocks',
+    marketSelector: 'Market',
 
     // Presets
     buffettPerfection: 'Buffett Perfection',
@@ -170,8 +202,23 @@ export const translations = {
     formula: 'Formula',
     disqualification: 'Exclusion Disqualification',
 
+    // Drawer & Quick View
+    quickStockDiagnosis: 'Quick Stock Diagnosis',
+    viewFullAnalysis: 'Open Full Deep Dive Analysis',
+    prevStock: 'Previous Stock',
+    nextStock: 'Next Stock',
+    close: 'Close',
+    keyFinancialMetrics: 'Key Financial Summary',
+    fiveYrRoic: '5Y ROIC',
+    fiveYrBpsCagr: '5Y BPS Growth',
+    debtRatio: 'Debt Ratio',
+    economicMoat: 'Economic Moat',
+    governanceRating: 'Governance Grade',
+    ceoTenure: 'CEO Tenure',
+    insiderAlignment: 'Shareholder Alignment',
+
     // Footer
-    footerCopyright: '© 2024 Search Only Good Stock.',
+    footerCopyright: '© 2026 Search Only Good Stock.',
     privacy: 'Privacy',
     terms: 'Terms',
     disclosure: 'Disclosure',
