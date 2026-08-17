@@ -47,14 +47,13 @@ export default {
       },
       fontFamily: {
         sans: [
-          'Nanum Gothic',
-          'NanumGothic',
-          'SF Pro Display',
-          'SF Pro Text',
           'Pretendard',
-          'Inter',
           '-apple-system',
           'BlinkMacSystemFont',
+          'SF Pro Display',
+          'SF Pro Text',
+          'Inter',
+          'Nanum Gothic',
           'system-ui',
           'sans-serif',
         ],

@@ -49,7 +49,7 @@ export const InlineStockExpansion: React.FC<InlineStockExpansionProps> = ({
               <ShieldCheck className="w-3.5 h-3.5 text-[#0071E3]" />
               Buffett 6-Pillar Scorecard
             </span>
-            <span className="font-mono text-[#86868B] text-[11px] font-medium tabular-nums">{stock.passCount}/{stock.totalRuleCount} Passed</span>
+            <span className="text-[#86868B] text-[11px] font-medium"><span className="font-mono tabular-nums">{stock.passCount}/{stock.totalRuleCount}</span> Passed</span>
           </div>
 
           <div className="space-y-1.5 text-xs">
@@ -87,7 +87,7 @@ export const InlineStockExpansion: React.FC<InlineStockExpansionProps> = ({
               <DollarSign className="w-3.5 h-3.5 text-[#FF9500]" />
               $1 Retained Earnings Test
             </span>
-            <span className={`font-mono px-2 py-0.5 rounded-full text-[10px] font-bold tabular-nums ${
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
               stock.oneDollarTest.passed ? 'bg-[#34C759]/15 text-[#248A3D]' : 'bg-[#FF3B30]/15 text-[#FF3B30]'
             }`}>
               {stock.oneDollarTest.passed ? 'PASS' : 'FAIL'}
@@ -108,9 +108,9 @@ export const InlineStockExpansion: React.FC<InlineStockExpansionProps> = ({
                   style={{ width: `${Math.min(100, (stock.oneDollarTest.valueCreatedPerDollar / 3) * 100)}%` }}
                 />
               </div>
-              <div className="flex justify-between text-[10px] text-[#86868B] font-mono tabular-nums mt-1">
-                <span>Threshold: $1.00</span>
-                <span>Created: ${stock.oneDollarTest.valueCreatedPerDollar.toFixed(2)}</span>
+              <div className="flex justify-between text-[10px] text-[#86868B] mt-1">
+                <span>Threshold: <span className="font-mono tabular-nums">$1.00</span></span>
+                <span>Created: <span className="font-mono tabular-nums">${stock.oneDollarTest.valueCreatedPerDollar.toFixed(2)}</span></span>
               </div>
             </div>
 
@@ -127,7 +127,7 @@ export const InlineStockExpansion: React.FC<InlineStockExpansionProps> = ({
               <Users className="w-3.5 h-3.5 text-[#0071E3]" />
               Management & Governance
             </span>
-            <span className="font-mono px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FF9500]/15 text-[#C93400] tabular-nums">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FF9500]/15 text-[#C93400]">
               {stock.governance.gradeLabel}
             </span>
           </div>

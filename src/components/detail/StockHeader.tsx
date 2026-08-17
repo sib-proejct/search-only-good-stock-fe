@@ -37,11 +37,11 @@ export const StockHeader: React.FC<StockHeaderProps> = ({ stock, onBack }) => {
                 <h1 className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] tracking-tight">
                   {stock.nameKo}
                 </h1>
-                <span className="font-mono text-xs font-semibold text-[#86868B] bg-[#F5F5F7] px-2.5 py-0.5 rounded-full border border-black/[0.04]">
-                  {stock.ticker} · {stock.market}
+                <span className="text-xs font-semibold text-[#86868B] bg-[#F5F5F7] px-2.5 py-0.5 rounded-full border border-black/[0.04]">
+                  <span className="font-mono">{stock.ticker}</span> · {stock.market}
                 </span>
               </div>
-              <p className="text-xs text-[#86868B] font-normal font-sans mt-0.5">
+              <p className="text-xs text-[#86868B] font-normal mt-0.5">
                 {stock.nameEn} · {stock.sector}
               </p>
             </div>
@@ -81,7 +81,7 @@ export const StockHeader: React.FC<StockHeaderProps> = ({ stock, onBack }) => {
             </span>
           </div>
 
-          <div className="flex items-center gap-2.5 text-xs text-[#86868B] font-sans">
+          <div className="flex items-center gap-2.5 text-xs text-[#86868B]">
             <span>Market Cap:</span>
             <span className="font-mono font-bold text-[#1D1D1F] tabular-nums">{stock.marketCapFormatted}</span>
             <span className="text-[#D2D2D7]">|</span>

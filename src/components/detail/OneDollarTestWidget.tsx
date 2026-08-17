@@ -38,13 +38,13 @@ export const OneDollarTestWidget: React.FC<OneDollarTestWidgetProps> = ({ testRe
             </p>
           </div>
 
-          <div className={`px-3 py-1 rounded-full text-xs font-semibold font-mono flex items-center gap-1.5 tabular-nums ${
+          <div className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${
             testResult.passed
               ? 'bg-[#34C759]/15 text-[#248A3D]'
               : 'bg-[#FF3B30]/15 text-[#FF3B30]'
           }`}>
             {testResult.passed ? <Check className="w-3 h-3 stroke-[3]" /> : <X className="w-3 h-3 stroke-[3]" />}
-            <span>${testResult.valueCreatedPerDollar.toFixed(2)} Created ({testResult.passed ? 'PASS' : 'FAIL'})</span>
+            <span><span className="font-mono tabular-nums">${testResult.valueCreatedPerDollar.toFixed(2)}</span> Created ({testResult.passed ? 'PASS' : 'FAIL'})</span>
           </div>
         </div>
 

@@ -211,8 +211,8 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                       setIsMarketDropdownOpen(false);
                     }}
                     className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer select-none ${isSelected
-                        ? 'bg-[#F2F4F6] dark:bg-[#2C2C2E] font-bold text-[#0071E3] dark:text-[#2997FF]'
-                        : 'text-[#191F28] dark:text-[#F5F5F7] hover:bg-[#F9FAFB] dark:hover:bg-[#252528]'
+                      ? 'bg-[#F2F4F6] dark:bg-[#2C2C2E] font-bold text-[#0071E3] dark:text-[#2997FF]'
+                      : 'text-[#191F28] dark:text-[#F5F5F7] hover:bg-[#F9FAFB] dark:hover:bg-[#252528]'
                       }`}
                   >
                     <div>
@@ -236,8 +236,8 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                 key={preset.id}
                 onClick={() => handleSelectPreset(preset.id)}
                 className={`px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-[13px] rounded-xl whitespace-nowrap transition-all duration-200 select-none cursor-pointer focus:outline-none shrink-0 ${isActive
-                    ? 'bg-white dark:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-bold shadow-sm border border-black/[0.04] dark:border-white/[0.06]'
-                    : 'text-[#8B95A1] dark:text-[#86868B] hover:text-[#191F28] dark:hover:text-[#F5F5F7] font-medium hover:bg-white/40 dark:hover:bg-white/5'
+                  ? 'bg-white dark:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-bold shadow-sm border border-black/[0.04] dark:border-white/[0.06]'
+                  : 'text-[#8B95A1] dark:text-[#86868B] hover:text-[#191F28] dark:hover:text-[#F5F5F7] font-medium hover:bg-white/40 dark:hover:bg-white/5'
                   }`}
               >
                 {preset.label}
@@ -254,16 +254,6 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
       <div className="block md:hidden bg-white dark:bg-[#1C1C1E] rounded-2xl border border-black/[0.06] dark:border-white/[0.08] shadow-sm overflow-hidden divide-y divide-black/[0.04] dark:divide-white/[0.06]">
         {displayStocks.map((stock, index) => {
           const rank = index + 1;
-          const scoreLabel = stock.isMasterPass
-            ? `${stock.passCount}/${stock.totalRuleCount}`
-            : `${stock.passCount}/${stock.totalRuleCount}`;
-
-          const scorePillClass = stock.isMasterPass
-            ? 'bg-[#EAF8EE] dark:bg-[#34C759]/15 text-[#34C759]'
-            : stock.passCount >= 4
-              ? 'bg-[#EAF8EE] dark:bg-[#34C759]/15 text-[#34C759]'
-              : 'bg-[#FDF2F2] dark:bg-[#FF3B30]/15 text-[#FF3B30]';
-
           const companyName = language === 'ko' ? stock.nameKo : stock.nameEn;
 
           return (
@@ -278,12 +268,18 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                   {rank}
                 </span>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-[#1D1D1F] dark:text-[#F5F5F7] font-mono">
                       {stock.ticker}
                     </span>
-                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold font-mono ${scorePillClass}`}>
-                      {scoreLabel}
+                    <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold">
+                      <span className={`w-1.5 h-1.5 rounded-full ${stock.isMasterPass
+                        ? 'bg-[#34C759]'
+                        : stock.passCount >= stock.totalRuleCount * 0.75
+                          ? 'bg-[#FF9500] dark:bg-[#FF9F0A]'
+                          : 'bg-[#FF3B30]'
+                        }`} />
+                      <span className="text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">{stock.passCount}/{stock.totalRuleCount}</span>
                     </span>
                   </div>
                   <div className="text-xs text-[#86868B] truncate mt-0.5 font-normal">
@@ -297,8 +293,8 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                 <div className="font-mono font-bold text-sm text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
                   {stock.currency === 'USD' ? `$${stock.currentPrice.toFixed(2)}` : `${stock.currentPrice.toLocaleString()}원`}
                 </div>
-                <div className="text-[11px] font-mono text-[#34C759] font-medium tabular-nums mt-0.5">
-                  ROE {stock.avgRoe5Yr.toFixed(1)}%
+                <div className="text-[11px] text-[#34C759] font-medium mt-0.5">
+                  ROE <span className="font-mono tabular-nums">{stock.avgRoe5Yr.toFixed(1)}%</span>
                 </div>
               </div>
             </div>
@@ -335,17 +331,12 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
             <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.06] text-xs">
               {displayStocks.map((stock, index) => {
                 const rank = index + 1;
-                const scoreLabel = stock.isMasterPass
-                  ? `${stock.passCount}/${stock.totalRuleCount} ${t('masterPass')}`
-                  : stock.passCount >= 4
-                    ? `${stock.passCount}/${stock.totalRuleCount} ${t('watch')}`
-                    : `${stock.passCount}/${stock.totalRuleCount} ${t('fail')}`;
-
-                const scorePillClass = stock.isMasterPass
-                  ? 'bg-[#EAF8EE] dark:bg-[#34C759]/15 text-[#34C759]'
-                  : stock.passCount >= 4
-                    ? 'bg-[#EAF8EE] dark:bg-[#34C759]/15 text-[#34C759]'
-                    : 'bg-[#FDF2F2] dark:bg-[#FF3B30]/15 text-[#FF3B30]';
+                const scorePassFraction = `${stock.passCount}/${stock.totalRuleCount}`;
+                const scoreText = stock.isMasterPass
+                  ? t('masterPass')
+                  : stock.passCount >= stock.totalRuleCount * 0.75
+                    ? t('watch')
+                    : t('fail');
 
                 const companyName = language === 'ko' ? `${stock.nameKo} (${stock.nameEn})` : stock.nameEn;
 
@@ -377,11 +368,27 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                       {stock.currency === 'USD' ? `$${stock.currentPrice.toFixed(2)}` : `${stock.currentPrice.toLocaleString()}원`}
                     </td>
 
-                    {/* Score Badge */}
+                    {/* Score Minimal Typography Stat */}
                     <td className="py-4 px-4 text-center whitespace-nowrap">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold font-mono tabular-nums whitespace-nowrap ${scorePillClass}`}>
-                        {scoreLabel}
-                      </span>
+                      <div className="inline-flex items-center justify-center gap-1.5">
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stock.isMasterPass
+                          ? 'bg-[#34C759]'
+                          : stock.passCount >= stock.totalRuleCount * 0.75
+                            ? 'bg-[#FF9500] dark:bg-[#FF9F0A]'
+                            : 'bg-[#FF3B30]'
+                          }`} />
+                        <span className="font-mono font-bold text-xs text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
+                          {scorePassFraction}
+                        </span>
+                        <span className={`text-[11px] font-semibold ${stock.isMasterPass
+                          ? 'text-[#34C759]'
+                          : stock.passCount >= stock.totalRuleCount * 0.75
+                            ? 'text-[#FF9500] dark:text-[#FF9F0A]'
+                            : 'text-[#86868B]'
+                          }`}>
+                          {scoreText}
+                        </span>
+                      </div>
                     </td>
 
                     {/* 5Y ROE */}

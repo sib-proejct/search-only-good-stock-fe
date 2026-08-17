@@ -13,7 +13,7 @@ export const FloatingControlDock: React.FC = () => {
       {/* 1. Single Toggle Language Button (Swaps between KO <-> EN) */}
       <button
         onClick={toggleLanguage}
-        className="h-8.5 px-3 rounded-full flex items-center gap-1.5 text-xs font-bold font-mono bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#EBEBED] dark:hover:bg-[#3A3A3C] transition-all focus:outline-none select-none"
+        className="h-8.5 px-3 rounded-full flex items-center gap-1.5 text-xs font-bold bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#EBEBED] dark:hover:bg-[#3A3A3C] transition-all focus:outline-none select-none"
         title={language === 'ko' ? 'Switch to English' : '한국어로 전환'}
       >
         <Globe className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />

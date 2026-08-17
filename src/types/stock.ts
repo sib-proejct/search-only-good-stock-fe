@@ -1,12 +1,18 @@
 import { RuleEvaluationDetail } from './rules';
 
 export interface LeadershipMember {
-  role: string;           // 직책 (예: '대표이사(CEO)', '최고재무책임자(CFO)', '이사회 의장')
-  name: string;           // 인물명 (예: '사티아 나델라')
+  role: string;           // 직책 (예: '대표이사(CEO)', '최고재무책임자(CFO)', '사외이사 (이사회 의장)')
+  name: string;           // 인물명 (예: '팀 쿡', '사티아 나델라')
   tenureYears: number;    // 재임 연수
-  bio: string;            // 핵심 업적 및 평가
+  bio: string;            // 핵심 업적 및 평가 / 주요 이력
   sharesOwned: number;    // 보유 주식 수
   sharesValueUsd: number; // 시가 환산 보유액 ($)
+  sharesOwnershipPct?: number; // 지분율 (%)
+  isOutsideDirector?: boolean; // 사외이사 여부 (true: 사외이사, false: 사내이사/경영진)
+  compensationUsd?: number;    // 연간 총 보수액 ($)
+  baseSalaryPct?: number;      // 기본급 비중 (%)
+  performanceBonusPct?: number;// 단기 성과급 비중 (%)
+  stockBasedCompPct?: number;  // 장기 주식보상/스톡옵션 비중 (%)
 }
 
 export interface ExecutiveCompensation {

@@ -19,7 +19,7 @@ export const ManagementGovernanceSection: React.FC<ManagementGovernanceSectionPr
             <h2 className="text-lg font-bold text-[#1D1D1F] tracking-tight">
               Management & Board Governance Audit
             </h2>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-[#FF9500]/15 text-[#C93400] tabular-nums">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FF9500]/15 text-[#C93400]">
               {governance.gradeLabel}
             </span>
           </div>
@@ -32,7 +32,7 @@ export const ManagementGovernanceSection: React.FC<ManagementGovernanceSectionPr
           <ShieldCheck className="w-4 h-4 text-[#34C759]" />
           <div className="text-right">
             <span className="text-[10px] text-[#86868B] font-semibold uppercase tracking-wider block">Board Independence</span>
-            <span className="font-mono font-bold text-[#34C759] text-xs tabular-nums">{governance.boardIndependencePct}% Independent</span>
+            <span className="text-[#34C759] text-xs font-bold"><span className="font-mono tabular-nums">{governance.boardIndependencePct}%</span> Independent</span>
           </div>
         </div>
       </div>
@@ -47,7 +47,7 @@ export const ManagementGovernanceSection: React.FC<ManagementGovernanceSectionPr
               <Users className="w-3.5 h-3.5 text-[#0071E3]" />
               <span>Leadership Profile & Skin in the Game</span>
             </h3>
-            <span className="text-[10px] text-[#248A3D] font-mono font-bold bg-[#34C759]/15 px-2.5 py-0.5 rounded-full">Owner Alignment A+</span>
+            <span className="text-[10px] text-[#248A3D] font-bold bg-[#34C759]/15 px-2.5 py-0.5 rounded-full">Owner Alignment A+</span>
           </div>
 
           <div className="space-y-3">
@@ -57,12 +57,12 @@ export const ManagementGovernanceSection: React.FC<ManagementGovernanceSectionPr
                   <div>
                     <span className="text-[10px] text-[#0071E3] font-semibold uppercase tracking-wider block">{leader.role}</span>
                     <span className="font-bold text-[#1D1D1F] text-xs">{leader.name}</span>
-                    <span className="text-[11px] text-[#86868B] font-mono ml-2">Tenure: {leader.tenureYears} Years</span>
+                    <span className="text-[11px] text-[#86868B] ml-2">Tenure: <span className="font-mono tabular-nums">{leader.tenureYears}</span> Years</span>
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-[#86868B] font-semibold uppercase tracking-wider block">Owned Shares Value</span>
-                    <span className="font-mono font-bold text-[#34C759] text-xs tabular-nums">
-                      ${(leader.sharesValueUsd / 1000000).toFixed(1)}M ({leader.sharesOwned.toLocaleString()} shares)
+                    <span className="font-bold text-[#34C759] text-xs">
+                      <span className="font-mono tabular-nums">${(leader.sharesValueUsd / 1000000).toFixed(1)}M</span> (<span className="font-mono tabular-nums">{leader.sharesOwned.toLocaleString()}</span> shares)
                     </span>
                   </div>
                 </div>
@@ -86,7 +86,7 @@ export const ManagementGovernanceSection: React.FC<ManagementGovernanceSectionPr
               <DollarSign className="w-3.5 h-3.5 text-[#FF9500]" />
               <span>Compensation Structure & Pay-for-Performance</span>
             </h3>
-            <span className="text-[10px] text-[#248A3D] font-mono font-bold bg-[#34C759]/15 px-2.5 py-0.5 rounded-full">
+            <span className="text-[10px] text-[#248A3D] font-bold bg-[#34C759]/15 px-2.5 py-0.5 rounded-full">
               {governance.compensation.alignmentRating === 'EXCELLENT' ? 'Outstanding Alignment' : 'Disciplined'}
             </span>
           </div>
@@ -137,8 +137,8 @@ export const ManagementGovernanceSection: React.FC<ManagementGovernanceSectionPr
                 <PieChart className="w-3.5 h-3.5 text-[#0071E3]" />
                 5-Year FCF Capital Deployment
               </span>
-              <span className="font-mono text-[11px] font-bold text-[#248A3D] tabular-nums bg-[#34C759]/15 px-2.5 py-0.5 rounded-full">
-                Total Shareholder Return: {governance.capitalAllocation.totalShareholderReturnPct}%
+              <span className="text-[11px] font-bold text-[#248A3D] bg-[#34C759]/15 px-2.5 py-0.5 rounded-full">
+                Total Shareholder Return: <span className="font-mono tabular-nums">{governance.capitalAllocation.totalShareholderReturnPct}%</span>
               </span>
             </div>
 

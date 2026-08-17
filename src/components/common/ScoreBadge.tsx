@@ -1,5 +1,4 @@
 import React from 'react';
-import { ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface ScoreBadgeProps {
   score: number;
@@ -16,40 +15,41 @@ export const ScoreBadge: React.FC<ScoreBadgeProps> = ({
   totalRules = 6,
   size = 'md',
 }) => {
+  const sizeClasses = {
+    sm: 'text-[11px] gap-1.5',
+    md: 'text-xs gap-1.5',
+    lg: 'text-sm gap-2',
+  }[size];
+
   if (isMasterPass || score >= 95) {
     return (
-      <div className={`inline-flex items-center gap-1.5 font-semibold rounded-full bg-[#34C759]/12 text-[#248A3D] border border-[#34C759]/25 select-none ${
-        size === 'sm' ? 'px-2.5 py-0.5 text-[11px]' : size === 'lg' ? 'px-3.5 py-1.5 text-sm' : 'px-3 py-1 text-xs'
-      }`}>
-        <ShieldCheck className={`${size === 'sm' ? 'w-3 h-3' : size === 'lg' ? 'w-4 h-4' : 'w-3.5 h-3.5'} text-[#34C759]`} />
-        <span className="font-mono tabular-nums font-bold">{score}</span>
-        <span className="tracking-tight">Master Pass</span>
-        <span className="text-[10px] text-[#248A3D]/80 font-mono tabular-nums">({passCount}/{totalRules})</span>
+      <div className={`inline-flex items-center font-medium select-none ${sizeClasses}`}>
+        <span className="w-1.5 h-1.5 rounded-full bg-[#34C759] shrink-0" />
+        <span className="font-mono tabular-nums font-bold text-[#1D1D1F] dark:text-[#F5F5F7]">{score}</span>
+        <span className="tracking-tight text-[#34C759] font-semibold">Master Pass</span>
+        <span className="text-[10px] text-[#86868B] font-mono tabular-nums font-normal">({passCount}/{totalRules})</span>
       </div>
     );
   }
 
   if (score >= 80) {
     return (
-      <div className={`inline-flex items-center gap-1.5 font-medium rounded-full bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20 select-none ${
-        size === 'sm' ? 'px-2.5 py-0.5 text-[11px]' : size === 'lg' ? 'px-3.5 py-1.5 text-sm' : 'px-3 py-1 text-xs'
-      }`}>
-        <CheckCircle2 className={`${size === 'sm' ? 'w-3 h-3' : size === 'lg' ? 'w-4 h-4' : 'w-3.5 h-3.5'} text-[#0071E3]`} />
-        <span className="font-mono tabular-nums font-bold">{score}</span>
-        <span className="tracking-tight">Candidate</span>
-        <span className="text-[10px] text-[#0071E3]/80 font-mono tabular-nums">({passCount}/{totalRules})</span>
+      <div className={`inline-flex items-center font-medium select-none ${sizeClasses}`}>
+        <span className="w-1.5 h-1.5 rounded-full bg-[#0071E3] dark:bg-[#2997FF] shrink-0" />
+        <span className="font-mono tabular-nums font-bold text-[#1D1D1F] dark:text-[#F5F5F7]">{score}</span>
+        <span className="tracking-tight text-[#0071E3] dark:text-[#2997FF] font-semibold">Candidate</span>
+        <span className="text-[10px] text-[#86868B] font-mono tabular-nums font-normal">({passCount}/{totalRules})</span>
       </div>
     );
   }
 
   return (
-    <div className={`inline-flex items-center gap-1.5 font-medium rounded-full bg-[#EBEBED] text-[#6E6E73] border border-black/5 select-none ${
-      size === 'sm' ? 'px-2.5 py-0.5 text-[11px]' : size === 'lg' ? 'px-3.5 py-1.5 text-sm' : 'px-3 py-1 text-xs'
-    }`}>
-      <AlertCircle className={`${size === 'sm' ? 'w-3 h-3' : size === 'lg' ? 'w-4 h-4' : 'w-3.5 h-3.5'} text-[#86868B]`} />
-      <span className="font-mono tabular-nums font-medium">{score}</span>
+    <div className={`inline-flex items-center font-medium select-none ${sizeClasses}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-[#86868B] shrink-0" />
+      <span className="font-mono tabular-nums font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">{score}</span>
       <span className="tracking-tight text-[#86868B]">Watchlist</span>
-      <span className="text-[10px] text-[#A1A1A6] font-mono tabular-nums">({passCount}/{totalRules})</span>
+      <span className="text-[10px] text-[#86868B] font-mono tabular-nums font-normal">({passCount}/{totalRules})</span>
     </div>
   );
 };
+

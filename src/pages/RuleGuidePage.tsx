@@ -159,7 +159,7 @@ export const RuleGuidePage: React.FC = () => {
             {/* Buffett Quote Bento Box */}
             <div className="bg-[#F5F5F7] dark:bg-[#252528] p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-black/[0.03] dark:border-white/[0.06] space-y-1">
               <Quote className="w-3.5 h-3.5 text-[#FF9500] opacity-80" />
-              <blockquote className="text-[11px] sm:text-xs text-[#1D1D1F] dark:text-[#F5F5F7] italic leading-relaxed font-serif">
+              <blockquote className="text-[11px] sm:text-xs text-[#1D1D1F] dark:text-[#F5F5F7] italic leading-relaxed">
                 {rule.buffettQuote}
               </blockquote>
             </div>

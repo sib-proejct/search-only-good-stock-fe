@@ -46,6 +46,7 @@ function AppContent() {
           <StockDetailPage
             stockId={selectedStockId}
             onBack={() => setCurrentTab('screener')}
+            onSelectStock={handleSelectStock}
           />
         )}
 
@@ -76,7 +77,7 @@ function AppContent() {
             <div className="flex items-center gap-2">
               <button
                 onClick={toggleLanguage}
-                className="h-7 px-2.5 rounded-full flex items-center gap-1 text-[11px] font-bold font-mono bg-[#F5F5F7] dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#EBEBED] dark:hover:bg-[#2C2C2E] border border-black/[0.06] dark:border-white/[0.08] transition-all focus:outline-none select-none cursor-pointer"
+                className="h-7 px-2.5 rounded-full flex items-center gap-1 text-[11px] font-bold bg-[#F5F5F7] dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#EBEBED] dark:hover:bg-[#2C2C2E] border border-black/[0.06] dark:border-white/[0.08] transition-all focus:outline-none select-none cursor-pointer"
                 title={language === 'ko' ? 'Switch to English' : '한국어로 전환'}
               >
                 <Globe className="w-3 h-3 text-[#0071E3] dark:text-[#2997FF]" />

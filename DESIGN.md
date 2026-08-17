@@ -1,7 +1,7 @@
 # 🍏 DESIGN.md — Search Only Good Stock (Apple Design Edition)
 
 > **"애플이 주식 사이트를 만들면 이럴 것이다."**
-> 
+>
 > **"Search Only Good Stock"**은 애플(Apple) 특유의 인간 중심 디자인 철학(Clarity, Deference, Depth)과 워런 버핏(Warren Buffett)의 정통 가치투자 원칙을 완벽하게 결합한 프리미엄 핀테크 웹 애플리케이션입니다.
 
 ---
@@ -24,30 +24,36 @@
 ## 2. 색상 팔레트 및 토큰 체계 (Apple Color Tokens)
 
 ### 2.1 Background & Surface Colors (Apple Clean Light)
-| 토큰명 | Hex Code / RGBA | 역할 및 적용처 |
-| :--- | :--- | :--- |
-| `--apple-canvas` | `#F5F5F7` | 페이지 전체 캔버스 배경 (Apple Signature Off-White) |
-| `--apple-surface` | `#FFFFFF` | 벤토 카드, 메인 테이블, 모달 컨테이너 배경 |
-| `--apple-surface-subtle` | `#EBEBED` | 세그먼트 컨트롤 트랙, 검색창 배경, 비활성 칩 |
-| `--apple-border` | `rgba(0, 0, 0, 0.06)` | 은은한 1px 컨테이너 및 테이블 테두리 |
-| `--apple-divider` | `rgba(0, 0, 0, 0.04)` | 카드 내부 구획선 및 테이블 행 구분선 |
+
+
+| 토큰명                   | Hex Code / RGBA       | 역할 및 적용처                                      |
+| :------------------------- | :---------------------- | :---------------------------------------------------- |
+| `--apple-canvas`         | `#F5F5F7`             | 페이지 전체 캔버스 배경 (Apple Signature Off-White) |
+| `--apple-surface`        | `#FFFFFF`             | 벤토 카드, 메인 테이블, 모달 컨테이너 배경          |
+| `--apple-surface-subtle` | `#EBEBED`             | 세그먼트 컨트롤 트랙, 검색창 배경, 비활성 칩        |
+| `--apple-border`         | `rgba(0, 0, 0, 0.06)` | 은은한 1px 컨테이너 및 테이블 테두리                |
+| `--apple-divider`        | `rgba(0, 0, 0, 0.04)` | 카드 내부 구획선 및 테이블 행 구분선                |
 
 ### 2.2 Apple Typography & Text Hierarchy
-| 토큰명 | Hex Code | 역할 및 적용처 |
-| :--- | :--- | :--- |
-| `--apple-text-primary` | `#1D1D1F` | 메인 헤드라인, 핵심 수치, 종목명 (Apple Dark Charcoal) |
-| `--apple-text-secondary` | `#86868B` | 서브헤더, 지표 레이블, 설명문 (Apple Mid Gray) |
-| `--apple-text-tertiary` | `#A1A1A6` | 각주, 캡션, 비활성 힌트 텍스트 |
+
+
+| 토큰명                   | Hex Code  | 역할 및 적용처                                         |
+| :------------------------- | :---------- | :------------------------------------------------------- |
+| `--apple-text-primary`   | `#1D1D1F` | 메인 헤드라인, 핵심 수치, 종목명 (Apple Dark Charcoal) |
+| `--apple-text-secondary` | `#86868B` | 서브헤더, 지표 레이블, 설명문 (Apple Mid Gray)         |
+| `--apple-text-tertiary`  | `#A1A1A6` | 각주, 캡션, 비활성 힌트 텍스트                         |
 
 ### 2.3 Apple System Semantic Colors (Finance)
-| 토큰명 | Hex Code | 의미 및 적용처 |
-| :--- | :--- | :--- |
-| `--apple-blue` | `#0071E3` | 브랜드 메인 액센트, 인터랙티브 액티브 상태, 주요 버튼 |
-| `--apple-blue-hover` | `#0077ED` | 버튼 호버 및 포커스 링 |
-| `--apple-green` | `#34C759` | 버핏 규칙 통과(Pass), 주가 상승, ROE 초과, 자사주 소각 |
-| `--apple-red` | `#FF3B30` | 버핏 규칙 탈락(Fail), 주가 하락, 과도한 부채, 주식 희석 |
-| `--apple-orange` | `#FF9500` | 주의(Caution), 버핏 지수 고평가 경계, 임계치 인접 |
-| `--apple-gold` | `#D97706` | 버핏 마스터 패스 100점 뱃지 하이라이트 |
+
+
+| 토큰명               | Hex Code  | 의미 및 적용처                                          |
+| :--------------------- | :---------- | :-------------------------------------------------------- |
+| `--apple-blue`       | `#0071E3` | 브랜드 메인 액센트, 인터랙티브 액티브 상태, 주요 버튼   |
+| `--apple-blue-hover` | `#0077ED` | 버튼 호버 및 포커스 링                                  |
+| `--apple-green`      | `#34C759` | 버핏 규칙 통과(Pass), 주가 상승, ROE 초과, 자사주 소각  |
+| `--apple-red`        | `#FF3B30` | 버핏 규칙 탈락(Fail), 주가 하락, 과도한 부채, 주식 희석 |
+| `--apple-orange`     | `#FF9500` | 주의(Caution), 버핏 지수 고평가 경계, 임계치 인접       |
+| `--apple-gold`       | `#D97706` | 버핏 마스터 패스 100점 뱃지 하이라이트                  |
 
 ---
 
@@ -68,12 +74,19 @@
 ## 4. UI 컴포넌트 아키텍처 (Apple Bento & Controls)
 
 1. **Apple Navigation Bar**:
+
    - 높이 52px, `backdrop-blur-xl bg-white/80`, 섬세한 `border-b border-black/[0.06]`.
    - 알약형 세그먼트 네비게이션 (`rounded-full bg-[#EBEBED] p-1`).
 2. **Apple Bento Hero**:
+
    - 24px 라운드 벤토 박스 레이아웃.
    - 핵심 메시지: *"진짜 우량 기업을 찾는 가장 명확한 기준"*과 합격률(0.57%, 14/2,450) 시각화.
 3. **Segmented Filter Controls**:
+
    - 직관적인 필터 프리셋 칩과 부드러운 슬라이더.
 4. **Bento Stock Cards & Data Table**:
+
    - 마이크로 스파크라인, 6대 버핏 규칙 통과 현황, 1달러 테스트 가치창출 수치를 한눈에 전달.
+
+   StockDetailPage.tsx 및 내부 카드 전체에서 모두 걷어내고, **Apple 스타일의 미니멀 타이포그래피 스탯**으로 정교하게 변경했습니다!
+5. **투박한 둥근 사각형 테두리 pill 뱃지들 대신 Apple 스타일의 미니멀 타이포그래피 스탯으로 제작**

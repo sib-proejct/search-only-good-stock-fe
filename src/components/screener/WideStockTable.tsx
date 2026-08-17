@@ -96,7 +96,7 @@ export const WideStockTable: React.FC<WideStockTableProps> = ({
                               {stock.ticker}
                             </span>
                           </div>
-                          <span className="text-[10px] text-[#86868B] font-sans">{stock.sector}</span>
+                          <span className="text-[10px] text-[#86868B]">{stock.sector}</span>
                         </div>
                       </div>
                     </td>

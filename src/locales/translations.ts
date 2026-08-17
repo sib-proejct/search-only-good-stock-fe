@@ -9,7 +9,7 @@ export const translations = {
     guide: '투자 원칙 가이드',
     searchPlaceholder: '종목명, 티커 검색...',
     searchTickerPlaceholder: '검색...',
-    masterPass: '마스터 통과',
+    masterPass: '통과',
     marketCapLabel: '시가총액',
 
     // Screener Page
@@ -48,6 +48,7 @@ export const translations = {
     fail: '탈락',
 
     // Analysis Page
+    backToScreener: '스크리너로 돌아가기',
     buffett6RuleDiagnosis: '워런 버핏 6대 원칙 정밀 진단',
     updatedToday: '오늘 기준 갱신',
     consistentEarnings: '지속적 이익 성장',
@@ -76,11 +77,16 @@ export const translations = {
     created: '창출가치',
     marketValue: '시장가치 창출',
 
-    capitalAllocationTitle: '자본배치 현황 (팀 쿡 재임기)',
+    capitalAllocationTitle: '자본배치 및 주주환원',
     buybacks: '자사주 소각',
-    sharesRetiredSub: '2012년 주주환원 프로그램 개시 이후 소각된 주식 총액',
+    sharesRetiredSub: '자사주 매입/소각 및 배당을 통한 누적 주주환원',
     shareRepurchases: '자사주 매입 및 소각',
     dividendsPaid: '현금 배당 지급',
+    economicMoatGovernance: '경제적 해자 & 경영진 거버넌스',
+    fiveYearFinancialTrends: '5개년 재무제표 핵심 추세',
+    operatingMarginLabel: '영업이익률',
+    revenueLabel: '매출액',
+    netIncomeLabel: '순이익',
 
     // Guide Page
     guideTitle: '워런 버핏 6대 가치투자 원칙 & 산출 공식',
@@ -120,7 +126,7 @@ export const translations = {
     guide: 'Guide',
     searchPlaceholder: 'Search ticker, company...',
     searchTickerPlaceholder: 'Search...',
-    masterPass: 'Master Pass',
+    masterPass: 'Pass',
     marketCapLabel: 'Market Cap',
 
     // Screener Page
@@ -160,6 +166,7 @@ export const translations = {
     fail: 'Fail',
 
     // Analysis Page
+    backToScreener: 'Back to Screener',
     buffett6RuleDiagnosis: 'Buffett 6-Rule Diagnosis',
     updatedToday: 'Updated Today',
     consistentEarnings: 'Consistent Earnings',
@@ -188,11 +195,16 @@ export const translations = {
     created: 'Created',
     marketValue: 'Market Value',
 
-    capitalAllocationTitle: 'Capital Allocation (Cook Era)',
+    capitalAllocationTitle: 'Capital Allocation & Shareholder Return',
     buybacks: 'Buybacks',
-    sharesRetiredSub: 'in shares retired since 2012 program inception.',
+    sharesRetiredSub: 'Cumulative capital returned via buybacks & dividends.',
     shareRepurchases: 'Share Repurchases',
     dividendsPaid: 'Dividends Paid',
+    economicMoatGovernance: 'Economic Moat & Governance',
+    fiveYearFinancialTrends: '5-Year Financial Summary & Trends',
+    operatingMarginLabel: 'Operating Margin',
+    revenueLabel: 'Revenue',
+    netIncomeLabel: 'Net Income',
 
     // Guide Page
     guideTitle: 'Warren Buffett 6-Pillar Investment Doctrine',

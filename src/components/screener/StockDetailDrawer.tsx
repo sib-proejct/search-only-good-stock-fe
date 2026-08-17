@@ -11,7 +11,6 @@ import {
   Banknote,
   ShieldCheck,
   DollarSign,
-  CheckCircle2,
   PieChart,
   Shield,
   Activity,
@@ -96,17 +95,12 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
   const companyName = language === 'ko' ? stock.nameKo : stock.nameEn;
   const subtitleName = language === 'ko' ? stock.nameEn : stock.nameKo;
 
-  const scoreLabel = stock.isMasterPass
-    ? `${stock.passCount}/${stock.totalRuleCount} ${t('masterPass')}`
+  const scorePassFraction = `${stock.passCount}/${stock.totalRuleCount}`;
+  const scoreText = stock.isMasterPass
+    ? t('masterPass')
     : stock.passCount >= 4
-      ? `${stock.passCount}/${stock.totalRuleCount} ${t('watch')}`
-      : `${stock.passCount}/${stock.totalRuleCount} ${t('fail')}`;
-
-  const scorePillClass = stock.isMasterPass
-    ? 'bg-[#EAF8EE] dark:bg-[#34C759]/15 text-[#34C759] border-[#34C759]/20'
-    : stock.passCount >= 4
-      ? 'bg-[#EAF8EE] dark:bg-[#34C759]/15 text-[#34C759] border-[#34C759]/20'
-      : 'bg-[#FDF2F2] dark:bg-[#FF3B30]/15 text-[#FF3B30] border-[#FF3B30]/20';
+      ? t('watch')
+      : t('fail');
 
   // 6-Rule Diagnosis list
   const diagnosisRules = [
@@ -175,8 +169,8 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
           
           {/* Left: Quick stock pagination & navigation */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] sm:text-xs font-mono font-semibold text-[#86868B] tabular-nums bg-[#F5F5F7] dark:bg-[#1C1C1E] px-2.5 py-1 rounded-full border border-black/[0.04] dark:border-white/[0.06]">
-              {currentIndex >= 0 ? `${currentIndex + 1} / ${stockList.length}` : '1 / 1'}
+            <span className="text-xs font-mono text-[#86868B] tabular-nums font-medium">
+              <span className="text-[#1D1D1F] dark:text-[#F5F5F7] font-bold">{currentIndex >= 0 ? currentIndex + 1 : 1}</span> / {stockList.length}
             </span>
 
             <div className="flex items-center gap-1">
@@ -248,7 +242,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                   <h1 id="drawer-stock-title" className="text-lg sm:text-xl font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
                     {companyName}
                   </h1>
-                  <span className="font-mono text-xs font-semibold text-[#86868B] dark:text-[#A1A1A6] bg-[#F5F5F7] dark:bg-[#2C2C2E] px-2 py-0.5 rounded-full border border-black/[0.04] dark:border-white/[0.06]">
+                  <span className="font-mono text-xs font-semibold text-[#86868B] dark:text-[#A1A1A6]">
                     {stock.ticker}
                   </span>
                   <span className="text-xs text-[#86868B]">· {stock.market}</span>
@@ -259,69 +253,88 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
               </div>
             </div>
 
-            {/* Right: Price & Score Badges */}
-            <div className="flex sm:flex-col items-baseline sm:items-end justify-between gap-1 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-black/[0.04] dark:border-white/[0.06]">
+            {/* Right: Price & Minimal Typography Score Stat */}
+            <div className="flex sm:flex-col items-baseline sm:items-end justify-between gap-1.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-black/[0.04] dark:border-white/[0.06]">
               <div className="flex items-baseline gap-2">
                 <span className="text-xl sm:text-2xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight tabular-nums">
                   {stock.currency === 'USD' ? `$${stock.currentPrice.toFixed(2)}` : `${stock.currentPrice.toLocaleString()}원`}
                 </span>
-                <span className={`text-xs font-mono font-bold tabular-nums px-2 py-0.5 rounded-full ${
-                  isPricePositive ? 'bg-[#34C759]/15 text-[#34C759]' : 'bg-[#FF3B30]/15 text-[#FF3B30]'
+                <span className={`text-xs sm:text-sm font-mono font-bold tabular-nums ${
+                  isPricePositive ? 'text-[#34C759]' : 'text-[#FF3B30]'
                 }`}>
                   {isPricePositive ? `+${stock.priceChangePct.toFixed(2)}%` : `${stock.priceChangePct.toFixed(2)}%`}
                 </span>
               </div>
 
-              <div className="mt-1">
-                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono border ${scorePillClass}`}>
-                  <CheckCircle2 className="w-3 h-3 stroke-[2.5]" />
-                  <span>{scoreLabel}</span>
+              <div className="inline-flex items-center gap-1.5 text-xs font-medium">
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                  stock.isMasterPass
+                    ? 'bg-[#34C759]'
+                    : stock.passCount >= stock.totalRuleCount * 0.75
+                      ? 'bg-[#FF9500] dark:bg-[#FF9F0A]'
+                      : 'bg-[#FF3B30]'
+                }`} />
+                <span className="font-mono font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
+                  {scorePassFraction}
+                </span>
+                <span className={`font-semibold ${
+                  stock.isMasterPass
+                    ? 'text-[#34C759]'
+                    : stock.passCount >= stock.totalRuleCount * 0.75
+                      ? 'text-[#FF9500] dark:text-[#FF9F0A]'
+                      : 'text-[#86868B]'
+                }`}>
+                  {scoreText}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* 2. Key Financial Metrics Bar (High-Density Strip) */}
-          <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-black/[0.06] dark:border-white/[0.08] shadow-sm">
+          {/* 2. Key Financial Metrics Bar (Apple Minimal Typography Stats) */}
+          <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-5 border border-black/[0.06] dark:border-white/[0.08] shadow-sm">
             <div className="flex items-center justify-between pb-3 border-b border-black/[0.04] dark:border-white/[0.06] text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
               <span className="flex items-center gap-1.5">
                 <Activity className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />
                 {t('keyFinancialMetrics')}
               </span>
-              <span className="text-[11px] text-[#86868B] font-mono tabular-nums">
-                {t('marketCapLabel')}: {stock.marketCapFormatted}
+              <span className="text-[11px] text-[#86868B]">
+                {t('marketCapLabel')}: <span className="font-mono tabular-nums font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">{stock.marketCapFormatted}</span>
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 text-xs">
-              <div className="bg-[#F5F5F7] dark:bg-[#252528] p-2.5 rounded-xl">
-                <span className="text-[10px] text-[#86868B] block font-medium">5Y Avg ROE</span>
-                <span className="text-sm font-bold font-mono text-[#34C759] tabular-nums mt-0.5 block">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 text-xs">
+              <div className="space-y-1">
+                <span className="text-[10px] text-[#86868B] block font-medium uppercase tracking-wider">5Y Avg ROE</span>
+                <span className="text-base sm:text-lg font-bold font-mono text-[#34C759] tabular-nums block">
                   {stock.avgRoe5Yr.toFixed(1)}%
                 </span>
+                <span className="text-[10px] text-[#86868B] block">기준 &gt; 15%</span>
               </div>
 
-              <div className="bg-[#F5F5F7] dark:bg-[#252528] p-2.5 rounded-xl">
-                <span className="text-[10px] text-[#86868B] block font-medium">5Y Avg ROIC</span>
-                <span className="text-sm font-bold font-mono text-[#0071E3] dark:text-[#2997FF] tabular-nums mt-0.5 block">
+              <div className="space-y-1">
+                <span className="text-[10px] text-[#86868B] block font-medium uppercase tracking-wider">5Y Avg ROIC</span>
+                <span className="text-base sm:text-lg font-bold font-mono text-[#0071E3] dark:text-[#2997FF] tabular-nums block">
                   {stock.avgRoic5Yr.toFixed(1)}%
                 </span>
+                <span className="text-[10px] text-[#86868B] block">기준 &gt; 10%</span>
               </div>
 
-              <div className="bg-[#F5F5F7] dark:bg-[#252528] p-2.5 rounded-xl">
-                <span className="text-[10px] text-[#86868B] block font-medium">5Y EPS CAGR</span>
-                <span className="text-sm font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums mt-0.5 block">
+              <div className="space-y-1">
+                <span className="text-[10px] text-[#86868B] block font-medium uppercase tracking-wider">5Y EPS CAGR</span>
+                <span className="text-base sm:text-lg font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums block">
                   {stock.epsCagr5Yr >= 0 ? `+${stock.epsCagr5Yr.toFixed(1)}%` : `${stock.epsCagr5Yr.toFixed(1)}%`}
                 </span>
+                <span className="text-[10px] text-[#86868B] block">10Y 복리성장</span>
               </div>
 
-              <div className="bg-[#F5F5F7] dark:bg-[#252528] p-2.5 rounded-xl">
-                <span className="text-[10px] text-[#86868B] block font-medium">{t('debtRatio')} (D/E)</span>
-                <span className={`text-sm font-bold font-mono tabular-nums mt-0.5 block ${
+              <div className="space-y-1">
+                <span className="text-[10px] text-[#86868B] block font-medium uppercase tracking-wider">{t('debtRatio')} (D/E)</span>
+                <span className={`text-base sm:text-lg font-bold font-mono tabular-nums block ${
                   stock.debtToEquity <= 80 ? 'text-[#34C759]' : 'text-[#FF9500]'
                 }`}>
-                  {stock.debtToEquity.toFixed(1)}%
+                  {stock.debtToEquity.toFixed(0)}%
                 </span>
+                <span className="text-[10px] text-[#86868B] block">무차입 안전</span>
               </div>
             </div>
           </div>
@@ -335,9 +348,11 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                   {t('buffett6RuleDiagnosis')}
                 </h2>
               </div>
-              <span className="text-[10px] sm:text-xs text-[#86868B] font-mono font-semibold bg-[#F5F5F7] dark:bg-[#2C2C2E] px-2.5 py-0.5 rounded-full">
-                {stock.passCount}/6 {t('pass')}
-              </span>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#34C759]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#34C759]" />
+                <span className="font-mono tabular-nums">{stock.passCount}/6</span>
+                <span>{t('pass')}</span>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
@@ -351,9 +366,15 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                     <div className="flex items-center justify-between mb-2">
                       <Icon className="w-3.5 h-3.5 text-[#86868B]" />
                       {rule.passed ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#34C759] stroke-[2.5]" />
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#34C759] font-mono">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#34C759]" />
+                          PASS
+                        </span>
                       ) : (
-                        <span className="text-[10px] font-bold font-mono text-[#FF3B30] bg-[#FF3B30]/15 px-1.5 py-0.2 rounded-full">FAIL</span>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#FF3B30] font-mono">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#FF3B30]" />
+                          FAIL
+                        </span>
                       )}
                     </div>
                     <div>
@@ -391,7 +412,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                 <PieChart className="w-3.5 h-3.5 text-[#FF9500]" />
                 {t('economicMoat')} & {t('governanceRating')}
               </span>
-              <span className="text-[10px] font-bold font-mono bg-[#FF9500]/15 text-[#C93400] px-2 py-0.5 rounded-full">
+              <span className="text-xs font-bold font-mono text-[#FF9500]">
                 {stock.governance.gradeLabel}
               </span>
             </div>
@@ -400,11 +421,11 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
               {stock.economicMoatSummary}
             </p>
 
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+            <div className="flex flex-wrap items-center gap-3 pt-1">
               {stock.moatSources.map((source, idx) => (
                 <span
                   key={idx}
-                  className="text-[11px] font-medium bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] px-2.5 py-1 rounded-full border border-black/[0.04] dark:border-white/[0.06]"
+                  className="text-xs text-[#6E6E73] dark:text-[#A1A1A6] font-medium flex items-center gap-1"
                 >
                   ✓ {source}
                 </span>

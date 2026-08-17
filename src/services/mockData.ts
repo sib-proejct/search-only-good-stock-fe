@@ -54,8 +54,11 @@ export const MOCK_STOCKS: Stock[] = [
       gradeLabel: '주주 친화 A+ 등급 (우수)',
       ceoSkinInTheGameSummary: 'CEO 팀 쿡 300만 주 이상 보유 (약 $7억 달러), 자사주 매입을 통한 세계 최고 수준의 주식수 축소 집행',
       leadership: [
-        { role: '대표이사(CEO)', name: '팀 쿡 (Tim Cook)', tenureYears: 13, bio: '스티브 잡스 이후 공급망 최적화 및 서비스/웨어러블 매출 3배 성장, 버핏의 최대 투자 종목 등극', sharesOwned: 3280000, sharesValueUsd: 736360000 },
-        { role: '최고재무책임자(CFO)', name: '루카 마에스트리 (Luca Maestri)', tenureYears: 10, bio: '자본 중립(Net Cash Neutral) 전략 하에 누적 $6,000억 이상 자사주 매입/소각 총괄', sharesOwned: 120000, sharesValueUsd: 26940000 }
+        { role: '대표이사(CEO)', name: '팀 쿡 (Tim Cook)', tenureYears: 13, bio: '스티브 잡스 이후 공급망 최적화 및 서비스/웨어러블 매출 3배 성장, 버핏의 최대 투자 종목 등극', sharesOwned: 3280000, sharesValueUsd: 736360000, sharesOwnershipPct: 0.021, isOutsideDirector: false, compensationUsd: 63200000, baseSalaryPct: 4.7, performanceBonusPct: 15.8, stockBasedCompPct: 79.5 },
+        { role: '최고재무책임자(CFO)', name: '루카 마에스트리 (Luca Maestri)', tenureYears: 10, bio: '자본 중립(Net Cash Neutral) 전략 하에 누적 $6,000억 이상 자사주 매입/소각 총괄', sharesOwned: 120000, sharesValueUsd: 26940000, sharesOwnershipPct: 0.001, isOutsideDirector: false, compensationUsd: 26900000, baseSalaryPct: 3.7, performanceBonusPct: 14.8, stockBasedCompPct: 81.5 },
+        { role: '사외이사 (이사회 의장)', name: '아서 레빈슨 (Arthur D. Levinson)', tenureYears: 24, bio: 'Genentech 전 CEO, 2011년부터 애플 이사회 의장 역임, 바이오 및 R&D 혁신 자문', sharesOwned: 4500000, sharesValueUsd: 1010250000, sharesOwnershipPct: 0.029, isOutsideDirector: true, compensationUsd: 565000, baseSalaryPct: 20.0, performanceBonusPct: 0.0, stockBasedCompPct: 80.0 },
+        { role: '사외이사 (보상위원장)', name: '수잔 와그너 (Susan L. Wagner)', tenureYears: 10, bio: '블랙록(BlackRock) 공동 설립자 겸 부회장, 리스크 관리 및 거버넌스 최고 권위자', sharesOwned: 42000, sharesValueUsd: 9429000, sharesOwnershipPct: 0.0003, isOutsideDirector: true, compensationUsd: 410000, baseSalaryPct: 25.0, performanceBonusPct: 0.0, stockBasedCompPct: 75.0 },
+        { role: '사외이사 (감사위원)', name: '알렉스 고스키 (Alex Gorsky)', tenureYears: 3, bio: '존슨앤드존슨(J&J) 전 회장 겸 CEO, 글로벌 헬스케어 및 공급망 전문성 제공', sharesOwned: 35000, sharesValueUsd: 7857500, sharesOwnershipPct: 0.0002, isOutsideDirector: true, compensationUsd: 385000, baseSalaryPct: 25.0, performanceBonusPct: 0.0, stockBasedCompPct: 75.0 }
       ],
       compensation: {
         year: 2026,
@@ -138,8 +141,10 @@ export const MOCK_STOCKS: Stock[] = [
       gradeLabel: '주주 친화 A+ 등급 (우수)',
       ceoSkinInTheGameSummary: 'CEO 사티아 나델라 약 80만 주 보유 (시가 약 $3.4억 달러), 10b5-1 정기 매도 외 비정상 지분 매각 없음',
       leadership: [
-        { role: '대표이사(CEO) & 이사회 의장', name: '사티아 나델라 (Satya Nadella)', tenureYears: 11, bio: '2014년 취임 후 모바일 실패 극복, 클라우드(Azure) 대전환으로 시가총액 10배 성장 견인', sharesOwned: 800000, sharesValueUsd: 340160000 },
-        { role: '최고재무책임자(CFO)', name: '에이미 후드 (Amy Hood)', tenureYears: 12, bio: '철저한 자본 배치와 40% 이상의 영업이익률 및 FCF 전환율 관리의 핵심 주역', sharesOwned: 250000, sharesValueUsd: 106300000 }
+        { role: '대표이사(CEO) & 이사회 의장', name: '사티아 나델라 (Satya Nadella)', tenureYears: 11, bio: '2014년 취임 후 모바일 실패 극복, 클라우드(Azure) 대전환으로 시가총액 10배 성장 견인', sharesOwned: 800000, sharesValueUsd: 340160000, sharesOwnershipPct: 0.011, isOutsideDirector: false, compensationUsd: 79100000, baseSalaryPct: 3.2, performanceBonusPct: 11.8, stockBasedCompPct: 85.0 },
+        { role: '최고재무책임자(CFO)', name: '에이미 후드 (Amy Hood)', tenureYears: 12, bio: '철저한 자본 배치와 40% 이상의 영업이익률 및 FCF 전환율 관리의 핵심 주역', sharesOwned: 250000, sharesValueUsd: 106300000, sharesOwnershipPct: 0.003, isOutsideDirector: false, compensationUsd: 26000000, baseSalaryPct: 4.0, performanceBonusPct: 16.0, stockBasedCompPct: 80.0 },
+        { role: '수석 사외이사 (Lead Independent)', name: '존 톰슨 (John W. Thompson)', tenureYears: 12, bio: '시만텍(Symantec) 전 CEO, MS 이사회 의장 역임 후 독립 이사회 감독 총괄', sharesOwned: 110000, sharesValueUsd: 46772000, sharesOwnershipPct: 0.0015, isOutsideDirector: true, compensationUsd: 480000, baseSalaryPct: 20.0, performanceBonusPct: 0.0, stockBasedCompPct: 80.0 },
+        { role: '사외이사 (감사위원)', name: '페니 프리츠커 (Penny Pritzker)', tenureYears: 7, bio: '미국 제38대 상무부 장관, PSP 파트너스 회장, 거버넌스 및 글로벌 규제 전문가', sharesOwned: 28000, sharesValueUsd: 11905600, sharesOwnershipPct: 0.0004, isOutsideDirector: true, compensationUsd: 390000, baseSalaryPct: 25.0, performanceBonusPct: 0.0, stockBasedCompPct: 75.0 }
       ],
       compensation: {
         year: 2026,
@@ -222,7 +227,9 @@ export const MOCK_STOCKS: Stock[] = [
       gradeLabel: '주주 친화 A 등급 (우수)',
       ceoSkinInTheGameSummary: '순다르 피차이 CEO 장기 재임 및 자사주 매입 확대',
       leadership: [
-        { role: '대표이사(CEO)', name: '순다르 피차이 (Sundar Pichai)', tenureYears: 10, bio: '구글 핵심 제품 총괄 후 지주사 알파벳 CEO 취임, AI First 전략 주도', sharesOwned: 220000, sharesValueUsd: 33048400 }
+        { role: '대표이사(CEO)', name: '순다르 피차이 (Sundar Pichai)', tenureYears: 10, bio: '구글 핵심 제품 총괄 후 지주사 알파벳 CEO 취임, AI First 전략 및 클라우드 흑자 전환 주도', sharesOwned: 220000, sharesValueUsd: 33048400, sharesOwnershipPct: 0.0018, isOutsideDirector: false, compensationUsd: 8500000, baseSalaryPct: 23.5, performanceBonusPct: 20.0, stockBasedCompPct: 56.5 },
+        { role: '사외이사 (이사회 의장)', name: '존 헤네시 (John L. Hennessy)', tenureYears: 20, bio: '전 스탠퍼드대 총장, 튜링상 수상자, 컴퓨터 아키텍처 세계 최고 석학', sharesOwned: 85000, sharesValueUsd: 12768700, sharesOwnershipPct: 0.0007, isOutsideDirector: true, compensationUsd: 450000, baseSalaryPct: 20.0, performanceBonusPct: 0.0, stockBasedCompPct: 80.0 },
+        { role: '사외이사 (감사위원장)', name: '앤 멀케이 (Anne M. Mulcahy)', tenureYears: 15, bio: '제록스(Xerox) 전 회장 겸 CEO, 기업 위기관리 및 독립 감사 총괄', sharesOwned: 32000, sharesValueUsd: 4807040, sharesOwnershipPct: 0.0003, isOutsideDirector: true, compensationUsd: 395000, baseSalaryPct: 25.0, performanceBonusPct: 0.0, stockBasedCompPct: 75.0 }
       ],
       compensation: {
         year: 2026,
@@ -305,7 +312,9 @@ export const MOCK_STOCKS: Stock[] = [
       gradeLabel: '주주 친화 A+ 등급 (우수)',
       ceoSkinInTheGameSummary: '창업 철학 계승 경영진 재임',
       leadership: [
-        { role: '대표이사(CEO)', name: '론 바크리스 (Ron Vachris)', tenureYears: 2, bio: '지게차 운전수로 입사해 40년 만에 CEO 등극, 현장 중심의 코스트코 철학 계승', sharesOwned: 45000, sharesValueUsd: 33304500 }
+        { role: '대표이사(CEO)', name: '론 바크리스 (Ron Vachris)', tenureYears: 2, bio: '지게차 운전수로 입사해 40년 만에 CEO 등극, 현장 중심의 코스트코 철학 계승', sharesOwned: 45000, sharesValueUsd: 33304500, sharesOwnershipPct: 0.010, isOutsideDirector: false, compensationUsd: 11500000, baseSalaryPct: 10.0, performanceBonusPct: 15.0, stockBasedCompPct: 75.0 },
+        { role: '사외이사 (지배구조위원장)', name: '켄 덴먼 (Ken Denman)', tenureYears: 8, bio: 'Emotient 전 CEO, 모바일/AI 테크 경영자 출신 사외이사', sharesOwned: 12000, sharesValueUsd: 8881200, sharesOwnershipPct: 0.0027, isOutsideDirector: true, compensationUsd: 340000, baseSalaryPct: 30.0, performanceBonusPct: 0.0, stockBasedCompPct: 70.0 },
+        { role: '사외이사 (감사위원)', name: '샐리 주얼 (Sally Jewell)', tenureYears: 5, bio: 'REI 전 CEO 겸 전 미국 내무부 장관, 유통 및 윤리경영 전문가', sharesOwned: 8500, sharesValueUsd: 6290850, sharesOwnershipPct: 0.0019, isOutsideDirector: true, compensationUsd: 310000, baseSalaryPct: 30.0, performanceBonusPct: 0.0, stockBasedCompPct: 70.0 }
       ],
       compensation: {
         year: 2026,
@@ -388,7 +397,9 @@ export const MOCK_STOCKS: Stock[] = [
       gradeLabel: '주주 친화 A 등급 (우수)',
       ceoSkinInTheGameSummary: '창업자 젠슨 황 약 3.5% 지분 보유',
       leadership: [
-        { role: '창립자 & CEO', name: '젠슨 황 (Jensen Huang)', tenureYears: 31, bio: '엔비디아 공동 창립, GPU 컴퓨팅 및 생성형 AI 인프라 혁명 완성', sharesOwned: 86000000, sharesValueUsd: 75680000000 }
+        { role: '창립자 & CEO', name: '젠슨 황 (Jensen Huang)', tenureYears: 31, bio: '엔비디아 공동 창립, GPU 컴퓨팅 및 생성형 AI 인프라 혁명 완성', sharesOwned: 86000000, sharesValueUsd: 75680000000, sharesOwnershipPct: 3.5, isOutsideDirector: false, compensationUsd: 34200000, baseSalaryPct: 3.0, performanceBonusPct: 12.0, stockBasedCompPct: 85.0 },
+        { role: '최고재무책임자(CFO)', name: '콜레트 크레스 (Colette Kress)', tenureYears: 11, bio: '시스코/MS 거친 최고재무책임자, 데이터센터 매출 500% 성장 자본 관리 총괄', sharesOwned: 620000, sharesValueUsd: 545600000, sharesOwnershipPct: 0.025, isOutsideDirector: false, compensationUsd: 14500000, baseSalaryPct: 5.0, performanceBonusPct: 15.0, stockBasedCompPct: 80.0 },
+        { role: '수석 사외이사 (감사위원장)', name: '마크 페리 (Mark A. Perry)', tenureYears: 19, bio: 'NEA 벤처파트너 및 로펌 출신 기업 거버넌스 및 감사 총괄', sharesOwned: 150000, sharesValueUsd: 132000000, sharesOwnershipPct: 0.006, isOutsideDirector: true, compensationUsd: 395000, baseSalaryPct: 20.0, performanceBonusPct: 0.0, stockBasedCompPct: 80.0 }
       ],
       compensation: {
         year: 2026,
@@ -554,8 +565,10 @@ export const MOCK_STOCKS: Stock[] = [
       gradeLabel: '주주 친화 A 등급 (우수)',
       ceoSkinInTheGameSummary: '이재용 회장 등 오너 일가 및 특수관계인 지분 약 20.8% 보유',
       leadership: [
-        { role: '대표이사(CEO) 부회장', name: '한종희 (Jong-Hee Han)', tenureYears: 4, bio: 'DX 부문 총괄, AI 가전 및 모바일 생태계 결합 주도', sharesOwned: 15000, sharesValueUsd: 850000 },
-        { role: '대표이사(CEO) 사장', name: '전영현 (Young Hyun Jun)', tenureYears: 1, bio: 'DS(반도체) 부문장, HBM 및 첨단 패키징 초격차 회복 총괄', sharesOwned: 5000, sharesValueUsd: 280000 }
+        { role: '대표이사(CEO) 부회장', name: '한종희 (Jong-Hee Han)', tenureYears: 4, bio: 'DX 부문 총괄, AI 가전 및 모바일 생태계 결합 주도', sharesOwned: 15000, sharesValueUsd: 850000, sharesOwnershipPct: 0.0003, isOutsideDirector: false, compensationUsd: 5200000, baseSalaryPct: 20.0, performanceBonusPct: 60.0, stockBasedCompPct: 20.0 },
+        { role: '대표이사(CEO) 사장', name: '전영현 (Young Hyun Jun)', tenureYears: 1, bio: 'DS(반도체) 부문장, HBM 및 첨단 패키징 초격차 회복 총괄', sharesOwned: 5000, sharesValueUsd: 280000, sharesOwnershipPct: 0.0001, isOutsideDirector: false, compensationUsd: 3200000, baseSalaryPct: 25.0, performanceBonusPct: 55.0, stockBasedCompPct: 20.0 },
+        { role: '사외이사 (이사회 의장)', name: '신제윤 (Je-Yoon Shin)', tenureYears: 2, bio: '전 금융위원장 및 기획재정부 1차관, 거시경제 및 리스크 관리 총괄', sharesOwned: 1200, sharesValueUsd: 68000, sharesOwnershipPct: 0.00002, isOutsideDirector: true, compensationUsd: 120000, baseSalaryPct: 80.0, performanceBonusPct: 0.0, stockBasedCompPct: 20.0 },
+        { role: '사외이사 (감사위원)', name: '유명희 (Myung-Hee Yoo)', tenureYears: 3, bio: '전 산업통상자원부 통상교섭본부장, 글로벌 통상 규제 및 공급망 전략 자문', sharesOwned: 800, sharesValueUsd: 45000, sharesOwnershipPct: 0.00001, isOutsideDirector: true, compensationUsd: 110000, baseSalaryPct: 80.0, performanceBonusPct: 0.0, stockBasedCompPct: 20.0 }
       ],
       compensation: {
         year: 2026,
@@ -638,7 +651,8 @@ export const MOCK_STOCKS: Stock[] = [
       gradeLabel: '주주 친화 A+ 등급 (우수)',
       ceoSkinInTheGameSummary: '김정수 부회장 등 오너가 책임경영 및 글로벌 확장 주도',
       leadership: [
-        { role: '대표이사(CEO) 부회장', name: '김정수 (Jeong-Soo Kim)', tenureYears: 6, bio: '불닭볶음면 기획 및 글로벌 신화 주역, 북미/동남아/유럽 수출 대폭 확장', sharesOwned: 320000, sharesValueUsd: 135000000 }
+        { role: '대표이사(CEO) 부회장', name: '김정수 (Jeong-Soo Kim)', tenureYears: 6, bio: '불닭볶음면 기획 및 글로벌 신화 주역, 북미/동남아/유럽 수출 대폭 확장', sharesOwned: 320000, sharesValueUsd: 135000000, sharesOwnershipPct: 4.25, isOutsideDirector: false, compensationUsd: 2200000, baseSalaryPct: 30.0, performanceBonusPct: 70.0, stockBasedCompPct: 0.0 },
+        { role: '사외이사 (감사위원장)', name: '정태운 (Tae-Woon Jung)', tenureYears: 3, bio: '공인회계사 및 재무감사 전문가, 투명한 내부회계 및 주주환원 감시', sharesOwned: 500, sharesValueUsd: 210000, sharesOwnershipPct: 0.007, isOutsideDirector: true, compensationUsd: 65000, baseSalaryPct: 100.0, performanceBonusPct: 0.0, stockBasedCompPct: 0.0 }
       ],
       compensation: {
         year: 2026,
@@ -721,7 +735,8 @@ export const MOCK_STOCKS: Stock[] = [
       gradeLabel: '주주 친화 A+ 등급 (우수)',
       ceoSkinInTheGameSummary: '창업자 이채윤 회장 지분 약 34.6% 보유',
       leadership: [
-        { role: '대표이사(CEO) 회장', name: '이채윤 (Chae-Yoon Lee)', tenureYears: 36, bio: '리노공업 창업주, 미세 핀 가공 기술 국산화 및 글로벌 독점 기업으로 육성', sharesOwned: 5270000, sharesValueUsd: 760000000 }
+        { role: '대표이사(CEO) 회장', name: '이채윤 (Chae-Yoon Lee)', tenureYears: 36, bio: '리노공업 창업주, 미세 핀 가공 기술 국산화 및 글로벌 독점 기업으로 육성', sharesOwned: 5270000, sharesValueUsd: 760000000, sharesOwnershipPct: 34.6, isOutsideDirector: false, compensationUsd: 1800000, baseSalaryPct: 40.0, performanceBonusPct: 60.0, stockBasedCompPct: 0.0 },
+        { role: '사외이사 (기술 및 거버넌스)', name: '박상일 (Sang-Il Park)', tenureYears: 4, bio: '파크시스템스 창업주 및 물리학 박사, 첨단 반도체 계측 및 기술 거버넌스 자문', sharesOwned: 3500, sharesValueUsd: 500000, sharesOwnershipPct: 0.023, isOutsideDirector: true, compensationUsd: 55000, baseSalaryPct: 100.0, performanceBonusPct: 0.0, stockBasedCompPct: 0.0 }
       ],
       compensation: {
         year: 2026,
@@ -804,7 +819,8 @@ export const MOCK_STOCKS: Stock[] = [
       gradeLabel: '주주 친화 A 등급 (우수)',
       ceoSkinInTheGameSummary: '곽노정 사장 엔지니어 출신 CEO 기술 리더십',
       leadership: [
-        { role: '대표이사(CEO) 사장', name: '곽노정 (Noh-Jung Kwak)', tenureYears: 3, bio: 'HBM 개발 총괄 및 엔비디아 파트너십 완성, 메모리 턴어라운드 주역', sharesOwned: 8000, sharesValueUsd: 1100000 }
+        { role: '대표이사(CEO) 사장', name: '곽노정 (Noh-Jung Kwak)', tenureYears: 3, bio: 'HBM 개발 총괄 및 엔비디아 파트너십 완성, 메모리 턴어라운드 주역', sharesOwned: 8000, sharesValueUsd: 1100000, sharesOwnershipPct: 0.0001, isOutsideDirector: false, compensationUsd: 2500000, baseSalaryPct: 35.0, performanceBonusPct: 65.0, stockBasedCompPct: 0.0 },
+        { role: '사외이사 (이사회 의장)', name: '하영구 (Young-Goo Ha)', tenureYears: 5, bio: '전 한국씨티은행장 및 전국은행연합회장, 글로벌 금융 및 거버넌스 총괄', sharesOwned: 1500, sharesValueUsd: 210000, sharesOwnershipPct: 0.00002, isOutsideDirector: true, compensationUsd: 130000, baseSalaryPct: 80.0, performanceBonusPct: 0.0, stockBasedCompPct: 20.0 }
       ],
       compensation: {
         year: 2026,

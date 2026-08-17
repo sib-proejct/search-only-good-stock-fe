@@ -69,8 +69,8 @@ export const BuffettRuleGrid: React.FC<BuffettRuleGridProps> = ({ stock }) => {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-[#1D1D1F] flex items-center gap-2.5">
           <span>Warren Buffett 6-Pillar Audit</span>
-          <span className="text-xs px-3 py-0.5 rounded-full bg-[#34C759]/15 text-[#248A3D] font-mono font-bold tabular-nums">
-            {stock.passCount} / {stock.totalRuleCount} Passed
+          <span className="text-xs px-3 py-0.5 rounded-full bg-[#34C759]/15 text-[#248A3D] font-bold">
+            <span className="font-mono tabular-nums">{stock.passCount} / {stock.totalRuleCount}</span> Passed
           </span>
         </h2>
         <span className="text-xs text-[#86868B] font-normal hidden sm:inline">
