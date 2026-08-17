@@ -117,22 +117,22 @@ export const RuleGuidePage: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-[1280px] mx-auto px-6 sm:px-8 py-10 space-y-6 animate-fade-in transition-colors duration-300">
+    <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-6 sm:py-10 space-y-4 sm:space-y-6 animate-fade-in transition-colors duration-300">
       
       {/* Apple Header Banner */}
-      <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-3">
+      <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl sm:rounded-3xl p-5 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-[#1D1D1F] dark:bg-[#2C2C2E] text-[#FFD60A] flex items-center justify-center shadow-apple-pill">
-            <BookOpen className="w-5 h-5" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#1D1D1F] dark:bg-[#2C2C2E] text-[#FFD60A] flex items-center justify-center shadow-apple-pill shrink-0">
+            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
           <div>
-            <div className="inline-flex items-center gap-1.5 bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] text-[10px] font-semibold px-2.5 py-0.5 rounded-full font-mono mb-1 border border-black/[0.04] dark:border-white/[0.06]">
+            <div className="inline-flex items-center gap-1.5 bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] text-[9px] sm:text-[10px] font-semibold px-2 sm:px-2.5 py-0.5 rounded-full font-mono mb-0.5 sm:mb-1 border border-black/[0.04] dark:border-white/[0.06]">
               <span>OWNER-RELATED BUSINESS PRINCIPLES</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
+            <h1 className="text-xl sm:text-3xl font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
               {t('guideTitle')}
             </h1>
-            <p className="text-xs text-[#86868B] mt-0.5 font-normal">
+            <p className="text-[11px] sm:text-xs text-[#86868B] mt-0.5 font-normal">
               {t('guideSubtitle')}
             </p>
           </div>
@@ -140,58 +140,58 @@ export const RuleGuidePage: React.FC = () => {
       </div>
 
       {/* 6 Rules Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {guideRules.map((rule) => (
           <div 
             key={rule.id} 
-            className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-4"
+            className="bg-white dark:bg-[#1C1C1E] rounded-2xl sm:rounded-3xl p-5 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-3.5 sm:space-y-4"
           >
             {/* Top Badge & Title */}
             <div>
               <span className="text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF] font-mono tracking-wider block mb-1">
                 {rule.num}
               </span>
-              <h3 className="font-bold text-base text-[#1D1D1F] dark:text-[#F5F5F7]">
+              <h3 className="font-bold text-sm sm:text-base text-[#1D1D1F] dark:text-[#F5F5F7]">
                 {rule.title}
               </h3>
             </div>
 
             {/* Buffett Quote Bento Box */}
-            <div className="bg-[#F5F5F7] dark:bg-[#252528] p-4 rounded-2xl border border-black/[0.03] dark:border-white/[0.06] space-y-1">
+            <div className="bg-[#F5F5F7] dark:bg-[#252528] p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-black/[0.03] dark:border-white/[0.06] space-y-1">
               <Quote className="w-3.5 h-3.5 text-[#FF9500] opacity-80" />
-              <blockquote className="text-xs text-[#1D1D1F] dark:text-[#F5F5F7] italic leading-relaxed font-serif">
+              <blockquote className="text-[11px] sm:text-xs text-[#1D1D1F] dark:text-[#F5F5F7] italic leading-relaxed font-serif">
                 {rule.buffettQuote}
               </blockquote>
             </div>
 
             {/* Purpose & Formula Details */}
-            <div className="space-y-2.5 text-xs">
-              <div className="bg-[#F5F5F7] dark:bg-[#252528] p-3.5 rounded-xl border border-black/[0.02] dark:border-white/[0.04]">
-                <span className="font-semibold text-[#86868B] block mb-0.5 text-[11px]">🎯 {t('objective')}:</span>
-                <p className="text-[#424245] dark:text-[#D2D2D7] leading-relaxed text-xs">{rule.purpose}</p>
+            <div className="space-y-2 sm:space-y-2.5 text-xs">
+              <div className="bg-[#F5F5F7] dark:bg-[#252528] p-3 sm:p-3.5 rounded-xl border border-black/[0.02] dark:border-white/[0.04]">
+                <span className="font-semibold text-[#86868B] block mb-0.5 text-[10px] sm:text-[11px]">🎯 {t('objective')}:</span>
+                <p className="text-[#424245] dark:text-[#D2D2D7] leading-relaxed text-[11px] sm:text-xs">{rule.purpose}</p>
               </div>
 
-              <div className="bg-[#34C759]/10 dark:bg-[#34C759]/15 p-3.5 rounded-xl border border-[#34C759]/20">
-                <span className="font-semibold text-[#248A3D] dark:text-[#34C759] flex items-center gap-1.5 mb-0.5 text-[11px]">
+              <div className="bg-[#34C759]/10 dark:bg-[#34C759]/15 p-3 sm:p-3.5 rounded-xl border border-[#34C759]/20">
+                <span className="font-semibold text-[#248A3D] dark:text-[#34C759] flex items-center gap-1.5 mb-0.5 text-[10px] sm:text-[11px]">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#34C759]" />
                   {t('passCriteria')}:
                 </span>
-                <p className="text-[#1D1D1F] dark:text-[#F5F5F7] font-mono font-bold text-xs">{rule.passCondition}</p>
+                <p className="text-[#1D1D1F] dark:text-[#F5F5F7] font-semibold text-[11px] sm:text-xs">{rule.passCondition}</p>
               </div>
 
-              <div className="bg-[#F5F5F7] dark:bg-[#252528] p-3.5 rounded-xl border border-black/[0.02] dark:border-white/[0.04]">
-                <span className="font-semibold text-[#86868B] block mb-0.5 text-[11px]">📐 {t('formula')}:</span>
-                <div className="font-mono text-[11px] text-[#1D1D1F] dark:text-[#F5F5F7] font-medium bg-white dark:bg-[#1C1C1E] p-2.5 rounded-lg border border-black/[0.04] dark:border-white/[0.06]">
+              <div className="bg-[#F5F5F7] dark:bg-[#252528] p-3 sm:p-3.5 rounded-xl border border-black/[0.02] dark:border-white/[0.04]">
+                <span className="font-semibold text-[#86868B] block mb-0.5 text-[10px] sm:text-[11px]">📐 {t('formula')}:</span>
+                <div className="font-mono text-[10px] sm:text-[11px] text-[#1D1D1F] dark:text-[#F5F5F7] font-medium bg-white dark:bg-[#1C1C1E] p-2 sm:p-2.5 rounded-lg border border-black/[0.04] dark:border-white/[0.06] overflow-x-auto">
                   {rule.formula}
                 </div>
               </div>
 
-              <div className="bg-[#FF3B30]/10 dark:bg-[#FF3B30]/15 p-3.5 rounded-xl border border-[#FF3B30]/20">
-                <span className="font-semibold text-[#D70015] dark:text-[#FF453A] flex items-center gap-1.5 mb-0.5 text-[11px]">
+              <div className="bg-[#FF3B30]/10 dark:bg-[#FF3B30]/15 p-3 sm:p-3.5 rounded-xl border border-[#FF3B30]/20">
+                <span className="font-semibold text-[#D70015] dark:text-[#FF453A] flex items-center gap-1.5 mb-0.5 text-[10px] sm:text-[11px]">
                   <AlertCircle className="w-3.5 h-3.5 text-[#FF3B30]" />
                   {t('disqualification')}:
                 </span>
-                <p className="text-[#424245] dark:text-[#D2D2D7] leading-relaxed text-xs">{rule.exclusionCondition}</p>
+                <p className="text-[#424245] dark:text-[#D2D2D7] leading-relaxed text-[11px] sm:text-xs">{rule.exclusionCondition}</p>
               </div>
             </div>
 

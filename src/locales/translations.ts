@@ -83,7 +83,7 @@ export const translations = {
     disqualification: '탈락 / 제외 기준',
 
     // Footer
-    footerCopyright: '© 2024 Search Only Good Stock. 기관 수준의 정밀 가치투자 미니멀리즘.',
+    footerCopyright: '© 2024 Search Only Good Stock.',
     privacy: '개인정보처리방침',
     terms: '이용약관',
     disclosure: '공시 정보',
@@ -171,7 +171,7 @@ export const translations = {
     disqualification: 'Exclusion Disqualification',
 
     // Footer
-    footerCopyright: '© 2024 Search Only Good Stock. Institutional Minimalism Applied.',
+    footerCopyright: '© 2024 Search Only Good Stock.',
     privacy: 'Privacy',
     terms: 'Terms',
     disclosure: 'Disclosure',

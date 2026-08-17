@@ -47,6 +47,8 @@ export default {
       },
       fontFamily: {
         sans: [
+          'Nanum Gothic',
+          'NanumGothic',
           'SF Pro Display',
           'SF Pro Text',
           'Pretendard',

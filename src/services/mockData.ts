@@ -479,7 +479,7 @@ export const MOCK_STOCKS: Stock[] = [
         baseSalaryPct: 0.0,
         performanceBonusPct: 0.0,
         stockBasedCompPct: 100.0,
-        alignmentRating: 'POOR',
+        alignmentRating: 'CONCERNING',
         summaryComment: '초대형 스톡옵션 보상안 법원 판결 및 겸직 리스크로 거버넌스 평가 감점.'
       },
       capitalAllocation: {

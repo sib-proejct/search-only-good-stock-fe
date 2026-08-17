@@ -27,20 +27,20 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({ stockId }) => 
 
   if (loading || !stock) {
     return (
-      <div className="max-w-[1280px] mx-auto px-6 sm:px-8 py-28 text-center">
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-20 text-center">
         <div className="inline-block w-8 h-8 border-2 border-[#0071E3] border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-[#86868B] font-sans text-xs font-medium">
-          Loading AAPL Intrinsic Value & Buffett Diagnosis...
+          Loading Intrinsic Value & Buffett Diagnosis...
         </p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-[1280px] mx-auto px-6 sm:px-8 py-10 space-y-6 animate-fade-in">
+    <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-6 sm:py-10 space-y-4 sm:space-y-6 animate-fade-in">
       
       {/* 1. Top Bento Grid (8-col Diagnosis & 4-col DCF Valuation) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         <div className="lg:col-span-8">
           <Buffett6RuleDiagnosis stock={stock} />
         </div>
@@ -50,7 +50,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({ stockId }) => 
       </div>
 
       {/* 2. Bottom Bento Grid (6-col $1 Retained Test & 6-col Capital Allocation) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <OneDollarRetainedCard testResult={stock.oneDollarTest} />
         <CapitalAllocationCookCard governance={stock.governance} />
       </div>
