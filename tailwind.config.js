@@ -65,6 +65,16 @@ export default {
           'Consolas',
           'monospace',
         ],
+        serif: [
+          'Newsreader',
+          'Noto Serif KR',
+          'Georgia',
+          'Nanum Myeongjo',
+          'Cambria',
+          '"Times New Roman"',
+          'Times',
+          'serif',
+        ],
       },
       boxShadow: {
         'apple-card': '0 2px 12px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.02)',

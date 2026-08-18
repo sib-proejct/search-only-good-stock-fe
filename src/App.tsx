@@ -1,23 +1,41 @@
 import { useState } from 'react';
 import { ThemeLanguageProvider, useAppConfig } from './context/ThemeLanguageContext';
-import { TopNavBar } from './components/common/TopNavBar';
+import { TopNavBar, GuideType, NavTab } from './components/common/TopNavBar';
 import { ScreenerPage } from './pages/ScreenerPage';
 import { StockDetailPage } from './pages/StockDetailPage';
 import { RuleGuidePage } from './pages/RuleGuidePage';
+import { CommunityPage } from './pages/CommunityPage';
 import { MOCK_STOCKS } from './services/mockData';
 import { Sun, Moon, Globe } from 'lucide-react';
 
 function AppContent() {
   const { t, theme, toggleTheme, language, toggleLanguage } = useAppConfig();
-  const [currentTab, setCurrentTab] = useState<'screener' | 'detail' | 'guide'>('screener');
+  const [currentTab, setCurrentTab] = useState<NavTab>('screener');
+  const [selectedGuide, setSelectedGuide] = useState<GuideType>('buffett');
   const [selectedStockId, setSelectedStockId] = useState<string>('aapl');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const selectedStock = MOCK_STOCKS.find((s) => s.id === selectedStockId) || MOCK_STOCKS[0];
 
   const handleSelectStock = (stockId: string) => {
-    setSelectedStockId(stockId);
+    // Check if stock exists by id or ticker
+    const found = MOCK_STOCKS.find(
+      (s) => s.id.toLowerCase() === stockId.toLowerCase() || s.ticker.toLowerCase() === stockId.toLowerCase()
+    );
+    if (found) {
+      setSelectedStockId(found.id);
+    } else {
+      setSelectedStockId(stockId.toLowerCase());
+    }
     setCurrentTab('detail');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSelectTab = (tab: NavTab, guideType?: GuideType) => {
+    if (guideType) {
+      setSelectedGuide(guideType);
+    }
+    setCurrentTab(tab);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -27,10 +45,11 @@ function AppContent() {
       {/* 1. Frosted Glass Top Navigation Bar */}
       <TopNavBar
         currentTab={currentTab}
-        onSelectTab={setCurrentTab}
+        onSelectTab={handleSelectTab}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         selectedStock={selectedStock}
+        activeGuide={selectedGuide}
       />
 
       {/* 2. Main Body Content */}
@@ -50,7 +69,17 @@ function AppContent() {
           />
         )}
 
-        {currentTab === 'guide' && <RuleGuidePage />}
+        {currentTab === 'guide' && (
+          <RuleGuidePage
+            activeGuide={selectedGuide}
+          />
+        )}
+
+        {currentTab === 'community' && (
+          <CommunityPage
+            onSelectStock={handleSelectStock}
+          />
+        )}
       </main>
 
       {/* 3. Apple Minimalist Footer with Inline Controls on a Single Line */}

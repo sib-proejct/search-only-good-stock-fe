@@ -3,14 +3,16 @@ import { Search, X } from 'lucide-react';
 import { Stock } from '../../types/stock';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
 
-export type NavTab = 'screener' | 'detail' | 'guide';
+export type NavTab = 'screener' | 'detail' | 'guide' | 'community';
+export type GuideType = 'buffett' | 'lynch';
 
 interface TopNavBarProps {
   currentTab: NavTab;
-  onSelectTab: (tab: NavTab) => void;
+  onSelectTab: (tab: NavTab, guideType?: GuideType) => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
   selectedStock?: Stock | null;
+  activeGuide?: GuideType;
 }
 
 export const TopNavBar: React.FC<TopNavBarProps> = ({
@@ -18,15 +20,17 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
   onSelectTab,
   searchQuery,
   onSearchChange,
+  activeGuide = 'buffett',
 }) => {
   const { t } = useAppConfig();
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const isDetail = currentTab === 'detail';
 
   return (
     <header className="sticky top-0 z-40 bg-[#FBFBFD]/90 dark:bg-black/85 backdrop-blur-xl border-b border-black/[0.04] dark:border-white/[0.08] transition-colors duration-300">
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-8 h-14 sm:h-18 flex items-center justify-between gap-2">
-        
+      <div className="max-w-[1280px] mx-auto px-3 sm:px-8 h-14 sm:h-18 flex items-center justify-between gap-1.5 sm:gap-4">
+
         {/* Mobile Search Overlay */}
         {showMobileSearch ? (
           <div className="flex-1 flex items-center gap-2 animate-fade-in">
@@ -46,74 +50,142 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                 setShowMobileSearch(false);
                 onSearchChange('');
               }}
-              className="p-1.5 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] rounded-full"
+              className="p-1.5 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] rounded-full cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         ) : (
           <>
-            {/* Left: Brand */}
+            {/* Left: Brand (Clean Typographic SOGS Logo) */}
             <div className="flex items-center shrink-0">
               <button
                 onClick={() => onSelectTab('screener')}
-                className="text-left group cursor-pointer focus:outline-none"
+                className="text-left group cursor-pointer focus:outline-none flex items-center gap-1.5 sm:gap-2"
               >
-                <span className="text-sm sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight hover:opacity-80 transition-opacity whitespace-nowrap">
-                  {t('brandTitle')}
+                <span className="text-sm sm:text-lg font-black tracking-tight text-[#0071E3] dark:text-[#2997FF] group-hover:opacity-80 transition-opacity">
+                  SOGS
+                </span>
+                <span className="hidden md:inline text-xs sm:text-sm font-medium text-[#86868B] dark:text-[#86868B] tracking-tight">
+                  Search Only Good Stock
                 </span>
               </button>
             </div>
 
-            {/* Center: Clean Nav Links with Apple Blue Underline */}
-            <nav className="flex items-center space-x-3 sm:space-x-8 shrink-0">
+
+            {/* Center: Clean Nav Links with Horizontal Scroll Shelf on Mobile */}
+            <nav className="flex items-center space-x-1 sm:space-x-6 overflow-x-auto no-scrollbar py-1 min-w-0">
               <button
                 onClick={() => onSelectTab('screener')}
-                className={`text-xs sm:text-sm font-medium py-1.5 px-0.5 relative transition-colors focus:outline-none whitespace-nowrap cursor-pointer ${
-                  currentTab === 'screener'
-                    ? 'text-[#0071E3] dark:text-[#2997FF] font-semibold'
-                    : 'text-[#6E6E73] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
-                }`}
+                className={`text-xs sm:text-sm font-medium py-1 px-1.5 sm:px-0.5 shrink-0 relative transition-colors focus:outline-none whitespace-nowrap cursor-pointer ${currentTab === 'screener'
+                  ? 'text-[#0071E3] dark:text-[#2997FF] font-semibold'
+                  : 'text-[#6E6E73] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
+                  }`}
               >
                 <span>{t('screener')}</span>
                 {currentTab === 'screener' && (
-                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#0071E3] dark:bg-[#2997FF] rounded-full" />
+                  <span className="absolute -bottom-1 left-1 right-1 sm:left-0 sm:right-0 h-0.5 bg-[#0071E3] dark:bg-[#2997FF] rounded-full" />
                 )}
               </button>
 
               <button
                 onClick={() => onSelectTab('detail')}
-                className={`text-xs sm:text-sm font-medium py-1.5 px-0.5 relative transition-colors focus:outline-none whitespace-nowrap cursor-pointer ${
-                  currentTab === 'detail'
-                    ? 'text-[#0071E3] dark:text-[#2997FF] font-semibold'
-                    : 'text-[#6E6E73] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
-                }`}
+                className={`text-xs sm:text-sm font-medium py-1 px-1.5 sm:px-0.5 shrink-0 relative transition-colors focus:outline-none whitespace-nowrap cursor-pointer ${currentTab === 'detail'
+                  ? 'text-[#0071E3] dark:text-[#2997FF] font-semibold'
+                  : 'text-[#6E6E73] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
+                  }`}
               >
-                <span>{t('analysis')}</span>
+                <span className="hidden sm:inline">{t('analysis')}</span>
+                <span className="sm:hidden">{t('analysisShort')}</span>
                 {currentTab === 'detail' && (
-                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#0071E3] dark:bg-[#2997FF] rounded-full" />
+                  <span className="absolute -bottom-1 left-1 right-1 sm:left-0 sm:right-0 h-0.5 bg-[#0071E3] dark:bg-[#2997FF] rounded-full" />
                 )}
               </button>
 
-              <button
-                onClick={() => onSelectTab('guide')}
-                className={`text-xs sm:text-sm font-medium py-1.5 px-0.5 relative transition-colors focus:outline-none whitespace-nowrap cursor-pointer ${
-                  currentTab === 'guide'
+              {/* Guide Tab with Hover Dropdown */}
+              <div
+                className="relative shrink-0"
+                onMouseEnter={() => setIsGuideOpen(true)}
+                onMouseLeave={() => setIsGuideOpen(false)}
+              >
+                <button
+                  onClick={() => {
+                    // 투자 원칙 가이드를 누르면 맨 첫번째인 버핏 규칙으로 이동
+                    onSelectTab('guide', 'buffett');
+                    setIsGuideOpen(false);
+                  }}
+                  className={`text-xs sm:text-sm font-medium py-1 px-1.5 sm:px-0.5 relative transition-colors focus:outline-none whitespace-nowrap cursor-pointer flex items-center gap-1 ${currentTab === 'guide'
                     ? 'text-[#0071E3] dark:text-[#2997FF] font-semibold'
                     : 'text-[#6E6E73] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
-                }`}
+                    }`}
+                >
+                  <span className="hidden sm:inline">{t('guide')}</span>
+                  <span className="sm:hidden">{t('guideShort')}</span>
+                  {currentTab === 'guide' && (
+                    <span className="absolute -bottom-1 left-1 right-1 sm:left-0 sm:right-0 h-0.5 bg-[#0071E3] dark:bg-[#2997FF] rounded-full" />
+                  )}
+                </button>
+
+                {/* Sub-Guide Dropdown Menu on Hover (Slim 1 Row, 2 Columns) */}
+                {isGuideOpen && (
+                  <div className="absolute left-0 sm:left-1/2 sm:-translate-x-1/2 top-full pt-1.5 z-50 animate-fade-in">
+                    <div className="bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-2xl rounded-xl border border-black/[0.08] dark:border-white/[0.12] shadow-xl p-1 flex items-center gap-1 whitespace-nowrap">
+
+                      {/* Sub-guide 1: Warren Buffett Rules */}
+                      <button
+                        onClick={() => {
+                          onSelectTab('guide', 'buffett');
+                          setIsGuideOpen(false);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all cursor-pointer ${currentTab === 'guide' && activeGuide === 'buffett'
+                          ? 'bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] font-semibold'
+                          : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-[#1D1D1F] dark:text-[#F5F5F7]'
+                          }`}
+                      >
+                        {t('guideBuffett')}
+                      </button>
+
+                      {/* Divider */}
+                      <div className="w-px h-3.5 bg-black/[0.06] dark:bg-white/[0.1]" />
+
+                      {/* Sub-guide 2: Peter Lynch Rules */}
+                      <button
+                        onClick={() => {
+                          onSelectTab('guide', 'lynch');
+                          setIsGuideOpen(false);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all cursor-pointer ${currentTab === 'guide' && activeGuide === 'lynch'
+                          ? 'bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] font-semibold'
+                          : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-[#1D1D1F] dark:text-[#F5F5F7]'
+                          }`}
+                      >
+                        {t('guideLynch')}
+                      </button>
+
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Community Tab */}
+              <button
+                onClick={() => onSelectTab('community')}
+                className={`text-xs sm:text-sm font-medium py-1 px-1.5 sm:px-0.5 shrink-0 relative transition-colors focus:outline-none whitespace-nowrap cursor-pointer ${currentTab === 'community'
+                  ? 'text-[#0071E3] dark:text-[#2997FF] font-semibold'
+                  : 'text-[#6E6E73] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
+                  }`}
               >
-                <span>{t('guide')}</span>
-                {currentTab === 'guide' && (
-                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#0071E3] dark:bg-[#2997FF] rounded-full" />
+                <span>{t('community')}</span>
+                {currentTab === 'community' && (
+                  <span className="absolute -bottom-1 left-1 right-1 sm:left-0 sm:right-0 h-0.5 bg-[#0071E3] dark:bg-[#2997FF] rounded-full" />
                 )}
               </button>
             </nav>
 
             {/* Right side: Global Search Pill */}
-            <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
+            <div className="flex items-center space-x-1.5 sm:space-x-4 shrink-0">
               {/* Desktop Search */}
-              <div className="relative hidden sm:block">
+              <div className="relative hidden md:block">
                 <input
                   type="text"
                   value={searchQuery}
@@ -127,7 +199,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
               {/* Mobile Search Trigger Icon */}
               <button
                 onClick={() => setShowMobileSearch(true)}
-                className="p-1.5 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] sm:hidden cursor-pointer"
+                className="p-1.5 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] md:hidden cursor-pointer"
               >
                 <Search className="w-4 h-4" />
               </button>

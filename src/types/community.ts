@@ -1,0 +1,79 @@
+export type DiscussionCategory = 
+  | 'all' 
+  | 'buffett' 
+  | 'lynch' 
+  | 'analysis' 
+  | 'valuation' 
+  | 'outlook';
+
+export type DiscussionSort = 'trending' | 'latest' | 'top' | 'editors';
+
+export interface Comment {
+  id: string;
+  author: {
+    name: string;
+    badge: string;
+    avatar: string;
+    isVerified?: boolean;
+  };
+  createdAt: string;
+  content: string;
+  likes: number;
+  userLiked?: boolean;
+}
+
+export interface DiscussionPost {
+  id: string;
+  title: string;
+  category: DiscussionCategory;
+  author: {
+    name: string;
+    handle: string;
+    badge: string;
+    avatar: string;
+    isVerified?: boolean;
+  };
+  createdAt: string;
+  ticker?: string;
+  stockPassStatus?: 'pass' | 'watch' | 'fail';
+  buffettScore?: number;
+  isPinned?: boolean;
+  isEditorsPick?: boolean;
+  content: string;
+  snippet: string;
+  upvotes: number;
+  downvotes: number;
+  userVote?: 'up' | 'down' | null;
+  commentsCount: number;
+  viewsCount: number;
+  tags: string[];
+  comments?: Comment[];
+}
+
+export interface SentimentPollOption {
+  id: string;
+  label: string;
+  votes: number;
+  percentage: number;
+}
+
+export interface SentimentPoll {
+  id: string;
+  question: string;
+  description: string;
+  totalVotes: number;
+  endsIn: string;
+  options: SentimentPollOption[];
+  userVotedId?: string;
+}
+
+export interface TopContributor {
+  id: string;
+  name: string;
+  handle: string;
+  badge: string;
+  avatar: string;
+  passAccuracy: string;
+  reputation: number;
+  followers: number;
+}
