@@ -9,7 +9,7 @@ export const translations = {
     analysisShort: '분석',
     guide: '투자 원칙 가이드',
     guideShort: '가이드',
-    community: '커뮤니티',
+    community: '게시판',
     searchPlaceholder: '종목명, 티커 검색...',
     searchTickerPlaceholder: '검색...',
     masterPass: '통과',
@@ -122,8 +122,7 @@ export const translations = {
     disqualification: '탈락 / 제외 기준',
 
     // Community Page
-    community: '커뮤니티',
-    communityTitle: '가치투자 커뮤니티',
+    communityTitle: '게시판',
     communitySubtitle: '워런 버핏과 피터 린치 원칙을 추구하는 투자자들의 고밀도 데이터 기반 토론 포럼',
     onlineInvestors: '실시간 참여자',
     totalDiscussions: '총 분석 토론',
@@ -162,6 +161,12 @@ export const translations = {
     comments: '댓글',
     writeCommentPlaceholder: '가치투자 관점의 댓글을 남겨보세요...',
     addComment: '등록',
+    communitySearchPlaceholder: '토론 검색, 티커, 해시태그...',
+    viewAnalysisLabel: '분석 보기',
+    buffettScoreShort: '버핏',
+    scorePts: '점',
+    collapseComments: '댓글 접기',
+    expandComments: '댓글 펼치기',
 
     // Drawer & Quick View
     quickStockDiagnosis: '종목 간편 진단',
@@ -193,7 +198,7 @@ export const translations = {
     analysisShort: 'Analysis',
     guide: 'Investment Doctrines',
     guideShort: 'Guide',
-    community: 'Community',
+    community: 'Board',
     searchPlaceholder: 'Search ticker, company...',
     searchTickerPlaceholder: 'Search...',
     masterPass: 'Pass',
@@ -307,7 +312,7 @@ export const translations = {
     disqualification: 'Exclusion Disqualification',
 
     // Community Page
-    communityTitle: 'Investor Community',
+    communityTitle: 'Board',
     communitySubtitle: 'High-conviction value investing discussions and fundamental analysis forum',
     onlineInvestors: 'Active Investors',
     totalDiscussions: 'Total Discussions',
@@ -346,6 +351,12 @@ export const translations = {
     comments: 'Comments',
     writeCommentPlaceholder: 'Share your analytical thoughts...',
     addComment: 'Reply',
+    communitySearchPlaceholder: 'Search discussions, tickers, tags...',
+    viewAnalysisLabel: 'View Analysis',
+    buffettScoreShort: 'Buffett Score',
+    scorePts: 'pts',
+    collapseComments: 'Collapse Comments',
+    expandComments: 'Expand Comments',
 
     // Drawer & Quick View
     quickStockDiagnosis: 'Quick Stock Diagnosis',

@@ -3,209 +3,175 @@ import { DiscussionPost, SentimentPoll, TopContributor } from '../types/communit
 export const INITIAL_DISCUSSIONS: DiscussionPost[] = [
   {
     id: 'post-1',
-    title: '워런 버핏의 2026 주주서한 심층 분석: 왜 당기순이익보다 소유주 이익(Owner Earnings)이 중요한가?',
-    category: 'buffett',
+    title: '삼전 8만층에 사람있다 구하러 와라 씨발ㅋㅋㅋㅋ',
+    category: 'analysis',
     author: {
-      name: '오마하의현인',
-      handle: '@omaha_disciple',
-      badge: 'Master Value Analyst',
-      avatar: '🏛️',
+      name: '8만층구조대원',
       isVerified: true,
     },
-    createdAt: '2시간 전',
-    ticker: 'BRK.B',
-    stockPassStatus: 'pass',
-    buffettScore: 100,
+    createdAt: '19:09',
+    ticker: '005930.KS',
+    stockPassStatus: 'watch',
+    buffettScore: 65,
     isPinned: true,
     isEditorsPick: true,
-    snippet: '일반적인 GAAP 순이익은 감가상각과 비현금성 평가손익으로 왜곡될 수 있습니다. 버핏이 강조한 "소유주 이익 = 순이익 + 감가상각비 - 유지보수 자본지출(Maintenance CapEx)" 공식을 실제 테크 및 금융 지주사에 적용해 본 데이터입니다.',
-    content: `버크셔 해서웨이의 2026년 주주서한에서 가장 주목할 점은 자본배분의 효율성입니다.
+    snippet: '내가 84,000원에 풀매수 치고 2년 동안 기도만 하고 있는데 이재용 회장님 언제 10만전자 만듭니까? 손절 치고 엔비디아 가야 되냐?',
+    content: `진짜 개잡주 수준 ㅋㅋㅋ 7만전자 올라오면 탈출하려고 했는데 올라오자마자 개같이 음봉 박히네 ㅋㅋㅋ
 
-1. **소유주 이익(Owner Earnings)의 산출**:
-   - 영업현금흐름(OCF)에서 기업의 현 경제적 해자와 경쟁력을 유지하기 위해 필수적인 유지 CapEx를 차감해야 합니다.
-   - 성장 CapEx는 장기 복리 효과를 낳지만, 유지 CapEx는 현상 유지를 위한 필수 비용입니다.
-
-2. **1달러 유보이익 테스트(One-Dollar Test)**:
-   - 기업이 배당하지 않고 유보한 1달러당 1달러 이상의 시장가치를 창출했는가를 추적하면 훌륭한 경영진인지 즉시 구별됩니다.
-
-3. **결론**:
-   - 단기 분기 실적의 희석 효과보다 10년 단위의 잉여현금흐름(FCF)과 BPS 복리성장률(CAGR)을 추적하는 것이 진정한 안전마진을 확보하는 길입니다.`,
+1. **내 평단**: 84,200원 (물량 500주 보유 중)
+2. **현재 상태**: 물려있어서 주주총회 참석권만 2년째 우편으로 받는 중
+3. **질문**: 삼전 다 털어버리고 미국 테슬라나 엔비디아 타는 게 맞냐? 뼈 가판 팩폭 좀 해줘라`,
     upvotes: 342,
-    downvotes: 4,
+    downvotes: 18,
     userVote: null,
     commentsCount: 28,
     viewsCount: 4890,
-    tags: ['가치투자', '워런버핏', '소유주이익', 'BRK.B'],
+    tags: ['삼성전자', '삼전8만층', '구조대', '국장탈출'],
     comments: [
       {
         id: 'c1',
         author: {
-          name: '복리의마법사',
-          badge: 'Verified Investor',
-          avatar: '📈',
+          name: '주린이3년차',
           isVerified: true,
         },
-        createdAt: '1시간 전',
-        content: '유지 CapEx와 성장 CapEx를 구분해서 산출하는 접근이 정말 핵심이네요. 좋은 글 감사합니다!',
-        likes: 19,
+        createdAt: '20:10',
+        content: '8만층이면 양반이네 ㅋㅋㅋ 난 9만1천원 펜트하우스 2년째 장기 투숙 중이다 ㅋㅋㅋ',
+        likes: 45,
       },
       {
         id: 'c2',
         author: {
-          name: '안전마진추구자',
-          badge: 'Contributor',
-          avatar: '🛡️',
+          name: '한강물온도체크',
         },
-        createdAt: '30분 전',
-        content: 'Search Only Good Stock 스크리너의 1달러 테스트 공식과 정확히 일치해서 이해가 쏙쏙 됩니다.',
-        likes: 12,
+        createdAt: '20:40',
+        content: '형님 미장 가도 지금 고점이라 타면 뚝배기 깨집니다 걍 닥치고 존버하세요',
+        likes: 28,
       },
     ],
   },
   {
     id: 'post-2',
-    title: '애플(AAPL)의 5년 연속 자사주 매입 소각 효과: 주당 가치 복리의 정석',
-    category: 'analysis',
+    title: '미국장 기술주 폭락한 거 보고 잠 다 깼다 ㅋㅋㅋ',
+    category: 'buffett',
     author: {
-      name: '찰리멍거의지혜',
-      handle: '@munger_legacy',
-      badge: 'Senior Analyst',
-      avatar: '💡',
+      name: '미장원정대',
       isVerified: true,
     },
-    createdAt: '4시간 전',
-    ticker: 'AAPL',
+    createdAt: '17:15',
+    ticker: 'NVDA',
     stockPassStatus: 'pass',
-    buffettScore: 100,
+    buffettScore: 92,
     isEditorsPick: true,
-    snippet: '애플은 지난 5년간 총 4,500억 달러 규모의 자사주를 소각하여 유통주식수를 18% 줄였습니다. 이는 순이익 성장률을 상회하는 주당순이익(EPS) 성장률을 견인하는 핵심 동력입니다.',
-    content: `애플의 자본배치 전략은 버핏이 왜 포트폴리오의 최우선 순위로 애플을 보유했는지를 여실히 보여줍니다.
+    snippet: '어제 나스닥 프리장 보는데 마이너스 4% 박히길래 식은땀 흘리면서 풀매수 샀다. 남들이 공포에 질렸을 때 사라는 버핏 형님 말씀 잊었냐?',
+    content: `야수 본능 발동해서 엔비디아랑 테슬라 추가 매수 박음 ㅋㅋㅋ
 
-- **유통 주식수 감소율**: 5개년 연평균 약 3.8% 주식 소각
-- **ROE 150%+ 유지 비결**: 지속적인 자기자본 축소 및 고효율 현금흐름 창출
-- **경제적 해자**: iOS 생태계 락인 및 서비스 부문 마진 70%+ 확장
-
-재무제표 상 부채비율만 보고 탈락시킬 것이 아니라, 이자보상배율 30배 이상의 압도적 현금창출능력을 감안해야 합니다.`,
+- **매수 종목**: NVDA, TSLA
+- **사유**: 버핏 형님이 "남들이 공포에 질렸을 때 사고, 탐욕스러울 때 팔라"매 ㅋㅋㅋ 지금이 대공포 타이밍임
+- **결과**: 통장 잔고 0원 됨... 이번 달 컵라면만 먹고 버틴다 ㅋㅋㅋ`,
     upvotes: 189,
-    downvotes: 7,
+    downvotes: 24,
     userVote: null,
     commentsCount: 15,
     viewsCount: 2310,
-    tags: ['애플', 'AAPL', '자사주매입', '자본배치'],
+    tags: ['나스닥', '엔비디아', '테슬라', '야수개미'],
     comments: [
       {
         id: 'c3',
         author: {
-          name: '성장주사냥꾼',
-          badge: 'Member',
-          avatar: '🎯',
+          name: '시드50만원',
         },
-        createdAt: '2시간 전',
-        content: '하드웨어 기업에서 서비스 플랫폼 기업으로의 완벽한 리레이팅 사례죠.',
-        likes: 8,
+        createdAt: '19:12',
+        content: '형님 공포에 사라는 건 우량주 얘기지 3배 레버리지가 아닙니다 ㅋㅋㅋ',
+        likes: 52,
       },
     ],
   },
   {
     id: 'post-3',
-    title: '피터 린치 PEG 0.8 이하 성장주 발굴법: 일상 속에서 발견하는 독점 기업',
+    title: '국장 버리고 미장 가야 되는 진짜 이유 알려준다',
     category: 'lynch',
     author: {
-      name: '월가의영웅',
-      handle: '@peter_lynch_fan',
-      badge: 'GARP Strategist',
-      avatar: '🔍',
+      name: '탈국장지능순',
       isVerified: true,
     },
-    createdAt: '7시간 전',
-    ticker: 'GOOGL',
+    createdAt: '14:20',
+    ticker: 'AAPL',
     stockPassStatus: 'pass',
-    buffettScore: 92,
-    snippet: '피터 린치는 PER과 EPS 성장률의 관계(PEG)가 1.0 이하인 기업을 강력 매수 구간으로 보았습니다. 2026년 기준 알파벳의 AI 인프라 매출 성장세와 밸류에이션을 대입해보았습니다.',
-    content: `피터 린치의 6대 분류 중 '대형 우량주(Stalwarts)'와 '고성장주(Fast Growers)' 사이의 완벽한 균형점:
+    buffettScore: 100,
+    snippet: '국장은 거래량 터지면 대주주가 물량 털고 유상증자 빔 쏘는데, 미장은 자사주 사서 소각해 준다. 주주환원 차원이 다름.',
+    content: `국장 3년 차에 계좌 수익률 -35% 찍고 멘탈 터져서 미장으로 이민 갔다.
 
-- **PER**: 23.4배
-- **5년 EPS CAGR 예상**: 26.5%
-- **산출 PEG**: 23.4 / 26.5 = **0.88 (합격)**
-- **순현금 보유액**: 980억 달러의 무차입 수준 철통 재무
-
-기관들의 단기 AI CAPEX 우려로 주가가 조정을 받을 때가 피터 린치 관점에서는 최고의 분할 매수 기회입니다.`,
-    upvotes: 145,
-    downvotes: 3,
+1. **국장 특징**: 호재 터지면 세력이 물량 털고 유상증자 빔 쏨 ㅋㅋㅋ
+2. **미장 특징**: 애플 버크셔 같은 대장주들은 자사주 다 태워서 주가 알아서 올려줌
+3. **결론**: 국장은 단타용이고 장투는 무조건 미장이다`,
+    upvotes: 512,
+    downvotes: 32,
     userVote: null,
     commentsCount: 11,
-    viewsCount: 1820,
-    tags: ['피터린치', 'PEG', '알파벳', 'GARP'],
+    viewsCount: 5820,
+    tags: ['국장탈출', '미장이민', '애플', '주주환원'],
   },
   {
     id: 'post-4',
-    title: 'SK하이닉스 vs 마이크론: 반도체 사이클 기업의 버핏 6대 룰 탈락 원인 분석',
+    title: 'SK하이닉스 HBM 독점 사이클 부활하냐? 목표가 22만 원 간다 ㅋㅋㅋ',
     category: 'valuation',
     author: {
-      name: '사이클의역발상',
-      handle: '@contrarian_cycle',
-      badge: 'Quantitative Analyst',
-      avatar: '📊',
+      name: '반도체전사',
     },
-    createdAt: '12시간 전',
+    createdAt: '09:15',
     ticker: '000660.KS',
     stockPassStatus: 'fail',
     buffettScore: 33,
-    snippet: 'HBM 시장의 압도적 호황에도 불구하고, 왜 버핏의 6대 가치투자 원칙에서는 "탈락(Fail)"으로 진단되는가? 10개년 이익 변동성과 감가상각비 부담 관점에서의 고찰.',
-    content: `버핏의 가치투자 관점에서는 "예측 가능한 꾸준한 이익 성장"이 핵심 전제조건입니다.
+    snippet: 'HBM3E 독점 납품 찌라시 돌면서 외국인들 싹 쓸어가는데 지금이라도 타고 들어가야 됨? 하이닉스 숏 친 애들 한강물 체크하러 가라.',
+    content: `삼성전자 비틀거릴 때 하이닉스가 HBM으로 뚝배기 다 깨는 중 ㅋㅋㅋ
 
-1. **지속적 이익 성장 탈락**: 2022~2023년 대규모 영업적자 발생으로 10년 연속 흑자 기준 미달.
-2. **수익성 확장력 변동성**: 경기 사이클에 따라 영업이익률이 -30%에서 +45%까지 급등락.
-3. **거대한 유지 CapEx**: 기술 공정 전환을 위해 연간 수십조 원의 설비투자가 필수적이므로 FCF 전환율이 변동적임.
-
-결론적으로 '트레이딩' 관점에서는 매력적일 수 있으나, 영구보유형 '가치투자' 원칙에서는 버핏 스크리너에서 제외되는 이유입니다.`,
-    upvotes: 98,
-    downvotes: 14,
+- **HBM 점유율**: 50% 이상 독점 모드
+- **차트**: 5일선 타고 우상향 정배열 완성
+- **목표가**: 220,000원 찍고 숏충이들 다 한강 보낼 예정 ㅋㅋㅋ`,
+    upvotes: 210,
+    downvotes: 15,
     userVote: null,
     commentsCount: 22,
     viewsCount: 3100,
-    tags: ['SK하이닉스', '반도체사이클', '버핏룰탈락', '경기민감주'],
+    tags: ['SK하이닉스', 'HBM', '반도체', '숏청산'],
   },
   {
     id: 'post-5',
-    title: '2026 하반기 글로벌 금리 인하기, 우량 배당성장주의 가치 재평가 전망',
+    title: '금리 인하하면 배당주 사라는 놈들 다 나와라 ㅋㅋㅋ',
     category: 'outlook',
     author: {
-      name: '글로벌매크로랩',
-      handle: '@macro_insights',
-      badge: 'Macro Strategist',
-      avatar: '🌐',
+      name: '배당금으로치킨',
       isVerified: true,
     },
-    createdAt: '1일 전',
+    createdAt: '08.17',
     ticker: 'KO',
     stockPassStatus: 'pass',
     buffettScore: 95,
-    snippet: '미국채 10년물 금리가 3% 중반으로 안정화될 때, 60년 연속 배당을 인상한 코카콜라(KO)와 존슨앤존슨(JNJ)의 실질 주주수익률(배당수익률 + EPS성장률) 비교.',
-    content: `무위험 수익률이 하락할수록 가격결정력(Pricing Power)을 가진 필수소비재 우량주의 채권형 주식(Equity Bond) 매력이 부각됩니다.
+    snippet: '코카콜라 배당률 3%대 받고 싱글벙글했는데 주가 떡락해서 배당 받은 거 이상으로 마이너스 났다 ㅋㅋㅋ 이게 맞는 거냐?',
+    content: `배당주 장투하면 건물주 부럽지 않다매 ㅋㅋㅋ
 
-- 인플레이션을 제품 가격에 100% 전가 가능한 브랜드 파워
-- 50년 이상 축적된 글로벌 독점 유통망
-- 지속적인 주당 배당금 인상 트랙레코드`,
-    upvotes: 76,
-    downvotes: 2,
+- **보유 종목**: 코카콜라(KO), SCHD
+- **상황**: 배당금 10만 원 들어왔는데 주가 평가손실 -120만 원 ㅋㅋㅋ
+- **느낀점**: 배당도 주가가 올라야 기분 좋은 거다... 뼛속까지 아프네`,
+    upvotes: 156,
+    downvotes: 9,
     userVote: null,
     commentsCount: 9,
     viewsCount: 1420,
-    tags: ['배당성장주', '코카콜라', '금리인하', '시장전망'],
+    tags: ['배당주', '코카콜라', 'SCHD', '배당착시'],
   },
 ];
 
 export const INITIAL_POLL: SentimentPoll = {
   id: 'poll-2026-w34',
-  question: '현재 글로벌 S&P 500 시장의 밸류에이션 상태에 대한 당신의 판단은?',
-  description: '워런 버핏의 버크셔 현금 보유량 3,000억 달러 돌파 시점에서 투자자들의 체감 밸류에이션',
-  totalVotes: 1428,
+  question: '현재 당신의 주식 계좌 상태 솔직하게 투표해라 ㅋㅋㅋ',
+  description: '주식 갤러리 개미들의 2026년 진짜 계좌 수익률 현황 조사',
+  totalVotes: 3428,
   endsIn: '3일 남음',
   options: [
-    { id: 'opt-1', label: '고평가 (버핏처럼 현금 비중 확대 필요)', votes: 785, percentage: 55 },
-    { id: 'opt-2', label: '적정 가치 (개별 우량주 선별 매수 구간)', votes: 471, percentage: 33 },
-    { id: 'opt-3', label: '저평가 (강력 분할 매수 기회)', votes: 172, percentage: 12 },
+    { id: 'opt-1', label: '떡락중 (손실 -30% 이상 물려있음)', votes: 1985, percentage: 58 },
+    { id: 'opt-2', label: '본전 치기 (원금만 사수 중)', votes: 1028, percentage: 30 },
+    { id: 'opt-3', label: '양전함 (수익률 +10% 이상 대박)', votes: 415, percentage: 12 },
   ],
   userVotedId: undefined,
 };
@@ -213,40 +179,28 @@ export const INITIAL_POLL: SentimentPoll = {
 export const TOP_CONTRIBUTORS: TopContributor[] = [
   {
     id: 'u1',
-    name: '오마하의현인',
-    handle: '@omaha_disciple',
-    badge: 'Master Value Analyst',
-    avatar: '🏛️',
+    name: '8만층구조대원',
     passAccuracy: '96.8%',
     reputation: 14250,
     followers: 3280,
   },
   {
     id: 'u2',
-    name: '찰리멍거의지혜',
-    handle: '@munger_legacy',
-    badge: 'Senior Analyst',
-    avatar: '💡',
+    name: '탈국장지능순',
     passAccuracy: '94.2%',
     reputation: 9840,
     followers: 2150,
   },
   {
     id: 'u3',
-    name: '월가의영웅',
-    handle: '@peter_lynch_fan',
-    badge: 'GARP Strategist',
-    avatar: '🔍',
+    name: '미장원정대',
     passAccuracy: '91.5%',
     reputation: 8200,
     followers: 1840,
   },
   {
     id: 'u4',
-    name: '글로벌매크로랩',
-    handle: '@macro_insights',
-    badge: 'Macro Strategist',
-    avatar: '🌐',
+    name: '한강물온도체크',
     passAccuracy: '89.4%',
     reputation: 6730,
     followers: 1420,
@@ -254,8 +208,9 @@ export const TOP_CONTRIBUTORS: TopContributor[] = [
 ];
 
 export const TRENDING_TICKERS = [
-  { ticker: 'BRK.B', name: 'Berkshire Hathaway', price: '$448.20', change: '+1.42%', score: 100, pass: true },
-  { ticker: 'AAPL', name: 'Apple Inc.', price: '$228.60', change: '+0.85%', score: 100, pass: true },
-  { ticker: 'GOOGL', name: 'Alphabet Inc.', price: '$178.40', change: '+2.10%', score: 92, pass: true },
-  { ticker: '000660.KS', name: 'SK하이닉스', price: '₩189,500', change: '-1.80%', score: 33, pass: false },
+  { ticker: '005930.KS', name: '삼성전자', price: '₩74,500', change: '-1.42%', score: 65, pass: true },
+  { ticker: 'NVDA', name: 'NVIDIA Corp', price: '$128.60', change: '+3.85%', score: 92, pass: true },
+  { ticker: 'AAPL', name: 'Apple Inc.', price: '$228.40', change: '+1.10%', score: 100, pass: true },
+  { ticker: '000660.KS', name: 'SK하이닉스', price: '₩189,500', change: '+2.80%', score: 33, pass: false },
 ];
+

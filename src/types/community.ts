@@ -6,14 +6,12 @@ export type DiscussionCategory =
   | 'valuation' 
   | 'outlook';
 
-export type DiscussionSort = 'trending' | 'latest' | 'top' | 'editors';
+export type DiscussionSort = 'daily' | 'weekly' | 'monthly' | 'latest' | 'top';
 
 export interface Comment {
   id: string;
   author: {
     name: string;
-    badge: string;
-    avatar: string;
     isVerified?: boolean;
   };
   createdAt: string;
@@ -28,9 +26,6 @@ export interface DiscussionPost {
   category: DiscussionCategory;
   author: {
     name: string;
-    handle: string;
-    badge: string;
-    avatar: string;
     isVerified?: boolean;
   };
   createdAt: string;
@@ -70,9 +65,6 @@ export interface SentimentPoll {
 export interface TopContributor {
   id: string;
   name: string;
-  handle: string;
-  badge: string;
-  avatar: string;
   passAccuracy: string;
   reputation: number;
   followers: number;
