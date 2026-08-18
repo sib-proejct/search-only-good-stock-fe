@@ -32,10 +32,10 @@ export const DcfIntrinsicValueCard: React.FC<DcfIntrinsicValueCardProps> = ({
       : `${Math.round(currentPrice).toLocaleString()}원`;
 
   return (
-    <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-6 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between h-full space-y-6 transition-colors duration-300">
+    <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col space-y-3.5 transition-colors duration-300 overflow-hidden">
       
       {/* Header */}
-      <div className="flex items-center justify-between pb-1 border-b border-black/[0.04] dark:border-white/[0.06]">
+      <div className="flex items-center justify-between pb-2 border-b border-black/[0.04] dark:border-white/[0.06]">
         <div>
           <h2 className="text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
             {t('dcfIntrinsicValue')}
@@ -56,14 +56,14 @@ export const DcfIntrinsicValueCard: React.FC<DcfIntrinsicValueCardProps> = ({
         </div>
       </div>
 
-      {/* Main Fair Value & Price Range Comparison */}
-      <div className="py-2 flex flex-col justify-center space-y-3">
+      {/* Main Fair Value & Visual Valuation Meter */}
+      <div className="space-y-2">
         <div className="flex items-baseline justify-between">
           <div>
             <span className="text-[10px] sm:text-[11px] text-[#86868B] uppercase tracking-wider font-semibold block">
               {t('fairValueEstimate')}
             </span>
-            <div className="text-3xl sm:text-4xl font-bold font-mono text-[#0071E3] dark:text-[#2997FF] tracking-tight tabular-nums mt-0.5">
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-[#0071E3] dark:text-[#2997FF] tracking-tight tabular-nums mt-0.5">
               {fairValueFormatted}
             </div>
           </div>
@@ -71,14 +71,14 @@ export const DcfIntrinsicValueCard: React.FC<DcfIntrinsicValueCardProps> = ({
             <span className="text-[10px] sm:text-[11px] text-[#86868B] uppercase tracking-wider font-semibold block">
               {t('price')}
             </span>
-            <div className="text-xl sm:text-2xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight tabular-nums mt-0.5">
+            <div className="text-lg sm:text-xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight tabular-nums mt-0.5">
               {currentPriceFormatted}
             </div>
           </div>
         </div>
 
         {/* Visual Valuation Meter */}
-        <div className="space-y-1.5 pt-1">
+        <div className="space-y-1">
           <div className="h-2 w-full bg-[#EBEBED] dark:bg-[#2C2C2E] rounded-full overflow-hidden flex">
             <div
               className="bg-[#0071E3] dark:bg-[#2997FF] h-full rounded-full transition-all duration-300"
@@ -98,7 +98,7 @@ export const DcfIntrinsicValueCard: React.FC<DcfIntrinsicValueCardProps> = ({
       </div>
 
       {/* Interactive Sliders */}
-      <div className="pt-2 border-t border-black/[0.04] dark:border-white/[0.06] space-y-3">
+      <div className="pt-2.5 border-t border-black/[0.04] dark:border-white/[0.06] space-y-2">
         {/* Slider 1: Expected Growth */}
         <div>
           <div className="flex justify-between items-center text-xs mb-1">

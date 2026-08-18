@@ -66,8 +66,8 @@ export const CapitalAllocationCookCard: React.FC<CapitalAllocationCookCardProps>
   const reinvestmentOffset = -(buybacksLen + dividendsLen);
 
   return (
-    <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-6 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between h-full space-y-6 transition-colors duration-300">
-      
+    <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between h-full space-y-4 transition-colors duration-300 overflow-hidden">
+
       {/* Header */}
       <div className="flex items-center justify-between pb-1 border-b border-black/[0.04] dark:border-white/[0.06]">
         <div>
@@ -78,7 +78,7 @@ export const CapitalAllocationCookCard: React.FC<CapitalAllocationCookCardProps>
             5-Year Shareholder Yield & Reinvestment
           </p>
         </div>
-        <div className="text-right shrink-0">
+        <div className="text-right shrink-0 ml-3">
           <span className="text-sm font-mono font-bold text-[#0071E3] dark:text-[#2997FF] tabular-nums">
             {totalReturnPct}%
           </span>
@@ -89,10 +89,10 @@ export const CapitalAllocationCookCard: React.FC<CapitalAllocationCookCardProps>
       </div>
 
       {/* Main Interactive Donut Chart & Breakdown */}
-      <div className="flex flex-col sm:flex-row items-center gap-6 py-1">
-        
+      <div className="flex flex-col xl:flex-row items-center gap-4 py-0.5 min-w-0">
+
         {/* Sleek Interactive SVG Donut Chart */}
-        <div className="relative w-32 h-32 sm:w-36 sm:h-36 flex items-center justify-center shrink-0">
+        <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center shrink-0">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
             {/* Background Track */}
             <circle
@@ -153,7 +153,7 @@ export const CapitalAllocationCookCard: React.FC<CapitalAllocationCookCardProps>
           {/* Center Dynamic Stat on Active Segment */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none transition-all duration-300">
             <span
-              className="text-2xl sm:text-3xl font-bold font-mono tabular-nums tracking-tight"
+              className="text-xl sm:text-2xl font-bold font-mono tabular-nums tracking-tight"
               style={{ color: currentSegment.color }}
             >
               {currentSegment.pct}%
@@ -165,20 +165,19 @@ export const CapitalAllocationCookCard: React.FC<CapitalAllocationCookCardProps>
         </div>
 
         {/* Clickable Legend & Breakdown Buttons */}
-        <div className="flex-1 w-full space-y-1.5">
+        <div className="flex-1 min-w-0 w-full space-y-1.5">
           {segments.map((seg) => {
             const isActive = activeSegment === seg.id;
             return (
               <button
                 key={seg.id}
                 onClick={() => setActiveSegment(seg.id)}
-                className={`w-full text-left p-2.5 rounded-2xl transition-all cursor-pointer select-none flex items-center justify-between border ${
-                  isActive
+                className={`w-full text-left p-2 sm:p-2.5 rounded-xl transition-all cursor-pointer select-none flex items-center justify-between border min-w-0 ${isActive
                     ? 'bg-[#F5F5F7] dark:bg-[#252528] border-black/[0.08] dark:border-white/[0.12] shadow-2xs'
                     : 'bg-transparent border-transparent hover:bg-[#F5F5F7]/50 dark:hover:bg-[#252528]/40'
-                }`}
+                  }`}
               >
-                <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
                   <span
                     className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform duration-300"
                     style={{
@@ -186,7 +185,7 @@ export const CapitalAllocationCookCard: React.FC<CapitalAllocationCookCardProps>
                       transform: isActive ? 'scale(1.25)' : 'scale(1)',
                     }}
                   />
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className={`text-xs font-semibold truncate ${isActive ? 'text-[#1D1D1F] dark:text-[#F5F5F7]' : 'text-[#6E6E73] dark:text-[#86868B]'}`}>
                       {seg.label}
                     </div>
@@ -198,7 +197,7 @@ export const CapitalAllocationCookCard: React.FC<CapitalAllocationCookCardProps>
                   </div>
                 </div>
 
-                <div className="text-right shrink-0 ml-2">
+                <div className="text-right shrink-0">
                   <span className={`font-mono text-xs tabular-nums ${isActive ? 'font-bold' : 'font-medium text-[#86868B]'}`} style={{ color: isActive ? seg.color : undefined }}>
                     {seg.pct}%
                   </span>

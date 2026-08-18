@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Stock, LeadershipMember } from '../../types/stock';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
 import {
@@ -7,6 +7,7 @@ import {
   Award,
   ChevronDown,
   CheckCircle2,
+  XCircle,
   Circle,
   Users,
   Briefcase,
@@ -17,18 +18,44 @@ interface CompanyProfileCardProps {
   stock: Stock;
 }
 
+const getInitialChecklist = (s: Stock): Record<string, boolean> => {
+  const isSkinPass =
+    s.governance?.overallGrade !== 'C' &&
+    s.governance?.overallGrade !== 'D' &&
+    s.governance?.overallGrade !== 'F' &&
+    s.governance?.compensation?.alignmentRating !== 'CONCERNING';
+
+  const isIndepPass = (s.governance?.boardIndependencePct ?? 0) >= 70;
+  const isDnoPass = s.shareCountCagr5Yr <= 0;
+  const isCompUnitPass =
+    (s.governance?.compensation?.stockBasedCompPct ?? 0) > 0 &&
+    s.governance?.compensation?.alignmentRating !== 'CONCERNING';
+
+  const isCompRoicPass =
+    s.governance?.compensation?.alignmentRating !== 'CONCERNING' &&
+    s.governance?.overallGrade !== 'C';
+
+  return {
+    gov_skin: isSkinPass,
+    gov_indep: isIndepPass,
+    gov_dno: isDnoPass,
+    comp_unit: isCompUnitPass,
+    comp_roic: isCompRoicPass,
+  };
+};
+
 export const CompanyProfileCard: React.FC<CompanyProfileCardProps> = ({ stock }) => {
   const { language } = useAppConfig();
-  const [isLeadershipExpanded, setIsLeadershipExpanded] = useState(true);
+  const [isLeadershipExpanded, setIsLeadershipExpanded] = useState(false);
   const [boardFilter, setBoardFilter] = useState<'ALL' | 'EXECUTIVE' | 'OUTSIDE'>('ALL');
-  const [isChecklistExpanded, setIsChecklistExpanded] = useState(true);
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({
-    gov_skin: true,
-    gov_indep: true,
-    gov_dno: true,
-    comp_unit: true,
-    comp_roic: true,
-  });
+  const [isChecklistExpanded, setIsChecklistExpanded] = useState(false);
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>(() =>
+    getInitialChecklist(stock)
+  );
+
+  useEffect(() => {
+    setCheckedItems(getInitialChecklist(stock));
+  }, [stock.id, stock.ticker]);
 
   const toggleCheck = (id: string) => {
     setCheckedItems((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -250,7 +277,8 @@ export const CompanyProfileCard: React.FC<CompanyProfileCardProps> = ({ stock })
             const basePct = member.baseSalaryPct ?? (isOutside ? 25 : stock.governance.compensation.baseSalaryPct);
             const bonusPct = member.performanceBonusPct ?? (isOutside ? 0 : stock.governance.compensation.performanceBonusPct);
             const stockPct = member.stockBasedCompPct ?? (isOutside ? 75 : stock.governance.compensation.stockBasedCompPct);
-            const totalPct = basePct + bonusPct + stockPct || 100;
+            const otherPct = member.otherCompPct ?? 0;
+            const totalPct = basePct + bonusPct + stockPct + otherPct || 100;
 
             return (
               <div
@@ -331,31 +359,51 @@ export const CompanyProfileCard: React.FC<CompanyProfileCardProps> = ({ stock })
                       </span>
                     </div>
 
-                    {/* Stacked Pay Mix Bar */}
+                    {/* Stacked Pay Mix Bar (보수 구성 선/막대 그래프) */}
                     <div className="space-y-1">
-                      <div className="w-full h-1.5 bg-[#EBEBED] dark:bg-[#2C2C2E] rounded-full overflow-hidden flex">
-                        <div
-                          className="h-full bg-[#0071E3] transition-all duration-300"
-                          style={{ width: `${(basePct / totalPct) * 100}%` }}
-                          title={`기본급: ${basePct}%`}
-                        />
-                        <div
-                          className="h-full bg-[#34C759] transition-all duration-300"
-                          style={{ width: `${(bonusPct / totalPct) * 100}%` }}
-                          title={`성과급: ${bonusPct}%`}
-                        />
-                        <div
-                          className="h-full bg-[#AF52DE] transition-all duration-300"
-                          style={{ width: `${(stockPct / totalPct) * 100}%` }}
-                          title={`주식보상: ${stockPct}%`}
-                        />
+                      <div className="w-full h-2 bg-[#EBEBED] dark:bg-[#2C2C2E] rounded-full overflow-hidden flex">
+                        {basePct > 0 && (
+                          <div
+                            className="h-full bg-[#0071E3] transition-all duration-300"
+                            style={{ width: `${(basePct / totalPct) * 100}%` }}
+                            title={`기본급: ${basePct.toFixed(1)}%`}
+                          />
+                        )}
+                        {bonusPct > 0 && (
+                          <div
+                            className="h-full bg-[#34C759] transition-all duration-300"
+                            style={{ width: `${(bonusPct / totalPct) * 100}%` }}
+                            title={`성과급: ${bonusPct.toFixed(1)}%`}
+                          />
+                        )}
+                        {stockPct > 0 && (
+                          <div
+                            className="h-full bg-[#AF52DE] transition-all duration-300"
+                            style={{ width: `${(stockPct / totalPct) * 100}%` }}
+                            title={`주식보상: ${stockPct.toFixed(1)}%`}
+                          />
+                        )}
+                        {otherPct > 0 && (
+                          <div
+                            className="h-full bg-[#FF9500] transition-all duration-300"
+                            style={{ width: `${(otherPct / totalPct) * 100}%` }}
+                            title={`기타(보안 등): ${otherPct.toFixed(1)}%`}
+                          />
+                        )}
                       </div>
 
-                      <div className="flex items-center justify-between text-[9px] text-[#86868B] font-mono">
-                        <span className="text-[#0071E3] dark:text-[#2997FF]">기본 {basePct}%</span>
-                        <span className="text-[#34C759]">성과 {bonusPct}%</span>
-                        <span className="text-[#AF52DE] dark:text-[#BF5AF2]">주식 {stockPct}%</span>
+                      <div className="flex items-center justify-between text-[9px] text-[#86868B] font-mono flex-wrap gap-x-2 gap-y-0.5">
+                        <span className="text-[#0071E3] dark:text-[#2997FF]">기본 {basePct.toFixed(basePct % 1 === 0 ? 0 : 1)}%</span>
+                        {bonusPct > 0 && <span className="text-[#34C759]">성과 {bonusPct.toFixed(bonusPct % 1 === 0 ? 0 : 1)}%</span>}
+                        {stockPct > 0 && <span className="text-[#AF52DE] dark:text-[#BF5AF2]">주식 {stockPct.toFixed(stockPct % 1 === 0 ? 0 : 1)}%</span>}
+                        {otherPct > 0 && <span className="text-[#FF9500] dark:text-[#FF9F0A] font-bold">기타(보안) {otherPct.toFixed(1)}%</span>}
                       </div>
+
+                      {member.otherCompDescription && (
+                        <p className="text-[10px] text-[#86868B] dark:text-[#A1A1A6] pt-1 border-t border-black/[0.03] dark:border-white/[0.04] leading-tight">
+                          * {member.otherCompDescription}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -380,8 +428,12 @@ export const CompanyProfileCard: React.FC<CompanyProfileCardProps> = ({ stock })
                 {language === 'ko' ? '지배구조 및 경영자 보상 원칙 진단' : 'Board Governance & Compensation Audit'}
               </h3>
             </div>
-            <span className="inline-flex items-center gap-1 text-xs font-bold font-mono text-[#34C759] tabular-nums">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#34C759]" />
+            <span className={`inline-flex items-center gap-1 text-xs font-bold font-mono tabular-nums ${
+              checkedCount === totalCheckCount ? 'text-[#34C759]' : checkedCount >= 3 ? 'text-[#FF9500]' : 'text-[#FF3B30]'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${
+                checkedCount === totalCheckCount ? 'bg-[#34C759]' : checkedCount >= 3 ? 'bg-[#FF9500]' : 'bg-[#FF3B30]'
+              }`} />
               {checkedCount}/{totalCheckCount} {language === 'ko' ? '충족' : 'Passed'}
             </span>
           </div>
@@ -408,7 +460,13 @@ export const CompanyProfileCard: React.FC<CompanyProfileCardProps> = ({ stock })
                     {language === 'ko' ? '지배구조 및 이사회 구성 (Board & Governance)' : 'Board & Governance'}
                   </h4>
                 </div>
-                <span className="text-[10px] font-medium text-[#86868B]">
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  stock.governance?.overallGrade === 'A+' || stock.governance?.overallGrade === 'A'
+                    ? 'bg-[#34C759]/10 text-[#34C759]'
+                    : stock.governance?.overallGrade === 'B+' || stock.governance?.overallGrade === 'B'
+                    ? 'bg-[#FF9500]/10 text-[#FF9500]'
+                    : 'bg-[#FF3B30]/10 text-[#FF3B30]'
+                }`}>
                   {stock.governance?.overallGrade ? `${stock.governance.overallGrade} 등급` : '검증완료'}
                 </span>
               </div>
@@ -423,13 +481,11 @@ export const CompanyProfileCard: React.FC<CompanyProfileCardProps> = ({ stock })
                     {checkedItems.gov_skin ? (
                       <CheckCircle2 className="w-4 h-4 text-[#34C759]" />
                     ) : (
-                      <Circle className="w-4 h-4 text-[#86868B]" />
+                      <XCircle className="w-4 h-4 text-[#FF3B30]" />
                     )}
                   </button>
                   <div className="min-w-0 space-y-0.5">
-                    <p className={`text-xs font-semibold leading-snug ${
-                      checkedItems.gov_skin ? 'text-[#1D1D1F] dark:text-[#F5F5F7]' : 'text-[#86868B] line-through'
-                    }`}>
+                    <p className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] leading-snug">
                       {language === 'ko'
                         ? '경영진/최대주주 지분율 및 내부자 매매 동향 (Skin in the game)'
                         : 'Executive & Insider Ownership Trends (Skin in the game)'}
@@ -452,13 +508,11 @@ export const CompanyProfileCard: React.FC<CompanyProfileCardProps> = ({ stock })
                     {checkedItems.gov_indep ? (
                       <CheckCircle2 className="w-4 h-4 text-[#34C759]" />
                     ) : (
-                      <Circle className="w-4 h-4 text-[#86868B]" />
+                      <XCircle className="w-4 h-4 text-[#FF3B30]" />
                     )}
                   </button>
                   <div className="min-w-0 space-y-0.5">
-                    <p className={`text-xs font-semibold leading-snug ${
-                      checkedItems.gov_indep ? 'text-[#1D1D1F] dark:text-[#F5F5F7]' : 'text-[#86868B] line-through'
-                    }`}>
+                    <p className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] leading-snug">
                       {language === 'ko'
                         ? '사외이사 독립성 및 이사회 구성 건전성'
                         : 'Independent Board Majority & Governance Soundness'}
@@ -480,13 +534,11 @@ export const CompanyProfileCard: React.FC<CompanyProfileCardProps> = ({ stock })
                     {checkedItems.gov_dno ? (
                       <CheckCircle2 className="w-4 h-4 text-[#34C759]" />
                     ) : (
-                      <Circle className="w-4 h-4 text-[#86868B]" />
+                      <XCircle className="w-4 h-4 text-[#FF3B30]" />
                     )}
                   </button>
                   <div className="min-w-0 space-y-0.5">
-                    <p className={`text-xs font-semibold leading-snug ${
-                      checkedItems.gov_dno ? 'text-[#1D1D1F] dark:text-[#F5F5F7]' : 'text-[#86868B] line-through'
-                    }`}>
+                    <p className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] leading-snug">
                       {language === 'ko'
                         ? '과도한 임원배상책임보험 및 방만한 스톡옵션 부여 여부'
                         : 'D&O Insurance Limits & Anti-Dilution Stock Option Safeguards'}
@@ -510,7 +562,13 @@ export const CompanyProfileCard: React.FC<CompanyProfileCardProps> = ({ stock })
                     {language === 'ko' ? '경영자 보상 원칙 (Compensation Alignment)' : 'Compensation Alignment'}
                   </h4>
                 </div>
-                <span className="text-[10px] font-medium text-[#86868B]">
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  stock.governance?.compensation?.alignmentRating === 'EXCELLENT' || stock.governance?.compensation?.alignmentRating === 'GOOD'
+                    ? 'bg-[#34C759]/10 text-[#34C759]'
+                    : stock.governance?.compensation?.alignmentRating === 'FAIR'
+                    ? 'bg-[#FF9500]/10 text-[#FF9500]'
+                    : 'bg-[#FF3B30]/10 text-[#FF3B30]'
+                }`}>
                   {stock.governance?.compensation?.alignmentRating || '우수'}
                 </span>
               </div>
@@ -525,13 +583,11 @@ export const CompanyProfileCard: React.FC<CompanyProfileCardProps> = ({ stock })
                     {checkedItems.comp_unit ? (
                       <CheckCircle2 className="w-4 h-4 text-[#34C759]" />
                     ) : (
-                      <Circle className="w-4 h-4 text-[#86868B]" />
+                      <XCircle className="w-4 h-4 text-[#FF3B30]" />
                     )}
                   </button>
                   <div className="min-w-0 space-y-0.5">
-                    <p className={`text-xs font-semibold leading-snug ${
-                      checkedItems.comp_unit ? 'text-[#1D1D1F] dark:text-[#F5F5F7]' : 'text-[#86868B] line-through'
-                    }`}>
+                    <p className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] leading-snug">
                       {language === 'ko'
                         ? "단순 유보이익 복리 성장이 아닌, '담당 사업부 실적/목표 달성' 기반 보상 여부"
                         : "Business Unit Performance & Target-Based Compensation"}
@@ -553,13 +609,11 @@ export const CompanyProfileCard: React.FC<CompanyProfileCardProps> = ({ stock })
                     {checkedItems.comp_roic ? (
                       <CheckCircle2 className="w-4 h-4 text-[#34C759]" />
                     ) : (
-                      <Circle className="w-4 h-4 text-[#86868B]" />
+                      <XCircle className="w-4 h-4 text-[#FF3B30]" />
                     )}
                   </button>
                   <div className="min-w-0 space-y-0.5">
-                    <p className={`text-xs font-semibold leading-snug ${
-                      checkedItems.comp_roic ? 'text-[#1D1D1F] dark:text-[#F5F5F7]' : 'text-[#86868B] line-through'
-                    }`}>
+                    <p className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] leading-snug">
                       {language === 'ko'
                         ? "단기 주가 부양용 옵션 장사가 아닌 '투하자본비용(자본비용)'을 고려한 성과급 체계 여부"
                         : "Cost of Capital & ROIC Hurdle-Based Incentive System"}
@@ -582,3 +636,5 @@ export const CompanyProfileCard: React.FC<CompanyProfileCardProps> = ({ stock })
     </div>
   );
 };
+
+

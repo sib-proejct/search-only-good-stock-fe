@@ -9,48 +9,56 @@ interface Buffett6RuleDiagnosisProps {
 export const Buffett6RuleDiagnosis: React.FC<Buffett6RuleDiagnosisProps> = ({ stock }) => {
   const { t } = useAppConfig();
 
+  const getRulePassed = (ruleId: string, fallback: boolean) => {
+    if (stock.ruleEvaluations) {
+      const evalItem = stock.ruleEvaluations.find((r) => r.ruleId === ruleId);
+      if (evalItem) return evalItem.passed;
+    }
+    return fallback;
+  };
+
   const rules = [
     {
       id: '01',
       title: t('consistentEarnings'),
       criteria: t('tenYrEpsGrowth'),
       actual: `${stock.epsCagr5Yr >= 0 ? '+' : ''}${stock.epsCagr5Yr.toFixed(1)}% CAGR`,
-      passed: stock.epsCagr5Yr >= 10,
+      passed: getRulePassed('eps_cagr_5yr', stock.epsCagr5Yr >= 10),
     },
     {
       id: '02',
       title: t('highRoe'),
       criteria: t('avgRoeGt20'),
       actual: `${stock.avgRoe5Yr.toFixed(1)}%`,
-      passed: stock.avgRoe5Yr >= 15,
+      passed: getRulePassed('roe_5yr', stock.avgRoe5Yr >= 15),
     },
     {
       id: '03',
       title: t('highRoic'),
       criteria: t('roicGt15Historic'),
       actual: `${stock.avgRoic5Yr.toFixed(1)}%`,
-      passed: stock.avgRoic5Yr >= 10,
+      passed: getRulePassed('roic_5yr', stock.avgRoic5Yr >= 10),
     },
     {
       id: '04',
       title: t('lowDebt'),
       criteria: t('netCashPositive'),
       actual: `${stock.debtToEquity.toFixed(0)}% D/E`,
-      passed: stock.debtToEquity <= 150,
+      passed: getRulePassed('debt_to_equity', stock.debtToEquity <= 150),
     },
     {
       id: '05',
       title: t('marginExpansion'),
       criteria: t('grossMarginsUp'),
-      actual: 'Expanding',
-      passed: true,
+      actual: stock.isMasterPass ? t('marginExpanding') : t('marginFluctuation'),
+      passed: getRulePassed('margin_expansion', stock.isMasterPass),
     },
     {
       id: '06',
       title: t('oneDollarTest'),
       criteria: t('valueCreated'),
       actual: `$${stock.oneDollarTest.valueCreatedPerDollar.toFixed(2)}`,
-      passed: stock.oneDollarTest.passed,
+      passed: getRulePassed('one_dollar_test', stock.oneDollarTest.passed),
     },
   ];
 
@@ -68,11 +76,11 @@ export const Buffett6RuleDiagnosis: React.FC<Buffett6RuleDiagnosisProps> = ({ st
           </p>
         </div>
         <div className="text-right shrink-0">
-          <span className="font-mono text-sm font-bold text-[#34C759] tabular-nums">
+          <span className={`font-mono text-sm font-bold tabular-nums ${stock.isMasterPass ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>
             {stock.passCount} / {stock.totalRuleCount}
           </span>
           <span className="text-[10px] text-[#86868B] block font-medium uppercase tracking-wider">
-            {t('masterPass')}
+            {stock.isMasterPass ? t('masterPass') : t('fail')}
           </span>
         </div>
       </div>
@@ -101,7 +109,10 @@ export const Buffett6RuleDiagnosis: React.FC<Buffett6RuleDiagnosisProps> = ({ st
 
             {/* Right: Actual Metric & Pass Pill */}
             <div className="text-right shrink-0">
-              <div className="text-xs font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
+              <div className={`text-xs text-[#1D1D1F] dark:text-[#F5F5F7] ${rule.id === '05'
+                  ? 'font-semibold tracking-tight'
+                  : 'font-bold font-mono tabular-nums'
+                }`}>
                 {rule.actual}
               </div>
               <div className="mt-0.5">

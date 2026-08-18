@@ -2,13 +2,105 @@ import { Stock } from '../types/stock';
 
 export const MOCK_STOCKS: Stock[] = [
   {
+    id: 'brk-b',
+    ticker: 'BRK.B',
+    nameKo: '버크셔 해서웨이',
+    nameEn: 'Berkshire Hathaway Inc.',
+    market: 'NYSE',
+    sector: '금융 · 복합기업/보험',
+    currentPrice: 452.80,
+    priceChangePct: 0.65,
+    currency: 'USD',
+    marketCap: 9920,
+    marketCapFormatted: '$992B',
+
+    buffettScore: 100,
+    isMasterPass: true,
+    passCount: 6,
+    totalRuleCount: 6,
+
+    avgRoe5Yr: 18.5,
+    avgRoic5Yr: 15.8,
+    epsCagr5Yr: 14.2,
+    bpsCagr5Yr: 13.5,
+    debtToEquity: 28.5,
+    interestCoverage: 35.0,
+    shareCountCagr5Yr: -1.8,
+    benchmarkBpsCagr5Yr: 7.2,
+
+    sparkline1Yr: [352, 358, 372, 390, 408, 404, 415, 428, 442, 446, 455, 452.8],
+    sparkline5Yr: [280, 310, 350, 410, 440, 452.8],
+    high52W: 462.40,
+    low52W: 342.10,
+    priceChange1YrPct: 28.4,
+    yearlyFinancials: [
+      { year: 2020, roe: 9.8, roic: 9.2, eps: 17.80, bps: 191.0, revenue: 2455, netIncome: 425, operatingMargin: 12.8, debtToEquity: 29.0, price: 231.8 },
+      { year: 2021, roe: 17.6, roic: 14.2, eps: 39.60, bps: 235.0, revenue: 2760, netIncome: 898, operatingMargin: 16.5, debtToEquity: 27.5, price: 299.0 },
+      { year: 2022, roe: 14.2, roic: 13.5, eps: 30.10, bps: 218.0, revenue: 3020, netIncome: 675, operatingMargin: 15.8, debtToEquity: 28.0, price: 308.9 },
+      { year: 2023, roe: 21.0, roic: 17.4, eps: 44.50, bps: 254.0, revenue: 3644, netIncome: 962, operatingMargin: 18.2, debtToEquity: 28.5, price: 356.6 },
+      { year: 2026, roe: 18.5, roic: 15.8, eps: 48.20, bps: 295.0, revenue: 3950, netIncome: 1080, operatingMargin: 19.5, debtToEquity: 28.5, price: 452.8 },
+    ],
+
+    oneDollarTest: {
+      evaluationPeriodYears: 5,
+      accumulatedRetainedEarnings: 2800,
+      marketCapIncrease: 4200,
+      valueCreatedPerDollar: 2.85,
+      passed: true,
+      evaluationComment: '5개년 누적 유보이익 $2,800억 대비 시가총액 $4,200억 증가 ($1 유보당 $2.85 주주가치 창출)'
+    },
+
+    economicMoatSummary: 'GEICO, BNSF 철도, 버크셔 에너지 등 독점적 현금창출 기업군과 $3,000억 이상 무이자 보험 플로트(Float)의 압도적 자본 해자',
+    moatSources: ['무이자 보험 부채 플로트(Float) 자본 레버리지', '북미 화물철도(BNSF) 및 에너지 인프라 독점력', '워런 버핏의 천재적 자본배치 및 현금창출력'],
+
+    governance: {
+      overallGrade: 'A+',
+      gradeLabel: '주주 친화 A+ 등급 (우수)',
+      ceoSkinInTheGameSummary: '워런 버핏 회장 경제적 지분 약 13.7%(의결권 30.2%) 보유로 완벽한 주주 이익 일치도(Skin in the Game), 2026년 1월 1일 그렉 아벨 CEO 공식 승계',
+      leadership: [
+        { role: '이사회 의장 겸 회장 (전 CEO 1970–2025)', name: '워런 버핏 (Warren Buffett)', tenureYears: 56, bio: '버크셔 해서웨이 회장 겸 전 CEO(1970–2025). 벤저민 그레이엄의 제자이자 버크셔를 세계 최대 복합기업으로 성장시킨 역사상 최고의 가치투자 대가', sharesOwned: 196317, sharesValueUsd: 134000000000, sharesOwnershipPct: 13.7, isOutsideDirector: false, compensationUsd: 389488, baseSalaryPct: 25.7, performanceBonusPct: 0.0, stockBasedCompPct: 0.0, otherCompPct: 74.3, otherCompDescription: '개인 및 주택 보안 비용 $289,488 (기본급 $100,000 + 기타 보안비용)' },
+        { role: '대표이사(CEO) 사장', name: '그렉 아벨 (Greg Abel)', tenureYears: 26, bio: '2026년 1월 1일 워런 버핏의 뒤를 이어 버크셔 해서웨이 CEO로 공식 승계. 에너지 및 비보험 전 사업 부문 총괄', sharesOwned: 3500, sharesValueUsd: 24000000, sharesOwnershipPct: 0.002, isOutsideDirector: false, compensationUsd: 20000000, baseSalaryPct: 100.0, performanceBonusPct: 0.0, stockBasedCompPct: 0.0, otherCompPct: 0.0 },
+        { role: '부회장 (보험 부문 총괄)', name: '아짓 자인 (Ajit Jain)', tenureYears: 40, bio: '글로벌 재보험 및 GEICO 총괄 부회장. 1986년 버크셔 합류 이후 무이자 보험 부채 플로트(Float) 운용을 총괄해 온 전설적 보험 리더', sharesOwned: 1200, sharesValueUsd: 8200000, sharesOwnershipPct: 0.001, isOutsideDirector: false, compensationUsd: 20000000, baseSalaryPct: 100.0, performanceBonusPct: 0.0, stockBasedCompPct: 0.0, otherCompPct: 0.0 },
+        { role: '사외이사 (감사위원)', name: '수잔 버핏 (Susan A. Buffett)', tenureYears: 23, bio: '셰어우드 재단 이사장, 버크셔 문화 및 주주가치 수호', sharesOwned: 2100, sharesValueUsd: 14000000, sharesOwnershipPct: 0.001, isOutsideDirector: true, compensationUsd: 75000, baseSalaryPct: 100.0, performanceBonusPct: 0.0, stockBasedCompPct: 0.0, otherCompPct: 0.0 }
+      ],
+      compensation: {
+        year: 2026,
+        totalCompUsd: 389488,
+        baseSalaryPct: 25.7,
+        performanceBonusPct: 0.0,
+        stockBasedCompPct: 0.0,
+        otherCompPct: 74.3,
+        otherCompDescription: '개인·주택 보안 비용 $289,488 (기타 비용)',
+        alignmentRating: 'EXCELLENT',
+        summaryComment: '워런 버핏 회장의 연간 기본급은 정확히 $100,000(25.7%)이며, SEC 공시상 개인 보안 비용 $289,488(74.3%)이 기타 비용으로 산정됨 (성과급·주식보상 0%). 그렉 아벨 CEO 체제에서도 스톡옵션 희석 없는 세계 최고 수준의 주주 친화 거버넌스.'
+      },
+      capitalAllocation: {
+        shareBuybacksPct: 45.0,
+        dividendsPct: 0.0,
+        reinvestmentPct: 40.0,
+        maAcquisitionPct: 15.0,
+        totalShareholderReturnPct: 45.0
+      },
+      boardIndependencePct: 85.0
+    },
+
+    ruleEvaluations: [
+      { ruleId: 'roe_5yr', ruleName: '5개년 평균 ROE', passed: true, actualValue: '18.5%', targetValue: '>= 15.0%', unit: '%', comment: '보험 플로트와 비보험 사업의 안정적 수익성' },
+      { ruleId: 'roic_5yr', ruleName: '5개년 평균 ROIC', passed: true, actualValue: '15.8%', targetValue: '>= 10.0%', unit: '%', comment: '탁월한 자본배치로 두 자릿수 ROIC 유지' },
+      { ruleId: 'eps_cagr_5yr', ruleName: '5개년 EPS 복리성장률', passed: true, actualValue: '14.2%', targetValue: '>= 10.0%', unit: '%', comment: '영업이익의 장기 지속적 복리 성장' },
+      { ruleId: 'one_dollar_test', ruleName: '1달러 유보이익 테스트', passed: true, actualValue: '$2.85', targetValue: '>= $1.00', unit: '$', comment: '유보이익 1달러당 2.85달러 주주가치 창출' },
+      { ruleId: 'debt_to_equity', ruleName: '부채비율 상한', passed: true, actualValue: '28.5%', targetValue: '<= 150.0%', unit: '%', comment: '$3,000억 달러 이상 현금 보유, 완벽한 무차입급 초안전 재무' },
+      { ruleId: 'share_dilution', ruleName: '주식 희석 방지', passed: true, actualValue: '-1.8%', targetValue: '<= 0.0%', unit: '%', comment: '저평가 시 꾸준한 자사주 매입/소각 집행' }
+    ]
+  },
+  {
     id: 'aapl',
     ticker: 'AAPL',
     nameKo: '애플',
     nameEn: 'Apple Inc.',
     market: 'NASDAQ',
     sector: '기술 · 하드웨어/서비스',
-    currentPrice: 175.84,
+    currentPrice: 224.50,
     priceChangePct: 0.85,
     currency: 'USD',
     marketCap: 34200,
@@ -28,7 +120,11 @@ export const MOCK_STOCKS: Stock[] = [
     shareCountCagr5Yr: -3.2,
     benchmarkBpsCagr5Yr: 7.2,
 
-    sparkline5Yr: [115, 150, 130, 185, 192, 224],
+    sparkline1Yr: [178, 185, 172, 168, 182, 192, 214, 232, 237, 222, 228, 224.5],
+    sparkline5Yr: [115, 150, 130, 185, 192, 224.5],
+    high52W: 237.23,
+    low52W: 164.08,
+    priceChange1YrPct: 24.5,
     yearlyFinancials: [
       { year: 2020, roe: 73.7, roic: 35.1, eps: 3.28, bps: 3.8, revenue: 2745, netIncome: 574, operatingMargin: 24.1, debtToEquity: 170.0, price: 132.7 },
       { year: 2021, roe: 147.4, roic: 54.2, eps: 5.61, bps: 3.8, revenue: 3658, netIncome: 946, operatingMargin: 29.8, debtToEquity: 195.0, price: 177.6 },
@@ -115,7 +211,11 @@ export const MOCK_STOCKS: Stock[] = [
     shareCountCagr5Yr: -0.8,
     benchmarkBpsCagr5Yr: 7.2,
 
-    sparkline5Yr: [180, 222, 250, 310, 375, 425],
+    sparkline1Yr: [390, 405, 418, 426, 448, 452, 468, 442, 408, 416, 428, 420.55],
+    sparkline5Yr: [180, 222, 250, 310, 375, 420.55],
+    high52W: 468.35,
+    low52W: 385.20,
+    priceChange1YrPct: 19.8,
     yearlyFinancials: [
       { year: 2020, roe: 40.1, roic: 26.5, eps: 5.76, bps: 15.6, revenue: 1430, netIncome: 442, operatingMargin: 37.0, debtToEquity: 58.0, price: 222.4 },
       { year: 2021, roe: 47.1, roic: 31.0, eps: 8.05, bps: 18.9, revenue: 1680, netIncome: 612, operatingMargin: 41.6, debtToEquity: 46.2, price: 336.3 },
@@ -201,13 +301,17 @@ export const MOCK_STOCKS: Stock[] = [
     shareCountCagr5Yr: -1.2,
     benchmarkBpsCagr5Yr: 7.2,
 
-    sparkline5Yr: [70, 95, 88, 120, 140, 150],
+    sparkline1Yr: [130, 136, 142, 150, 168, 178, 188, 191.75, 168, 164, 175, 178.5],
+    sparkline5Yr: [70, 95, 88, 120, 140, 178.5],
+    high52W: 191.75,
+    low52W: 128.50,
+    priceChange1YrPct: 35.2,
     yearlyFinancials: [
       { year: 2020, roe: 19.0, roic: 18.2, eps: 2.93, bps: 16.5, revenue: 1825, netIncome: 402, operatingMargin: 22.6, debtToEquity: 12.0, price: 87.6 },
       { year: 2021, roe: 32.1, roic: 29.5, eps: 5.61, bps: 19.8, revenue: 2576, netIncome: 760, operatingMargin: 30.6, debtToEquity: 10.8, price: 144.9 },
       { year: 2022, roe: 23.6, roic: 21.0, eps: 4.56, bps: 20.1, revenue: 2828, netIncome: 599, operatingMargin: 26.5, debtToEquity: 11.0, price: 88.7 },
       { year: 2023, roe: 27.4, roic: 24.0, eps: 5.80, bps: 22.8, revenue: 3074, netIncome: 737, operatingMargin: 27.4, debtToEquity: 11.5, price: 139.7 },
-      { year: 2026, roe: 24.8, roic: 22.1, eps: 7.10, bps: 26.5, revenue: 3450, netIncome: 920, operatingMargin: 30.1, debtToEquity: 11.2, price: 150.2 },
+      { year: 2026, roe: 24.8, roic: 22.1, eps: 7.10, bps: 26.5, revenue: 3450, netIncome: 920, operatingMargin: 30.1, debtToEquity: 11.2, price: 178.5 },
     ],
 
     oneDollarTest: {
@@ -266,11 +370,11 @@ export const MOCK_STOCKS: Stock[] = [
     nameEn: 'Costco Wholesale',
     market: 'NASDAQ',
     sector: '소비재 · 회원제 유통',
-    currentPrice: 740.10,
-    priceChangePct: 0.65,
+    currentPrice: 845.20,
+    priceChangePct: 0.92,
     currency: 'USD',
-    marketCap: 3280,
-    marketCapFormatted: '$328B',
+    marketCap: 3750,
+    marketCapFormatted: '$375B',
 
     buffettScore: 100,
     isMasterPass: true,
@@ -286,13 +390,17 @@ export const MOCK_STOCKS: Stock[] = [
     shareCountCagr5Yr: -0.2,
     benchmarkBpsCagr5Yr: 7.2,
 
-    sparkline5Yr: [300, 420, 510, 560, 680, 740],
+    sparkline1Yr: [558, 585, 638, 712, 755, 792, 835, 862, 838, 872, 888, 845.2],
+    sparkline5Yr: [300, 420, 510, 560, 680, 845.2],
+    high52W: 890.00,
+    low52W: 550.00,
+    priceChange1YrPct: 51.2,
     yearlyFinancials: [
       { year: 2020, roe: 23.7, roic: 18.0, eps: 9.02, bps: 42.0, revenue: 1667, netIncome: 40, operatingMargin: 3.4, debtToEquity: 40.0, price: 347.0 },
       { year: 2021, roe: 28.9, roic: 20.5, eps: 11.27, bps: 45.0, revenue: 1959, netIncome: 50, operatingMargin: 3.4, debtToEquity: 38.0, price: 455.0 },
       { year: 2022, roe: 29.5, roic: 21.0, eps: 13.14, bps: 48.0, revenue: 2269, netIncome: 58, operatingMargin: 3.4, debtToEquity: 36.0, price: 456.0 },
       { year: 2023, roe: 27.2, roic: 20.2, eps: 14.16, bps: 53.0, revenue: 2422, netIncome: 63, operatingMargin: 3.3, debtToEquity: 35.0, price: 565.0 },
-      { year: 2026, roe: 28.4, roic: 20.8, eps: 16.50, bps: 59.0, revenue: 2540, netIncome: 73, operatingMargin: 3.6, debtToEquity: 35.0, price: 740.1 },
+      { year: 2026, roe: 28.4, roic: 20.8, eps: 16.50, bps: 59.0, revenue: 2540, netIncome: 73, operatingMargin: 3.6, debtToEquity: 35.0, price: 845.2 },
     ],
 
     oneDollarTest: {
@@ -312,9 +420,9 @@ export const MOCK_STOCKS: Stock[] = [
       gradeLabel: '주주 친화 A+ 등급 (우수)',
       ceoSkinInTheGameSummary: '창업 철학 계승 경영진 재임',
       leadership: [
-        { role: '대표이사(CEO)', name: '론 바크리스 (Ron Vachris)', tenureYears: 2, bio: '지게차 운전수로 입사해 40년 만에 CEO 등극, 현장 중심의 코스트코 철학 계승', sharesOwned: 45000, sharesValueUsd: 33304500, sharesOwnershipPct: 0.010, isOutsideDirector: false, compensationUsd: 11500000, baseSalaryPct: 10.0, performanceBonusPct: 15.0, stockBasedCompPct: 75.0 },
-        { role: '사외이사 (지배구조위원장)', name: '켄 덴먼 (Ken Denman)', tenureYears: 8, bio: 'Emotient 전 CEO, 모바일/AI 테크 경영자 출신 사외이사', sharesOwned: 12000, sharesValueUsd: 8881200, sharesOwnershipPct: 0.0027, isOutsideDirector: true, compensationUsd: 340000, baseSalaryPct: 30.0, performanceBonusPct: 0.0, stockBasedCompPct: 70.0 },
-        { role: '사외이사 (감사위원)', name: '샐리 주얼 (Sally Jewell)', tenureYears: 5, bio: 'REI 전 CEO 겸 전 미국 내무부 장관, 유통 및 윤리경영 전문가', sharesOwned: 8500, sharesValueUsd: 6290850, sharesOwnershipPct: 0.0019, isOutsideDirector: true, compensationUsd: 310000, baseSalaryPct: 30.0, performanceBonusPct: 0.0, stockBasedCompPct: 70.0 }
+        { role: '대표이사(CEO)', name: '론 바크리스 (Ron Vachris)', tenureYears: 2, bio: '지게차 운전수로 입사해 40년 만에 CEO 등극, 현장 중심의 코스트코 철학 계승', sharesOwned: 45000, sharesValueUsd: 38034000, sharesOwnershipPct: 0.010, isOutsideDirector: false, compensationUsd: 11500000, baseSalaryPct: 10.0, performanceBonusPct: 15.0, stockBasedCompPct: 75.0 },
+        { role: '사외이사 (지배구조위원장)', name: '켄 덴먼 (Ken Denman)', tenureYears: 8, bio: 'Emotient 전 CEO, 모바일/AI 테크 경영자 출신 사외이사', sharesOwned: 12000, sharesValueUsd: 10142400, sharesOwnershipPct: 0.0027, isOutsideDirector: true, compensationUsd: 340000, baseSalaryPct: 30.0, performanceBonusPct: 0.0, stockBasedCompPct: 70.0 },
+        { role: '사외이사 (감사위원)', name: '샐리 주얼 (Sally Jewell)', tenureYears: 5, bio: 'REI 전 CEO 겸 전 미국 내무부 장관, 유통 및 윤리경영 전문가', sharesOwned: 8500, sharesValueUsd: 7184200, sharesOwnershipPct: 0.0019, isOutsideDirector: true, compensationUsd: 310000, baseSalaryPct: 30.0, performanceBonusPct: 0.0, stockBasedCompPct: 70.0 }
       ],
       compensation: {
         year: 2026,
@@ -351,11 +459,11 @@ export const MOCK_STOCKS: Stock[] = [
     nameEn: 'NVIDIA Corp.',
     market: 'NASDAQ',
     sector: '기술 · 반도체/AI 가속기',
-    currentPrice: 880.00,
+    currentPrice: 128.50,
     priceChangePct: 2.15,
     currency: 'USD',
-    marketCap: 28500,
-    marketCapFormatted: '$2.85T',
+    marketCap: 31600,
+    marketCapFormatted: '$3.16T',
 
     buffettScore: 66,
     isMasterPass: false,
@@ -371,13 +479,17 @@ export const MOCK_STOCKS: Stock[] = [
     shareCountCagr5Yr: 0.8,
     benchmarkBpsCagr5Yr: 7.2,
 
-    sparkline5Yr: [130, 290, 140, 480, 750, 880],
+    sparkline1Yr: [46, 52, 65, 78, 90, 106, 122, 138, 118, 124, 136, 128.5],
+    sparkline5Yr: [13, 29, 14, 48, 75, 128.5],
+    high52W: 140.76,
+    low52W: 45.20,
+    priceChange1YrPct: 172.5,
     yearlyFinancials: [
-      { year: 2020, roe: 26.0, roic: 22.0, eps: 1.73, bps: 11.0, revenue: 166, netIncome: 43, operatingMargin: 28.0, debtToEquity: 25.0, price: 130.0 },
-      { year: 2021, roe: 36.8, roic: 30.0, eps: 3.85, bps: 16.0, revenue: 269, netIncome: 97, operatingMargin: 37.0, debtToEquity: 24.0, price: 294.0 },
-      { year: 2022, roe: 19.5, roic: 16.0, eps: 1.74, bps: 18.0, revenue: 269, netIncome: 43, operatingMargin: 21.0, debtToEquity: 25.0, price: 146.0 },
-      { year: 2023, roe: 91.5, roic: 72.0, eps: 11.93, bps: 35.0, revenue: 609, netIncome: 297, operatingMargin: 54.0, debtToEquity: 23.0, price: 495.0 },
-      { year: 2026, roe: 65.0, roic: 48.0, eps: 24.50, bps: 62.0, revenue: 1100, netIncome: 600, operatingMargin: 62.0, debtToEquity: 22.0, price: 880.0 },
+      { year: 2020, roe: 26.0, roic: 22.0, eps: 0.17, bps: 1.1, revenue: 166, netIncome: 43, operatingMargin: 28.0, debtToEquity: 25.0, price: 13.0 },
+      { year: 2021, roe: 36.8, roic: 30.0, eps: 0.39, bps: 1.6, revenue: 269, netIncome: 97, operatingMargin: 37.0, debtToEquity: 24.0, price: 29.4 },
+      { year: 2022, roe: 19.5, roic: 16.0, eps: 0.17, bps: 1.8, revenue: 269, netIncome: 43, operatingMargin: 21.0, debtToEquity: 25.0, price: 14.6 },
+      { year: 2023, roe: 91.5, roic: 72.0, eps: 1.19, bps: 3.5, revenue: 609, netIncome: 297, operatingMargin: 54.0, debtToEquity: 23.0, price: 49.5 },
+      { year: 2026, roe: 65.0, roic: 48.0, eps: 2.85, bps: 7.2, revenue: 1100, netIncome: 600, operatingMargin: 62.0, debtToEquity: 22.0, price: 128.5 },
     ],
 
     oneDollarTest: {
@@ -397,9 +509,9 @@ export const MOCK_STOCKS: Stock[] = [
       gradeLabel: '주주 친화 A 등급 (우수)',
       ceoSkinInTheGameSummary: '창업자 젠슨 황 약 3.5% 지분 보유',
       leadership: [
-        { role: '창립자 & CEO', name: '젠슨 황 (Jensen Huang)', tenureYears: 31, bio: '엔비디아 공동 창립, GPU 컴퓨팅 및 생성형 AI 인프라 혁명 완성', sharesOwned: 86000000, sharesValueUsd: 75680000000, sharesOwnershipPct: 3.5, isOutsideDirector: false, compensationUsd: 34200000, baseSalaryPct: 3.0, performanceBonusPct: 12.0, stockBasedCompPct: 85.0 },
-        { role: '최고재무책임자(CFO)', name: '콜레트 크레스 (Colette Kress)', tenureYears: 11, bio: '시스코/MS 거친 최고재무책임자, 데이터센터 매출 500% 성장 자본 관리 총괄', sharesOwned: 620000, sharesValueUsd: 545600000, sharesOwnershipPct: 0.025, isOutsideDirector: false, compensationUsd: 14500000, baseSalaryPct: 5.0, performanceBonusPct: 15.0, stockBasedCompPct: 80.0 },
-        { role: '수석 사외이사 (감사위원장)', name: '마크 페리 (Mark A. Perry)', tenureYears: 19, bio: 'NEA 벤처파트너 및 로펌 출신 기업 거버넌스 및 감사 총괄', sharesOwned: 150000, sharesValueUsd: 132000000, sharesOwnershipPct: 0.006, isOutsideDirector: true, compensationUsd: 395000, baseSalaryPct: 20.0, performanceBonusPct: 0.0, stockBasedCompPct: 80.0 }
+        { role: '창립자 & CEO', name: '젠슨 황 (Jensen Huang)', tenureYears: 31, bio: '엔비디아 공동 창립, GPU 컴퓨팅 및 생성형 AI 인프라 혁명 완성', sharesOwned: 86000000, sharesValueUsd: 11051000000, sharesOwnershipPct: 3.5, isOutsideDirector: false, compensationUsd: 34200000, baseSalaryPct: 3.0, performanceBonusPct: 12.0, stockBasedCompPct: 85.0 },
+        { role: '최고재무책임자(CFO)', name: '콜레트 크레스 (Colette Kress)', tenureYears: 11, bio: '시스코/MS 거친 최고재무책임자, 데이터센터 매출 500% 성장 자본 관리 총괄', sharesOwned: 620000, sharesValueUsd: 79670000, sharesOwnershipPct: 0.025, isOutsideDirector: false, compensationUsd: 14500000, baseSalaryPct: 5.0, performanceBonusPct: 15.0, stockBasedCompPct: 80.0 },
+        { role: '수석 사외이사 (감사위원장)', name: '마크 페리 (Mark A. Perry)', tenureYears: 19, bio: 'NEA 벤처파트너 및 로펌 출신 기업 거버넌스 및 감사 총괄', sharesOwned: 150000, sharesValueUsd: 19275000, sharesOwnershipPct: 0.006, isOutsideDirector: true, compensationUsd: 395000, baseSalaryPct: 20.0, performanceBonusPct: 0.0, stockBasedCompPct: 80.0 }
       ],
       compensation: {
         year: 2026,
@@ -436,11 +548,11 @@ export const MOCK_STOCKS: Stock[] = [
     nameEn: 'Tesla Inc.',
     market: 'NASDAQ',
     sector: '자동차 · 전기차/에너지',
-    currentPrice: 170.00,
-    priceChangePct: -1.85,
+    currentPrice: 215.00,
+    priceChangePct: -2.35,
     currency: 'USD',
-    marketCap: 5400,
-    marketCapFormatted: '$540B',
+    marketCap: 6850,
+    marketCapFormatted: '$685B',
 
     buffettScore: 33,
     isMasterPass: false,
@@ -456,13 +568,17 @@ export const MOCK_STOCKS: Stock[] = [
     shareCountCagr5Yr: 3.5,
     benchmarkBpsCagr5Yr: 7.2,
 
-    sparkline5Yr: [100, 380, 120, 250, 210, 170],
+    sparkline1Yr: [215, 238, 208, 176, 142, 178, 198, 262, 224, 208, 232, 215],
+    sparkline5Yr: [100, 380, 120, 250, 210, 215],
+    high52W: 271.00,
+    low52W: 138.80,
+    priceChange1YrPct: -11.5,
     yearlyFinancials: [
       { year: 2020, roe: 4.8, roic: 4.0, eps: 0.24, bps: 7.0, revenue: 315, netIncome: 7, operatingMargin: 6.3, debtToEquity: 45.0, price: 235.0 },
       { year: 2021, roe: 19.3, roic: 15.0, eps: 1.63, bps: 9.5, revenue: 538, netIncome: 55, operatingMargin: 12.1, debtToEquity: 25.0, price: 352.0 },
       { year: 2022, roe: 28.1, roic: 21.0, eps: 3.62, bps: 14.0, revenue: 814, netIncome: 125, operatingMargin: 16.8, debtToEquity: 18.0, price: 123.0 },
       { year: 2023, roe: 19.4, roic: 12.0, eps: 3.12, bps: 19.0, revenue: 967, netIncome: 149, operatingMargin: 8.2, debtToEquity: 16.0, price: 248.0 },
-      { year: 2026, roe: 15.0, roic: 9.5, eps: 2.20, bps: 22.0, revenue: 980, netIncome: 75, operatingMargin: 7.5, debtToEquity: 18.0, price: 170.0 },
+      { year: 2026, roe: 15.0, roic: 9.5, eps: 2.20, bps: 22.0, revenue: 980, netIncome: 75, operatingMargin: 7.5, debtToEquity: 18.0, price: 215.0 },
     ],
 
     oneDollarTest: {
@@ -482,7 +598,7 @@ export const MOCK_STOCKS: Stock[] = [
       gradeLabel: '주주 친화 C 등급 (주의)',
       ceoSkinInTheGameSummary: 'CEO 일론 머스크 타 법인(X, xAI, SpaceX) 겸직 및 거액 스톡옵션 분쟁 이력',
       leadership: [
-        { role: '대표이사(CEO)', name: '일론 머스크 (Elon Musk)', tenureYears: 16, bio: '전기차 대중화 주도, xAI/스페이스X 등 다수 기업 겸직', sharesOwned: 411000000, sharesValueUsd: 69870000000 }
+        { role: '대표이사(CEO)', name: '일론 머스크 (Elon Musk)', tenureYears: 16, bio: '전기차 대중화 주도, xAI/스페이스X 등 다수 기업 겸직', sharesOwned: 411000000, sharesValueUsd: 88365000000 }
       ],
       compensation: {
         year: 2026,
@@ -539,7 +655,11 @@ export const MOCK_STOCKS: Stock[] = [
     shareCountCagr5Yr: -0.1,
     benchmarkBpsCagr5Yr: 6.5,
 
+    sparkline1Yr: [68500, 71000, 73200, 77800, 82500, 85600, 88800, 83500, 78800, 74500, 76800, 78500],
     sparkline5Yr: [55000, 81000, 60000, 78000, 71000, 78500],
+    high52W: 88800,
+    low52W: 65800,
+    priceChange1YrPct: 14.8,
     yearlyFinancials: [
       { year: 2020, roe: 9.9, roic: 8.5, eps: 3841, bps: 39406, revenue: 2368, netIncome: 264, operatingMargin: 15.2, debtToEquity: 37.0, price: 81000 },
       { year: 2021, roe: 13.9, roic: 12.0, eps: 5777, bps: 43611, revenue: 2796, netIncome: 399, operatingMargin: 18.5, debtToEquity: 30.5, price: 78300 },
@@ -605,11 +725,11 @@ export const MOCK_STOCKS: Stock[] = [
     nameEn: 'Samyang Foods',
     market: 'KOSPI',
     sector: '음식료 · K-푸드/라면',
-    currentPrice: 580000,
-    priceChangePct: 3.20,
+    currentPrice: 612000,
+    priceChangePct: 3.45,
     currency: 'KRW',
-    marketCap: 43700,
-    marketCapFormatted: '4.37조원',
+    marketCap: 46100,
+    marketCapFormatted: '4.61조원',
 
     buffettScore: 100,
     isMasterPass: true,
@@ -625,13 +745,17 @@ export const MOCK_STOCKS: Stock[] = [
     shareCountCagr5Yr: 0.0,
     benchmarkBpsCagr5Yr: 6.5,
 
-    sparkline5Yr: [95000, 110000, 125000, 210000, 480000, 580000],
+    sparkline1Yr: [195000, 215000, 235000, 310000, 485000, 595000, 718000, 645000, 580000, 595000, 630000, 612000],
+    sparkline5Yr: [95000, 110000, 125000, 210000, 480000, 612000],
+    high52W: 718000,
+    low52W: 182000,
+    priceChange1YrPct: 212.5,
     yearlyFinancials: [
       { year: 2020, roe: 18.2, roic: 15.0, eps: 9028, bps: 45000, revenue: 6485, netIncome: 680, operatingMargin: 14.7, debtToEquity: 62.0, price: 98000 },
       { year: 2021, roe: 13.5, roic: 11.2, eps: 7502, bps: 51000, revenue: 6420, netIncome: 560, operatingMargin: 10.2, debtToEquity: 60.0, price: 94000 },
       { year: 2022, roe: 19.8, roic: 16.5, eps: 10680, bps: 60000, revenue: 9090, netIncome: 803, operatingMargin: 9.9, debtToEquity: 58.0, price: 124000 },
       { year: 2023, roe: 28.0, roic: 22.0, eps: 17200, bps: 75000, revenue: 11929, netIncome: 1300, operatingMargin: 12.4, debtToEquity: 56.0, price: 215000 },
-      { year: 2026, roe: 29.5, roic: 24.2, eps: 35000, bps: 108000, revenue: 16000, netIncome: 2600, operatingMargin: 20.0, debtToEquity: 55.0, price: 580000 },
+      { year: 2026, roe: 29.5, roic: 24.2, eps: 35000, bps: 108000, revenue: 16000, netIncome: 2600, operatingMargin: 20.0, debtToEquity: 55.0, price: 612000 },
     ],
 
     oneDollarTest: {
@@ -651,8 +775,8 @@ export const MOCK_STOCKS: Stock[] = [
       gradeLabel: '주주 친화 A+ 등급 (우수)',
       ceoSkinInTheGameSummary: '김정수 부회장 등 오너가 책임경영 및 글로벌 확장 주도',
       leadership: [
-        { role: '대표이사(CEO) 부회장', name: '김정수 (Jeong-Soo Kim)', tenureYears: 6, bio: '불닭볶음면 기획 및 글로벌 신화 주역, 북미/동남아/유럽 수출 대폭 확장', sharesOwned: 320000, sharesValueUsd: 135000000, sharesOwnershipPct: 4.25, isOutsideDirector: false, compensationUsd: 2200000, baseSalaryPct: 30.0, performanceBonusPct: 70.0, stockBasedCompPct: 0.0 },
-        { role: '사외이사 (감사위원장)', name: '정태운 (Tae-Woon Jung)', tenureYears: 3, bio: '공인회계사 및 재무감사 전문가, 투명한 내부회계 및 주주환원 감시', sharesOwned: 500, sharesValueUsd: 210000, sharesOwnershipPct: 0.007, isOutsideDirector: true, compensationUsd: 65000, baseSalaryPct: 100.0, performanceBonusPct: 0.0, stockBasedCompPct: 0.0 }
+        { role: '대표이사(CEO) 부회장', name: '김정수 (Jeong-Soo Kim)', tenureYears: 6, bio: '불닭볶음면 기획 및 글로벌 신화 주역, 북미/동남아/유럽 수출 대폭 확장', sharesOwned: 320000, sharesValueUsd: 142000000, sharesOwnershipPct: 4.25, isOutsideDirector: false, compensationUsd: 2200000, baseSalaryPct: 30.0, performanceBonusPct: 70.0, stockBasedCompPct: 0.0 },
+        { role: '사외이사 (감사위원장)', name: '정태운 (Tae-Woon Jung)', tenureYears: 3, bio: '공인회계사 및 재무감사 전문가, 투명한 내부회계 및 주주환원 감시', sharesOwned: 500, sharesValueUsd: 220000, sharesOwnershipPct: 0.007, isOutsideDirector: true, compensationUsd: 65000, baseSalaryPct: 100.0, performanceBonusPct: 0.0, stockBasedCompPct: 0.0 }
       ],
       compensation: {
         year: 2026,
@@ -689,11 +813,11 @@ export const MOCK_STOCKS: Stock[] = [
     nameEn: 'Leeno Industrial',
     market: 'KOSDAQ',
     sector: '반도체 · 테스트 소켓/핀',
-    currentPrice: 198000,
-    priceChangePct: 0.51,
+    currentPrice: 234000,
+    priceChangePct: -0.85,
     currency: 'KRW',
-    marketCap: 30180,
-    marketCapFormatted: '3.01조원',
+    marketCap: 35680,
+    marketCapFormatted: '3.57조원',
 
     buffettScore: 100,
     isMasterPass: true,
@@ -709,13 +833,17 @@ export const MOCK_STOCKS: Stock[] = [
     shareCountCagr5Yr: 0.0,
     benchmarkBpsCagr5Yr: 6.5,
 
-    sparkline5Yr: [85000, 140000, 120000, 160000, 210000, 198000],
+    sparkline1Yr: [162000, 178000, 208000, 242000, 276000, 285000, 258000, 238000, 224000, 228000, 246000, 234000],
+    sparkline5Yr: [85000, 140000, 120000, 160000, 210000, 234000],
+    high52W: 285000,
+    low52W: 152000,
+    priceChange1YrPct: 42.6,
     yearlyFinancials: [
       { year: 2020, roe: 24.2, roic: 25.0, eps: 4680, bps: 22000, revenue: 2013, netIncome: 712, operatingMargin: 38.7, debtToEquity: 10.0, price: 133000 },
       { year: 2021, roe: 28.5, roic: 30.2, eps: 6720, bps: 26500, revenue: 2802, netIncome: 1025, operatingMargin: 41.8, debtToEquity: 9.2, price: 189000 },
       { year: 2022, roe: 27.8, roic: 29.5, eps: 7550, bps: 32000, revenue: 3221, netIncome: 1150, operatingMargin: 42.4, debtToEquity: 8.8, price: 156000 },
       { year: 2023, roe: 24.0, roic: 25.1, eps: 6800, bps: 36000, revenue: 2556, netIncome: 1030, operatingMargin: 44.7, debtToEquity: 8.5, price: 215000 },
-      { year: 2026, roe: 26.8, roic: 28.0, eps: 8900, bps: 42000, revenue: 3100, netIncome: 1350, operatingMargin: 43.5, debtToEquity: 8.5, price: 198000 },
+      { year: 2026, roe: 26.8, roic: 28.0, eps: 8900, bps: 42000, revenue: 3100, netIncome: 1350, operatingMargin: 43.5, debtToEquity: 8.5, price: 234000 },
     ],
 
     oneDollarTest: {
@@ -735,8 +863,8 @@ export const MOCK_STOCKS: Stock[] = [
       gradeLabel: '주주 친화 A+ 등급 (우수)',
       ceoSkinInTheGameSummary: '창업자 이채윤 회장 지분 약 34.6% 보유',
       leadership: [
-        { role: '대표이사(CEO) 회장', name: '이채윤 (Chae-Yoon Lee)', tenureYears: 36, bio: '리노공업 창업주, 미세 핀 가공 기술 국산화 및 글로벌 독점 기업으로 육성', sharesOwned: 5270000, sharesValueUsd: 760000000, sharesOwnershipPct: 34.6, isOutsideDirector: false, compensationUsd: 1800000, baseSalaryPct: 40.0, performanceBonusPct: 60.0, stockBasedCompPct: 0.0 },
-        { role: '사외이사 (기술 및 거버넌스)', name: '박상일 (Sang-Il Park)', tenureYears: 4, bio: '파크시스템스 창업주 및 물리학 박사, 첨단 반도체 계측 및 기술 거버넌스 자문', sharesOwned: 3500, sharesValueUsd: 500000, sharesOwnershipPct: 0.023, isOutsideDirector: true, compensationUsd: 55000, baseSalaryPct: 100.0, performanceBonusPct: 0.0, stockBasedCompPct: 0.0 }
+        { role: '대표이사(CEO) 회장', name: '이채윤 (Chae-Yoon Lee)', tenureYears: 36, bio: '리노공업 창업주, 미세 핀 가공 기술 국산화 및 글로벌 독점 기업으로 육성', sharesOwned: 5270000, sharesValueUsd: 910000000, sharesOwnershipPct: 34.6, isOutsideDirector: false, compensationUsd: 1800000, baseSalaryPct: 40.0, performanceBonusPct: 60.0, stockBasedCompPct: 0.0 },
+        { role: '사외이사 (기술 및 거버넌스)', name: '박상일 (Sang-Il Park)', tenureYears: 4, bio: '파크시스템스 창업주 및 물리학 박사, 첨단 반도체 계측 및 기술 거버넌스 자문', sharesOwned: 3500, sharesValueUsd: 600000, sharesOwnershipPct: 0.023, isOutsideDirector: true, compensationUsd: 55000, baseSalaryPct: 100.0, performanceBonusPct: 0.0, stockBasedCompPct: 0.0 }
       ],
       compensation: {
         year: 2026,
@@ -770,84 +898,91 @@ export const MOCK_STOCKS: Stock[] = [
     id: '000660',
     ticker: '000660',
     nameKo: 'SK하이닉스',
-    nameEn: 'SK Hynix',
+    nameEn: 'SK Hynix Inc.',
     market: 'KOSPI',
-    sector: '전기전자 · HBM 반도체',
-    currentPrice: 195000,
-    priceChangePct: 2.63,
+    sector: '전기전자 · HBM/메모리 반도체',
+    currentPrice: 1662000,
+    priceChangePct: 1.03,
     currency: 'KRW',
-    marketCap: 1420000,
-    marketCapFormatted: '142조원',
+    marketCap: 12100000,
+    marketCapFormatted: '1,210조원',
 
-    buffettScore: 83,
+    buffettScore: 33,
     isMasterPass: false,
-    passCount: 5,
+    passCount: 2,
     totalRuleCount: 6,
 
-    avgRoe5Yr: 22.4,
-    avgRoic5Yr: 16.8,
-    epsCagr5Yr: 28.5,
-    bpsCagr5Yr: 16.2,
+    avgRoe5Yr: 10.8,
+    avgRoic5Yr: 7.2,
+    epsCagr5Yr: 4.8,
+    bpsCagr5Yr: 11.2,
     debtToEquity: 48.0,
-    interestCoverage: 18.0,
-    shareCountCagr5Yr: 0.1,
+    interestCoverage: 8.5,
+    shareCountCagr5Yr: 0.8,
     benchmarkBpsCagr5Yr: 6.5,
 
-    sparkline5Yr: [85000, 130000, 80000, 140000, 180000, 195000],
+    sparkline1Yr: [980000, 1050000, 1180000, 1290000, 1380000, 1490000, 1680000, 1750000, 1580000, 1520000, 1610000, 1662000],
+    sparkline5Yr: [850000, 1180000, 750000, 1250000, 1500000, 1662000],
+    high52W: 1750000,
+    low52W: 980000,
+    priceChange1YrPct: 58.2,
     yearlyFinancials: [
-      { year: 2020, roe: 9.5, roic: 8.0, eps: 6512, bps: 72000, revenue: 3190, netIncome: 475, operatingMargin: 15.7, debtToEquity: 43.0, price: 118500 },
-      { year: 2021, roe: 16.8, roic: 14.5, eps: 13200, bps: 85000, revenue: 4299, netIncome: 961, operatingMargin: 28.8, debtToEquity: 40.0, price: 131000 },
-      { year: 2022, roe: 3.5, roic: 3.0, eps: 3100, bps: 87000, revenue: 4464, netIncome: 224, operatingMargin: 15.2, debtToEquity: 52.0, price: 75000 },
-      { year: 2023, roe: -16.0, roic: -12.0, eps: -12500, bps: 74000, revenue: 3276, netIncome: -913, operatingMargin: -23.6, debtToEquity: 62.0, price: 141500 },
-      { year: 2026, roe: 22.4, roic: 16.8, eps: 24000, bps: 98000, revenue: 6600, netIncome: 1800, operatingMargin: 35.0, debtToEquity: 48.0, price: 195000 },
+      { year: 2020, roe: 9.5, roic: 8.0, eps: 65120, bps: 720000, revenue: 31900, netIncome: 4750, operatingMargin: 15.7, debtToEquity: 43.0, price: 1185000 },
+      { year: 2021, roe: 16.8, roic: 14.5, eps: 132000, bps: 850000, revenue: 42990, netIncome: 9610, operatingMargin: 28.8, debtToEquity: 40.0, price: 1310000 },
+      { year: 2022, roe: 3.5, roic: 3.0, eps: 31000, bps: 870000, revenue: 44640, netIncome: 2240, operatingMargin: 15.2, debtToEquity: 52.0, price: 750000 },
+      { year: 2023, roe: -16.0, roic: -12.0, eps: -125000, bps: 740000, revenue: 32760, netIncome: -9130, operatingMargin: -23.6, debtToEquity: 62.0, price: 1415000 },
+      { year: 2026, roe: 22.4, roic: 16.8, eps: 240000, bps: 980000, revenue: 66000, netIncome: 18000, operatingMargin: 35.0, debtToEquity: 48.0, price: 1662000 },
     ],
 
     oneDollarTest: {
       evaluationPeriodYears: 5,
-      accumulatedRetainedEarnings: 320000,
-      marketCapIncrease: 680000,
-      valueCreatedPerDollar: 2.12,
-      passed: true,
-      evaluationComment: 'HBM 시장 1위 선점으로 사내 유보 1원당 2.12원 주주가치 창출'
+      accumulatedRetainedEarnings: 3200000,
+      marketCapIncrease: 2800000,
+      valueCreatedPerDollar: 0.88,
+      passed: false,
+      evaluationComment: '메모리 다운턴 적자 및 막대한 설비투자(CAPEX) 소모로 유보 1원당 0.88원 창출에 그쳐 주주가치 창출 기준 미달'
     },
 
-    economicMoatSummary: '엔비디아(NVIDIA)향 고대역폭 메모리(HBM3E) 독점적 공급 리더십과 MR-MUF 첨단 패키징 독점 기술 해자',
-    moatSources: ['HBM AI 가속기 메모리 시장 독점력', 'MR-MUF 공정 기술 경쟁력', '글로벌 2위 메모리 규모의 경제'],
+    economicMoatSummary: 'HBM 선두 기술력을 확보했으나, 메모리 반도체 특유의 극심한 경기 사이클 변동성과 매년 수십조 원 CAPEX 재투자 강요로 지속적 잉여현금흐름(FCF) 창출에 취약',
+    moatSources: ['HBM AI 가속기 메모리 공급력', '극심한 사이클형 실적 변동성 위험', '자본집약적 산업 구조 (매년 막대한 설비투자 소모)'],
 
     governance: {
-      overallGrade: 'A',
-      gradeLabel: '주주 친화 A 등급 (우수)',
-      ceoSkinInTheGameSummary: '곽노정 사장 엔지니어 출신 CEO 기술 리더십',
+      overallGrade: 'C',
+      gradeLabel: '거버넌스 C 등급 (오너 상징적 지분 0.002% & 고액 보수)',
+      ceoSkinInTheGameSummary: '실질 오너 최태원 회장이 최근 책임경영 강화를 위해 하이닉스 주식 15,000주(약 249억원, 지분 0.002%)를 직접 장내 매입했으나, 시총(1,210조원) 대비 상징적 수준에 그치며 연간 약 35억원의 고액 보수 및 지주사(SK) 상표권 로열티·배당 유출 지속',
       leadership: [
-        { role: '대표이사(CEO) 사장', name: '곽노정 (Noh-Jung Kwak)', tenureYears: 3, bio: 'HBM 개발 총괄 및 엔비디아 파트너십 완성, 메모리 턴어라운드 주역', sharesOwned: 8000, sharesValueUsd: 1100000, sharesOwnershipPct: 0.0001, isOutsideDirector: false, compensationUsd: 2500000, baseSalaryPct: 35.0, performanceBonusPct: 65.0, stockBasedCompPct: 0.0 },
-        { role: '사외이사 (이사회 의장)', name: '하영구 (Young-Goo Ha)', tenureYears: 5, bio: '전 한국씨티은행장 및 전국은행연합회장, 글로벌 금융 및 거버넌스 총괄', sharesOwned: 1500, sharesValueUsd: 210000, sharesOwnershipPct: 0.00002, isOutsideDirector: true, compensationUsd: 130000, baseSalaryPct: 80.0, performanceBonusPct: 0.0, stockBasedCompPct: 20.0 }
+        { role: 'SK그룹 회장 겸 사내이사 (실질 지배주주)', name: '최태원 (Tae-Won Chey)', tenureYears: 13, bio: 'SK그룹 총수. 최근 책임경영 차원에서 하이닉스 주식 15,000주(약 249억원)를 직접 장내 매수. 다만 시총(1,210조원) 대비 직접 지분율은 0.002%로 상징적 수준이며, 지주사 SK스퀘어(20.1%)를 통한 옥상옥 지배 및 연간 35억원 보수 수령 병행', sharesOwned: 15000, sharesValueUsd: 18460000, sharesOwnershipPct: 0.002, isOutsideDirector: false, compensationUsd: 2600000, baseSalaryPct: 50.0, performanceBonusPct: 50.0, stockBasedCompPct: 0.0, otherCompPct: 0.0, otherCompDescription: '최근 직접 주식 1.5만 주 매수(약 249억원) / 연간 약 35억원 보수 수령 + 지주사(SK)로 매년 브랜드 사용료 및 배당 유출' },
+        { role: '대표이사(CEO) 사장', name: '곽노정 (Noh-Jung Kwak)', tenureYears: 3, bio: 'HBM 개발 총괄 및 엔비디아 파트너십 완성, 기술 중심 전문경영인', sharesOwned: 8000, sharesValueUsd: 9850000, sharesOwnershipPct: 0.0001, isOutsideDirector: false, compensationUsd: 2000000, baseSalaryPct: 40.0, performanceBonusPct: 60.0, stockBasedCompPct: 0.0, otherCompPct: 0.0 },
+        { role: '부회장 (전 대표이사)', name: '박정호 (Jung-Ho Park)', tenureYears: 12, bio: 'SK하이닉스 인수 주역이자 부회장. 연간 수십억 원대 보수 및 퇴직금 수령', sharesOwned: 20000, sharesValueUsd: 24620000, sharesOwnershipPct: 0.0003, isOutsideDirector: false, compensationUsd: 2800000, baseSalaryPct: 45.0, performanceBonusPct: 55.0, stockBasedCompPct: 0.0, otherCompPct: 0.0 },
+        { role: '사외이사 (이사회 의장)', name: '하영구 (Young-Goo Ha)', tenureYears: 5, bio: '전 한국씨티은행장 및 전국은행연합회장, 글로벌 금융 및 경영 자문', sharesOwned: 1500, sharesValueUsd: 1846000, sharesOwnershipPct: 0.00002, isOutsideDirector: true, compensationUsd: 130000, baseSalaryPct: 80.0, performanceBonusPct: 0.0, stockBasedCompPct: 20.0, otherCompPct: 0.0 }
       ],
       compensation: {
         year: 2026,
-        totalCompUsd: 2500000,
-        baseSalaryPct: 35.0,
-        performanceBonusPct: 65.0,
+        totalCompUsd: 2600000,
+        baseSalaryPct: 50.0,
+        performanceBonusPct: 50.0,
         stockBasedCompPct: 0.0,
-        alignmentRating: 'GOOD',
-        summaryComment: 'HBM 이익 급증에 연동된 성과급 체계.'
+        otherCompPct: 0.0,
+        alignmentRating: 'CONCERNING',
+        summaryComment: '최태원 회장이 최근 자사주 매수를 통해 직접 지분(0.002%, 약 29억원)을 취득했으나, 연간 35억원대 보수와 지주사(SK스퀘어)로의 배당/로열티 이전 구조에 비해 일반 주주와의 완전한 경제적 이해 일치(Skin in the Game)에는 구조적 한계가 존재.'
       },
       capitalAllocation: {
-        shareBuybacksPct: 10.0,
-        dividendsPct: 40.0,
-        reinvestmentPct: 50.0,
+        shareBuybacksPct: 5.0,
+        dividendsPct: 15.0,
+        reinvestmentPct: 80.0,
         maAcquisitionPct: 0.0,
-        totalShareholderReturnPct: 50.0
+        totalShareholderReturnPct: 20.0
       },
       boardIndependencePct: 75.0
     },
 
     ruleEvaluations: [
-      { ruleId: 'roe_5yr', ruleName: '5개년 평균 ROE', passed: true, actualValue: '22.4%', targetValue: '>= 15.0%', unit: '%', comment: 'HBM 턴어라운드로 고ROE 달성' },
-      { ruleId: 'roic_5yr', ruleName: '5개년 평균 ROIC', passed: true, actualValue: '16.8%', targetValue: '>= 10.0%', unit: '%', comment: '높은 HBM 마진율로 ROIC 회복' },
-      { ruleId: 'eps_cagr_5yr', ruleName: '5개년 EPS 복리성장률', passed: true, actualValue: '28.5%', targetValue: '>= 10.0%', unit: '%', comment: 'AI 수요 폭증으로 고성장' },
-      { ruleId: 'one_dollar_test', ruleName: '1달러 유보이익 테스트', passed: true, actualValue: '$2.12', targetValue: '>= $1.00', unit: '$', comment: '유보이익 대비 주주가치 증가' },
-      { ruleId: 'debt_to_equity', ruleName: '부채비율 상한', passed: true, actualValue: '48.0%', targetValue: '<= 80.0%', unit: '%', comment: '재무구조 안정' },
-      { ruleId: 'share_dilution', ruleName: '주식 희석 방지', passed: false, actualValue: '+0.1%', targetValue: '<= 0.0%', unit: '%', comment: '주식수 소폭 증가' }
+      { ruleId: 'roe_5yr', ruleName: '5개년 평균 ROE', passed: false, actualValue: '10.8%', targetValue: '>= 15.0%', unit: '%', comment: '2023년 대규모 적자(-16%)로 인해 5년 평균 기준 미달' },
+      { ruleId: 'roic_5yr', ruleName: '5개년 평균 ROIC', passed: false, actualValue: '7.2%', targetValue: '>= 10.0%', unit: '%', comment: '막대한 CAPEX 투입 대비 평균 투하자본수익률 저조' },
+      { ruleId: 'eps_cagr_5yr', ruleName: '5개년 EPS 복리성장률', passed: false, actualValue: '4.8%', targetValue: '>= 10.0%', unit: '%', comment: '다운턴 사이클로 인한 이익 변동성 심화로 10% 미달' },
+      { ruleId: 'one_dollar_test', ruleName: '1달러 유보이익 테스트', passed: false, actualValue: '$0.88', targetValue: '>= $1.00', unit: '$', comment: '유보 1원당 0.88원 가치 창출로 주주가치 훼손 구간 존재' },
+      { ruleId: 'debt_to_equity', ruleName: '부채비율 상한', passed: true, actualValue: '48.0%', targetValue: '<= 80.0%', unit: '%', comment: '부채비율 48%로 재무 안전성 유지' },
+      { ruleId: 'share_dilution', ruleName: '주식 희석 방지', passed: false, actualValue: '+0.8%', targetValue: '<= 0.0%', unit: '%', comment: '신주 발행 등으로 주식수 연 0.8% 증가 (지분 희석)' }
     ]
   }
 ];

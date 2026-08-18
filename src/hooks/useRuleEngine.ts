@@ -5,7 +5,7 @@ import { Stock } from '../types/stock';
 
 export function useRuleEngine() {
   const [rules, setRules] = useState<FilterRuleDefinition[]>(DEFAULT_BUFFETT_RULES);
-  const [activePresetId, setActivePresetId] = useState<string>('buffett_master');
+  const [activePresetId, setActivePresetId] = useState<string>('buffett_rules');
 
   // 규칙 필터값 변경
   const updateRuleValue = useCallback((ruleId: string, newValue: number | boolean) => {
@@ -33,7 +33,7 @@ export function useRuleEngine() {
 
   // 모든 필터 기본값으로 리셋
   const resetRules = useCallback(() => {
-    applyPreset('buffett_master');
+    applyPreset('buffett_rules');
   }, [applyPreset]);
 
   // 새로운 커스텀 규칙 추가 (확장성 지원)

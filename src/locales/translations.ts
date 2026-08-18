@@ -28,7 +28,7 @@ export const translations = {
     marketSelector: '시장 선택',
 
     // Presets
-    buffettPerfection: '버핏 마스터',
+    buffettPerfection: '버핏 룰',
     zeroDebt: '무차입 철통 재무',
     garpStrategy: '피터 린치 성장주',
     dividendChampions: '주주환원 챔피언',
@@ -47,8 +47,22 @@ export const translations = {
     watch: '관찰',
     fail: '탈락',
 
+    // Stock Example Quick Buttons
+    goodStockExample: '좋은 주식의 예시(버크셔 해서웨이)',
+    badStockExample: '나쁜 주식의 예시(SK하이닉스)',
+    asOfDateLabel: '2026.08.18 기준 분석',
+
     // Analysis Page
     backToScreener: '스크리너로 돌아가기',
+    low52W: '52주 최저',
+    high52W: '52주 최고',
+    range52W: '52주 가격 범위',
+    priceTrend1Y: '1년 주가 추이',
+    priceTrend5Y: '5년 주가 추이',
+    return1Y: '1년 수익률',
+    return5Y: '5년 수익률',
+    period1Y: '1년',
+    period5Y: '5년',
     buffett6RuleDiagnosis: '워런 버핏 6대 원칙 정밀 진단',
     updatedToday: '오늘 기준 갱신',
     consistentEarnings: '지속적 이익 성장',
@@ -61,6 +75,8 @@ export const translations = {
     netCashPositive: '순현금 자산 우량',
     marginExpansion: '수익성 확장력',
     grossMarginsUp: '매출총이익률 우상향',
+    marginExpanding: '확장 및 개선',
+    marginFluctuation: '경기 민감 및 변동',
     oneDollarTest: '1달러 유보이익 테스트',
     valueCreated: '주주가치 창출 통과',
 
@@ -146,7 +162,7 @@ export const translations = {
     marketSelector: 'Market',
 
     // Presets
-    buffettPerfection: 'Buffett Perfection',
+    buffettPerfection: 'Buffett Rules',
     zeroDebt: 'Zero-Debt',
     garpStrategy: 'GARP Strategy',
     dividendChampions: 'Dividend Champions',
@@ -165,8 +181,22 @@ export const translations = {
     watch: 'Watch',
     fail: 'Fail',
 
+    // Stock Example Quick Buttons
+    goodStockExample: 'Good Stock: Berkshire Hathaway',
+    badStockExample: 'Bad Stock: SK Hynix',
+    asOfDateLabel: 'Analysis as of Aug 18, 2026',
+
     // Analysis Page
     backToScreener: 'Back to Screener',
+    low52W: '52W Low',
+    high52W: '52W High',
+    range52W: '52-Week Range',
+    priceTrend1Y: '1Y Price Trend',
+    priceTrend5Y: '5Y Price Trend',
+    return1Y: '1Y Return',
+    return5Y: '5Y Return',
+    period1Y: '1Y',
+    period5Y: '5Y',
     buffett6RuleDiagnosis: 'Buffett 6-Rule Diagnosis',
     updatedToday: 'Updated Today',
     consistentEarnings: 'Consistent Earnings',
@@ -179,6 +209,8 @@ export const translations = {
     netCashPositive: 'Net Cash Positive',
     marginExpansion: 'Margin Expansion',
     grossMarginsUp: 'Gross Margins ↑',
+    marginExpanding: 'Expanding',
+    marginFluctuation: 'Cyclical Fluctuation',
     oneDollarTest: 'One-Dollar Test',
     valueCreated: 'Value Created',
 

@@ -24,7 +24,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
   const [isMarketDropdownOpen, setIsMarketDropdownOpen] = useState(false);
   const marketDropdownRef = useRef<HTMLDivElement>(null);
 
-  const [activeTab, setActiveTab] = useState('buffett_perfection');
+  const [activeTab, setActiveTab] = useState('buffett_rules');
   const [showAll, setShowAll] = useState(false);
   const [drawerStockId, setDrawerStockId] = useState<string | null>(null);
 
@@ -50,22 +50,13 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
 
   // Strategy Presets with translations
   const presets = [
-    { id: 'buffett_perfection', label: t('buffettPerfection') },
-    { id: 'zero_debt', label: t('zeroDebt') },
-    { id: 'garp', label: t('garpStrategy') },
-    { id: 'dividend', label: t('dividendChampions') },
+    { id: 'buffett_rules', label: t('buffettPerfection') },
   ];
 
   const handleSelectPreset = (id: string) => {
     setActiveTab(id);
-    if (id === 'buffett_perfection') {
-      ruleEngine.applyPreset('buffett_master');
-    } else if (id === 'zero_debt') {
-      ruleEngine.applyPreset('zero_debt_fortress');
-    } else if (id === 'garp') {
-      ruleEngine.applyPreset('buffett_master');
-    } else if (id === 'dividend') {
-      ruleEngine.applyPreset('one_dollar_champion');
+    if (id === 'buffett_rules') {
+      ruleEngine.applyPreset('buffett_rules');
     }
   };
 
@@ -279,7 +270,12 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                           ? 'bg-[#FF9500] dark:bg-[#FF9F0A]'
                           : 'bg-[#FF3B30]'
                         }`} />
-                      <span className="text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">{stock.passCount}/{stock.totalRuleCount}</span>
+                      <span className={`tabular-nums ${stock.isMasterPass
+                        ? 'text-[#34C759]'
+                        : stock.passCount >= stock.totalRuleCount * 0.75
+                          ? 'text-[#FF9500] dark:text-[#FF9F0A]'
+                          : 'text-[#FF3B30]'
+                        }`}>{stock.passCount}/{stock.totalRuleCount}</span>
                     </span>
                   </div>
                   <div className="text-xs text-[#86868B] truncate mt-0.5 font-normal">
@@ -377,7 +373,12 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                             ? 'bg-[#FF9500] dark:bg-[#FF9F0A]'
                             : 'bg-[#FF3B30]'
                           }`} />
-                        <span className="font-mono font-bold text-xs text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
+                        <span className={`font-mono font-bold text-xs tabular-nums ${stock.isMasterPass
+                          ? 'text-[#34C759]'
+                          : stock.passCount >= stock.totalRuleCount * 0.75
+                            ? 'text-[#FF9500] dark:text-[#FF9F0A]'
+                            : 'text-[#FF3B30]'
+                          }`}>
                           {scorePassFraction}
                         </span>
                         <span className={`text-[11px] font-semibold ${stock.isMasterPass

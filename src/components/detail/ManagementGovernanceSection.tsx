@@ -101,10 +101,13 @@ export const ManagementGovernanceSection: React.FC<ManagementGovernanceSectionPr
 
             {/* Compensation Breakdown Bar */}
             <div>
-              <div className="flex justify-between text-[10px] text-[#86868B] mb-1.5 font-sans">
+              <div className="flex justify-between text-[10px] text-[#86868B] mb-1.5 font-sans flex-wrap gap-1">
                 <span>Base ({governance.compensation.baseSalaryPct}%)</span>
-                <span>Bonus ({governance.compensation.performanceBonusPct}%)</span>
-                <span className="font-semibold text-[#34C759]">Stock-based ({governance.compensation.stockBasedCompPct}%)</span>
+                {governance.compensation.performanceBonusPct > 0 && <span>Bonus ({governance.compensation.performanceBonusPct}%)</span>}
+                {governance.compensation.stockBasedCompPct > 0 && <span className="font-semibold text-[#34C759]">Stock-based ({governance.compensation.stockBasedCompPct}%)</span>}
+                {governance.compensation.otherCompPct !== undefined && governance.compensation.otherCompPct > 0 && (
+                  <span className="font-semibold text-[#FF9500]">Other/Security ({governance.compensation.otherCompPct}%)</span>
+                )}
               </div>
               <div className="w-full bg-[#E5E5EA] rounded-full h-2 flex overflow-hidden">
                 <div
@@ -112,16 +115,27 @@ export const ManagementGovernanceSection: React.FC<ManagementGovernanceSectionPr
                   style={{ width: `${governance.compensation.baseSalaryPct}%` }}
                   title="Base Salary"
                 />
-                <div
-                  className="bg-[#0071E3] h-full"
-                  style={{ width: `${governance.compensation.performanceBonusPct}%` }}
-                  title="Performance Bonus"
-                />
-                <div
-                  className="bg-[#34C759] h-full"
-                  style={{ width: `${governance.compensation.stockBasedCompPct}%` }}
-                  title="Long-term Equity Incentives"
-                />
+                {governance.compensation.performanceBonusPct > 0 && (
+                  <div
+                    className="bg-[#0071E3] h-full"
+                    style={{ width: `${governance.compensation.performanceBonusPct}%` }}
+                    title="Performance Bonus"
+                  />
+                )}
+                {governance.compensation.stockBasedCompPct > 0 && (
+                  <div
+                    className="bg-[#34C759] h-full"
+                    style={{ width: `${governance.compensation.stockBasedCompPct}%` }}
+                    title="Long-term Equity Incentives"
+                  />
+                )}
+                {governance.compensation.otherCompPct !== undefined && governance.compensation.otherCompPct > 0 && (
+                  <div
+                    className="bg-[#FF9500] h-full"
+                    style={{ width: `${governance.compensation.otherCompPct}%` }}
+                    title="Other / Security Expenses"
+                  />
+                )}
               </div>
             </div>
 

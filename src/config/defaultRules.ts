@@ -129,9 +129,9 @@ export const DEFAULT_BUFFETT_RULES: FilterRuleDefinition[] = [
 
 export const RULE_PRESETS: RulePreset[] = [
   {
-    id: 'buffett_master',
-    name: 'Buffett 6/6 Master',
-    badge: 'Buffett 6/6',
+    id: 'buffett_rules',
+    name: 'Buffett Rules',
+    badge: 'Buffett Rules',
     description: '버핏의 6대 핵심 원칙(ROE 15%, ROIC 10%, EPS CAGR 10%, 1달러 테스트 통과, 부채비율 80% 이하, 주식수 희석 방지)을 모두 만족하는 초우량 기업',
     filterValues: {
       roe_5yr: 15,
@@ -139,38 +139,6 @@ export const RULE_PRESETS: RulePreset[] = [
       eps_cagr_5yr: 10,
       one_dollar_test: true,
       debt_to_equity: 80,
-      share_dilution: true,
-      interest_coverage: 5.0,
-      benchmark_bps_outperformance: true,
-    }
-  },
-  {
-    id: 'zero_debt_fortress',
-    name: 'Fortress Balance Sheet',
-    badge: 'Zero-Debt',
-    description: '부채비율 40% 이하 및 이자보상배율 10배 이상으로 금융 위기에도 흔들리지 않는 절대적 안정성을 갖춘 기업',
-    filterValues: {
-      roe_5yr: 12,
-      roic_5yr: 10,
-      eps_cagr_5yr: 8,
-      one_dollar_test: true,
-      debt_to_equity: 40,
-      share_dilution: true,
-      interest_coverage: 10.0,
-      benchmark_bps_outperformance: false,
-    }
-  },
-  {
-    id: 'one_dollar_champion',
-    name: 'High Capital Efficiency',
-    badge: '$1 Test Hero',
-    description: '유보이익 1달러당 2달러 이상의 시가총액을 창출하고 적극적인 자사주 매입/소각으로 주주가치를 극대화하는 자본배치 명인 기업',
-    filterValues: {
-      roe_5yr: 20,
-      roic_5yr: 15,
-      eps_cagr_5yr: 12,
-      one_dollar_test: true,
-      debt_to_equity: 100,
       share_dilution: true,
       interest_coverage: 5.0,
       benchmark_bps_outperformance: true,

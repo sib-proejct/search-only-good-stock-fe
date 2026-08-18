@@ -13,6 +13,8 @@ export interface LeadershipMember {
   baseSalaryPct?: number;      // 기본급 비중 (%)
   performanceBonusPct?: number;// 단기 성과급 비중 (%)
   stockBasedCompPct?: number;  // 장기 주식보상/스톡옵션 비중 (%)
+  otherCompPct?: number;       // 기타 비용(보안 비용/복리후생 등) 비중 (%)
+  otherCompDescription?: string; // 기타 비용 세부 내역 (예: '개인·주택 보안 비용 $289,488')
 }
 
 export interface ExecutiveCompensation {
@@ -21,6 +23,8 @@ export interface ExecutiveCompensation {
   baseSalaryPct: number;     // 기본급 비중 (%)
   performanceBonusPct: number; // 단기 성과급 비중 (%)
   stockBasedCompPct: number; // 장기 주식보상/스톡옵션 비중 (%)
+  otherCompPct?: number;     // 기타 비용(보안 비용 등) 비중 (%)
+  otherCompDescription?: string; // 기타 비용 세부 내역
   alignmentRating: 'EXCELLENT' | 'GOOD' | 'CONCERNING'; // 주주수익률 연동 평가
   summaryComment: string;    // 평가 요약 코멘트
 }
@@ -93,7 +97,11 @@ export interface Stock {
   shareCountCagr5Yr: number;          // 5개년 발행주식수 CAGR (%) (마이너스면 자사주 소각)
   benchmarkBpsCagr5Yr: number;        // 벤치마크(S&P500/KOSPI) BPS CAGR (%)
 
-  // 시계열 재무 추세 데이터
+  // 시계열 재무 및 주가 추세 데이터
+  high52W: number;                    // 52주 최고가
+  low52W: number;                     // 52주 최저가
+  priceChange1YrPct?: number;         // 1개년 주가 변동률 (%)
+  sparkline1Yr: number[];             // 1개년 주가 추세 스파크라인 포인트
   sparkline5Yr: number[];             // 5개년 주가 추세 스파크라인 포인트
   yearlyFinancials: YearlyFinancialMetric[]; // 연도별 세부 재무제표
 
