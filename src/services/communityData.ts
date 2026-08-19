@@ -26,7 +26,6 @@ export const INITIAL_DISCUSSIONS: DiscussionPost[] = [
     userVote: null,
     commentsCount: 28,
     viewsCount: 4890,
-    tags: ['삼성전자', '삼전8만층', '구조대', '국장탈출'],
     comments: [
       {
         id: 'c1',
@@ -73,7 +72,6 @@ export const INITIAL_DISCUSSIONS: DiscussionPost[] = [
     userVote: null,
     commentsCount: 15,
     viewsCount: 2310,
-    tags: ['나스닥', '엔비디아', '테슬라', '야수개미'],
     comments: [
       {
         id: 'c3',
@@ -109,7 +107,6 @@ export const INITIAL_DISCUSSIONS: DiscussionPost[] = [
     userVote: null,
     commentsCount: 11,
     viewsCount: 5820,
-    tags: ['국장탈출', '미장이민', '애플', '주주환원'],
   },
   {
     id: 'post-4',
@@ -133,7 +130,6 @@ export const INITIAL_DISCUSSIONS: DiscussionPost[] = [
     userVote: null,
     commentsCount: 22,
     viewsCount: 3100,
-    tags: ['SK하이닉스', 'HBM', '반도체', '숏청산'],
   },
   {
     id: 'post-5',
@@ -158,7 +154,6 @@ export const INITIAL_DISCUSSIONS: DiscussionPost[] = [
     userVote: null,
     commentsCount: 9,
     viewsCount: 1420,
-    tags: ['배당주', '코카콜라', 'SCHD', '배당착시'],
   },
 ];
 

@@ -74,6 +74,111 @@
   background: rgba(255, 255, 255, 0.35);
 }
 
+/* Community Feed Native CSS Container Queries (Zero JS overhead, 60fps butter smooth) */
+.cq-feed-container {
+  container-type: inline-size;
+}
+
+@container (min-width: 850px) {
+  .cq-tier-3 {
+    display: flex !important;
+  }
+}
+
+@container (max-width: 849px) {
+  .cq-tier-3 {
+    display: none !important;
+  }
+}
+
+@container (min-width: 720px) {
+  .cq-tier-2 {
+    display: flex !important;
+  }
+}
+
+@container (max-width: 719px) {
+  .cq-tier-2 {
+    display: none !important;
+  }
+}
+
+@container (min-width: 480px) {
+  .cq-tier-1 {
+    display: flex !important;
+  }
+}
+
+@container (max-width: 479px) {
+  .cq-tier-1 {
+    display: none !important;
+  }
+}
+
+/* Top Controls Bar Responsive Container Rules */
+.cq-controls-wrapper {
+  container-type: inline-size;
+  width: 100%;
+}
+
+.cq-top-controls {
+  display: flex !important;
+  width: 100%;
+}
+
+/* Default / Wide (>= 500px): 1 line on desktop */
+@container (min-width: 500px) {
+  .cq-controls-wrapper .cq-top-controls {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .cq-controls-wrapper .cq-top-controls>div:first-child {
+    width: auto !important;
+  }
+
+  .cq-controls-wrapper .cq-top-right-group {
+    width: auto !important;
+  }
+}
+
+/* Narrow (< 500px): 2 lines (Desktop panel wide drag & Mobile) */
+@container (max-width: 499px) {
+  .cq-controls-wrapper .cq-top-controls {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.625rem !important;
+  }
+
+  .cq-controls-wrapper .cq-top-controls>div:first-child {
+    width: 100% !important;
+  }
+
+  .cq-controls-wrapper .cq-top-right-group {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+}
+
+/* Mobile View Fallback (< 640px viewport): Always 2 lines */
+@media (max-width: 639px) {
+  .cq-top-controls {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.625rem !important;
+  }
+
+  .cq-top-controls>div:first-child {
+    width: 100% !important;
+  }
+
+  .cq-top-right-group {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+}
+
 /* Apple Bento Card & Surface Utilities */
 .apple-card {
   background-color: #FFFFFF;
@@ -122,6 +227,7 @@
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;

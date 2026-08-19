@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MessageSquare, Clock, Calendar,
   ThumbsUp, ThumbsDown, MessageCircle, Share2, Bookmark,
   Plus, Search, CheckCircle2,
-  ArrowRight, X, Send
+  ArrowRight, X, Send, LayoutList, PanelRight,
+  Bold, List, ListOrdered, Heading, Quote, Code, Sparkles, FileText
 } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import {
@@ -16,6 +17,8 @@ import {
   INITIAL_DISCUSSIONS,
   TRENDING_TICKERS
 } from '../services/communityData';
+import { CommunityDetailDrawer } from '../components/community/CommunityDetailDrawer';
+import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
 
 interface CommunityPageProps {
   onSelectStock?: (ticker: string) => void;
@@ -49,6 +52,36 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
   const [newCommentText, setNewCommentText] = useState<{ [postId: string]: string }>({});
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
 
+  // View Mode State: 'list' (Inline list expansion) or 'panel' (Right side slide drawer)
+  const [viewMode, setViewMode] = useState<'list' | 'panel'>(() => {
+    try {
+      const saved = localStorage.getItem('community_view_mode');
+      if (saved === 'list' || saved === 'panel') return saved;
+    } catch {
+      // ignore
+    }
+    return 'list';
+  });
+
+  const [selectedPanelPostId, setSelectedPanelPostId] = useState<string | null>(null);
+  const [drawerWidth, setDrawerWidth] = useState<number>(780);
+  const [isDrawerResizing, setIsDrawerResizing] = useState<boolean>(false);
+  const [windowWidth, setWindowWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('community_view_mode', viewMode);
+    } catch {
+      // ignore
+    }
+  }, [viewMode]);
+
   const toggleCommentsFold = (postId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setCollapsedCommentPostIds((prev) => {
@@ -68,7 +101,6 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
   const [modalCategory, setModalCategory] = useState<DiscussionCategory>('buffett');
   const [modalTicker, setModalTicker] = useState('');
   const [modalContent, setModalContent] = useState('');
-  const [modalTags, setModalTags] = useState('');
 
   // Toast State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -174,11 +206,6 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
       return;
     }
 
-    const tagsArray = modalTags
-      .split(',')
-      .map((t) => t.trim().replace(/^#/, ''))
-      .filter(Boolean);
-
     const now = new Date();
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
@@ -201,7 +228,6 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
       userVote: 'up',
       commentsCount: 0,
       viewsCount: 1,
-      tags: tagsArray.length > 0 ? tagsArray : ['가치투자'],
       comments: [],
     };
 
@@ -210,8 +236,38 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
     setModalTitle('');
     setModalContent('');
     setModalTicker('');
-    setModalTags('');
     showToast('새 토론 글이 게시되었습니다!');
+  };
+
+  const insertMarkdownSymbol = (prefix: string, suffix: string = '') => {
+    const textarea = document.getElementById('community-write-textarea') as HTMLTextAreaElement | null;
+    if (!textarea) {
+      setModalContent((prev) => prev + `${prefix}텍스트${suffix}`);
+      return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = modalContent.substring(start, end) || '텍스트';
+    const replacement = `${prefix}${selectedText}${suffix}`;
+
+    const newContent = modalContent.substring(0, start) + replacement + modalContent.substring(end);
+    setModalContent(newContent);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + prefix.length, start + prefix.length + selectedText.length);
+    }, 0);
+  };
+
+  const applyTemplate = (type: 'buffett' | 'discussion') => {
+    let templateText = '';
+    if (type === 'buffett') {
+      templateText = `1. **핵심 투자 아이디어**: \n2. **버핏 점수 / 경쟁 우위(Moat)**: \n3. **목표가 및 리스크 요소**: `;
+    } else {
+      templateText = `1. **내 평단**: \n2. **현재 상태**: \n3. **질문 / 의견**: `;
+    }
+    setModalContent((prev) => (prev.trim() ? prev + '\n\n' + templateText : templateText));
   };
 
   // Filter & Sort logic
@@ -225,8 +281,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
         const matchesTitle = post.title.toLowerCase().includes(query);
         const matchesContent = post.content.toLowerCase().includes(query);
         const matchesTicker = post.ticker?.toLowerCase().includes(query);
-        const matchesTag = post.tags.some((tag) => tag.toLowerCase().includes(query));
-        if (!matchesTitle && !matchesContent && !matchesTicker && !matchesTag) {
+        if (!matchesTitle && !matchesContent && !matchesTicker) {
           return false;
         }
       }
@@ -253,8 +308,17 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
       return 0;
     });
 
+  const isDesktop = windowWidth >= 640;
+  const isPanelOpenOnDesktop = isDesktop && viewMode === 'panel' && Boolean(selectedPanelPostId);
+
   return (
-    <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-6 space-y-6 animate-fade-in font-sans">
+    <div
+      style={{
+        paddingRight: isPanelOpenOnDesktop ? `${drawerWidth}px` : 0,
+        transition: isDrawerResizing ? 'none' : 'padding-right 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+      }}
+      className="max-w-[1280px] mx-auto px-4 sm:px-8 py-6 space-y-6 animate-fade-in font-sans"
+    >
 
       {/* Toast Feedback Notification */}
       {toastMessage && (
@@ -264,65 +328,95 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
         </div>
       )}
 
-      {/* Search & Sort Controls Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-[#1C1C1E] p-2 rounded-xl border border-black/[0.06] dark:border-white/[0.08] shadow-sm">
-        {/* Sort Tabs */}
-        <div className="flex items-center gap-1 w-full sm:w-auto overflow-x-auto no-scrollbar">
-          {(
-            [
-              { id: 'latest', label: t('sortLatest'), icon: Clock },
-              { id: 'top', label: t('sortTop'), icon: ThumbsUp },
-              { id: 'daily', label: 'Daily', icon: Calendar },
-              { id: 'weekly', label: 'Weekly', icon: Calendar },
-              { id: 'monthly', label: 'Monthly', icon: Calendar },
-            ] as const
-          ).map((s) => {
-            const Icon = s.icon;
-            const isActive = activeSort === s.id;
-            return (
-              <button
-                key={s.id}
-                onClick={() => setActiveSort(s.id)}
-                className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${isActive
-                  ? 'bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-xs'
-                  : 'text-[#86868B] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
-                  }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{s.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Search & New Discussion CTA */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('communitySearchPlaceholder')}
-              className="w-full bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] text-xs pl-8 pr-3 py-1.5 rounded-lg border border-black/[0.04] dark:border-white/[0.08] focus:outline-none focus:border-[#0071E3] dark:focus:border-[#2997FF] placeholder-[#86868B]"
-            />
-            <Search className="w-3.5 h-3.5 text-[#86868B] absolute left-2.5 top-1/2 -translate-y-1/2" />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+      {/* Search & Sort Controls Bar (Responsive Container Query < 500px & Mobile 2-Row) */}
+      <div className="cq-controls-wrapper w-full">
+        <div className="cq-top-controls flex items-center justify-between gap-2.5 bg-white dark:bg-[#1C1C1E] p-2.5 sm:p-2 rounded-2xl sm:rounded-xl border border-black/[0.06] dark:border-white/[0.08] shadow-sm overflow-hidden">
+          {/* Sort Tabs (Horizontal Scroll Shelf) */}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0 py-0.5">
+            {(
+              [
+                { id: 'latest', label: t('sortLatest'), icon: Clock },
+                { id: 'top', label: t('sortTop'), icon: ThumbsUp },
+                { id: 'daily', label: 'Daily', icon: Calendar },
+                { id: 'weekly', label: 'Weekly', icon: Calendar },
+                { id: 'monthly', label: 'Monthly', icon: Calendar },
+              ] as const
+            ).map((s) => {
+              const Icon = s.icon;
+              const isActive = activeSort === s.id;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setActiveSort(s.id)}
+                  className={`shrink-0 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${isActive
+                    ? 'bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-xs font-bold'
+                    : 'text-[#86868B] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
+                    }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{s.label}</span>
+                </button>
+              );
+            })}
           </div>
 
-          <button
-            onClick={() => setIsWriteModalOpen(true)}
-            className="px-3.5 py-1.5 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#0071E3] dark:hover:bg-[#2997FF] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>{t('newDiscussion')}</span>
-          </button>
+          {/* Search & New Discussion CTA Group */}
+          <div className="cq-top-right-group flex items-center gap-2 shrink-0 justify-between sm:justify-end">
+            {/* Single Unified View Mode Toggle Button */}
+            <button
+              onClick={() => {
+                if (viewMode === 'list') {
+                  setViewMode('panel');
+                } else {
+                  setViewMode('list');
+                  setSelectedPanelPostId(null);
+                }
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/5 dark:hover:bg-white/10 border border-black/[0.04] dark:border-white/[0.08] text-xs font-semibold transition-all cursor-pointer shrink-0"
+              title={viewMode === 'list' ? `${t('rightPanelView')}로 전환` : `${t('listView')}로 전환`}
+            >
+              {viewMode === 'list' ? (
+                <>
+                  <LayoutList className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />
+                  <span className="hidden min-[360px]:inline text-[11px] sm:text-xs">{t('listView')}</span>
+                </>
+              ) : (
+                <>
+                  <PanelRight className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />
+                  <span className="hidden min-[360px]:inline sm:hidden text-[11px]">{t('panelView')}</span>
+                  <span className="hidden sm:inline text-xs">{t('rightPanelView')}</span>
+                </>
+              )}
+            </button>
+
+            {/* Compact Fluid Search Bar */}
+            <div className="relative flex-1 min-w-[90px] max-w-full sm:max-w-[240px]">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('communitySearchPlaceholder')}
+                className="w-full bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] text-xs pl-8 pr-3 py-1.5 rounded-lg border border-black/[0.04] dark:border-white/[0.08] focus:outline-none focus:border-[#0071E3] dark:focus:border-[#2997FF] placeholder-[#86868B]"
+              />
+              <Search className="w-3.5 h-3.5 text-[#86868B] absolute left-2.5 top-1/2 -translate-y-1/2" />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <button
+              onClick={() => setIsWriteModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#0071E3] dark:hover:bg-[#2997FF] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{t('newDiscussion')}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -346,7 +440,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
             </button>
           </div>
         ) : (
-          <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl border border-black/[0.06] dark:border-white/[0.08] shadow-sm divide-y divide-black/[0.06] dark:divide-white/[0.08] overflow-hidden">
+          <div className="cq-feed-container bg-white dark:bg-[#1C1C1E] rounded-2xl border border-black/[0.06] dark:border-white/[0.08] shadow-sm divide-y divide-black/[0.06] dark:divide-white/[0.08] overflow-hidden">
             {filteredDiscussions.map((post) => {
               const isExpanded = expandedPostId === post.id;
               const isBookmarked = bookmarkedIds.has(post.id);
@@ -369,13 +463,29 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                 }
               };
 
+              const isPanelSelected = viewMode === 'panel' && selectedPanelPostId === post.id;
+
+              const handlePostItemClick = () => {
+                if (viewMode === 'panel') {
+                  setSelectedPanelPostId(post.id);
+                } else {
+                  setExpandedPostId(isExpanded ? null : post.id);
+                }
+              };
+
               return (
                 <div
                   key={post.id}
-                  className="p-3 sm:px-4 sm:py-3.5 hover:bg-[#F5F5F7]/60 dark:hover:bg-[#2C2C2E]/40 transition-colors"
+                  className={`p-3 sm:px-4 sm:py-3.5 hover:bg-[#F5F5F7]/60 dark:hover:bg-[#2C2C2E]/40 transition-all ${isPanelSelected
+                    ? 'bg-[#0071E3]/5 dark:bg-[#2997FF]/10 border-l-4 border-[#0071E3] dark:border-[#2997FF]'
+                    : ''
+                    }`}
                 >
-                  {/* Single Horizontal Row */}
-                  <div className="flex items-center justify-between gap-3 text-xs sm:text-sm">
+                  {/* Single Horizontal Row (Header: Title, Category, Action buttons) */}
+                  <div
+                    onClick={handlePostItemClick}
+                    className="flex items-center justify-between gap-3 text-xs sm:text-sm cursor-pointer select-none"
+                  >
                     {/* Left: 말머리 & 게시글 제목 */}
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       {/* 말머리 고정 컬럼 (뱃지 자체는 안 늘어나고 제목 시작위치만 정렬) */}
@@ -387,28 +497,32 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
 
                       {/* 게시글 제목 */}
                       <h2
-                        onClick={() => setExpandedPostId(isExpanded ? null : post.id)}
-                        className="font-medium text-xs sm:text-sm text-[#1D1D1F] dark:text-[#F5F5F7] hover:text-[#0071E3] dark:hover:text-[#2997FF] transition-colors cursor-pointer truncate min-w-0 flex-1"
+                        className={`font-medium text-xs sm:text-sm transition-colors truncate min-w-0 flex-1 ${isPanelSelected
+                          ? 'text-[#0071E3] dark:text-[#2997FF] font-bold'
+                          : 'text-[#1D1D1F] dark:text-[#F5F5F7] hover:text-[#0071E3] dark:hover:text-[#2997FF]'
+                          }`}
                         title={post.title}
                       >
                         {post.title}
                       </h2>
                     </div>
 
-                    {/* Right: 작성자 이름, 추천, 비추천, 댓글, 북마크, 링크 공유, 작성 시각(맨 끝) */}
-                    <div className="flex items-center gap-2 sm:gap-3 shrink-0 text-xs text-[#86868B] dark:text-[#86868B]">
-                      {/* 작성자 이름 고정 컬럼 (오른쪽 정렬) */}
-                      <div className="w-20 sm:w-28 text-right shrink-0">
-                        <span className="font-semibold text-xs text-[#1D1D1F] dark:text-[#F5F5F7] truncate block">
+                    {/* Right: 작성자 이름, 추천, 비추천, 댓글, 북마크, 링크 공유, 작성 시각 (순수 CSS Container Query 60fps) */}
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0 text-xs text-[#86868B] dark:text-[#86868B] whitespace-nowrap">
+                      {/* Tier 2: 작성자 이름 및 추천/비추천 (컨테이너 너비 >= 720px) */}
+                      <div className="cq-tier-2 items-center gap-2 sm:gap-2.5 shrink-0">
+                        {/* 작성자 이름 */}
+                        <span className="font-semibold text-xs text-[#1D1D1F] dark:text-[#F5F5F7] truncate max-w-[80px] sm:max-w-[100px]">
                           {post.author.name}
                         </span>
-                      </div>
 
-                      {/* 추천 / 비추천 컬럼 */}
-                      <div className="w-12 sm:w-20 shrink-0 flex justify-center">
+                        {/* 추천 / 비추천 */}
                         <div className="flex items-center bg-[#F5F5F7] dark:bg-[#2C2C2E] rounded-lg p-0.5 border border-black/[0.04] dark:border-white/[0.08]">
                           <button
-                            onClick={() => handleVote(post.id, 'up')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleVote(post.id, 'up');
+                            }}
                             className={`flex items-center gap-1 px-1.5 py-0.5 rounded transition-all cursor-pointer ${post.userVote === 'up'
                               ? 'bg-[#34C759]/15 dark:bg-[#34C759]/25 text-[#34C759] dark:text-[#30D158] font-bold'
                               : 'hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
@@ -420,7 +534,10 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                           </button>
                           <div className="w-px h-3 bg-black/[0.06] dark:bg-white/[0.1] hidden sm:block" />
                           <button
-                            onClick={() => handleVote(post.id, 'down')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleVote(post.id, 'down');
+                            }}
                             className={`hidden sm:flex items-center gap-1 px-1.5 py-0.5 rounded transition-all cursor-pointer ${post.userVote === 'down'
                               ? 'bg-[#FF3B30]/15 dark:bg-[#FF3B30]/25 text-[#FF3B30] dark:text-[#FF453A] font-bold'
                               : 'hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
@@ -432,35 +549,22 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                         </div>
                       </div>
 
-                      {/* 댓글 컬럼 */}
-                      <div className="w-10 sm:w-12 shrink-0 flex justify-center">
+                      {/* Tier 3: 북마크 및 공유 (컨테이너 너비 >= 850px) */}
+                      <div className="cq-tier-3 items-center gap-1 shrink-0">
                         <button
-                          onClick={() => setExpandedPostId(isExpanded ? null : post.id)}
-                          className={`flex items-center gap-1 hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors cursor-pointer ${isExpanded ? 'text-[#0071E3] dark:text-[#2997FF] font-bold' : ''
-                            }`}
-                          title="댓글 및 상세 보기"
-                        >
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          <span className="tabular-nums text-[11px]">{post.commentsCount}</span>
-                        </button>
-                      </div>
-
-                      {/* 북마크 컬럼 (모바일 숨김) */}
-                      <div className="w-6 shrink-0 hidden sm:flex justify-center">
-                        <button
-                          onClick={() => handleToggleBookmark(post.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleBookmark(post.id);
+                          }}
                           className={`p-1 rounded transition-colors cursor-pointer ${isBookmarked ? 'text-[#F59E0B]' : 'hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                             }`}
                           title="북마크"
                         >
                           <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-current' : ''}`} />
                         </button>
-                      </div>
-
-                      {/* 링크 공유 컬럼 (모바일 숨김) */}
-                      <div className="w-6 shrink-0 hidden sm:flex justify-center">
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             navigator.clipboard?.writeText(window.location.href);
                             showToast('토론 링크가 복사되었습니다.');
                           }}
@@ -471,8 +575,23 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                         </button>
                       </div>
 
-                      {/* 작성 시각 컬럼 (맨 끝 위치) */}
-                      <div className="w-12 sm:w-14 text-right shrink-0">
+                      {/* Tier 1: 댓글 수 및 작성 시각 (컨테이너 너비 >= 480px) */}
+                      <div className="cq-tier-1 items-center gap-2 sm:gap-2.5 shrink-0">
+                        {/* 댓글 수 */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePostItemClick();
+                          }}
+                          className={`flex items-center gap-1 hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors cursor-pointer ${(viewMode === 'list' && isExpanded) || isPanelSelected ? 'text-[#0071E3] dark:text-[#2997FF] font-bold' : ''
+                            }`}
+                          title="댓글 및 상세 보기"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span className="tabular-nums text-[11px]">{post.commentsCount}</span>
+                        </button>
+
+                        {/* 작성 시각 */}
                         <span className="text-[11px] text-[#86868B] dark:text-[#86868B] whitespace-nowrap">
                           {post.createdAt}
                         </span>
@@ -480,9 +599,12 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                     </div>
                   </div>
 
-                  {/* Expanded Content View (Post Content + Tags + Comments) */}
-                  {isExpanded && (
-                    <div className="mt-3 pt-3.5 border-t border-black/[0.04] dark:border-white/[0.06] space-y-4 animate-fade-in text-xs sm:text-sm">
+                  {/* Expanded Content View (List view mode only) */}
+                  {viewMode === 'list' && isExpanded && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-3 pt-3.5 border-t border-black/[0.04] dark:border-white/[0.06] space-y-4 animate-fade-in text-xs sm:text-sm cursor-default"
+                    >
                       {/* Readable Inline Stock Metrics (Name, Ticker, Price, Change Rate, Buffett Score) */}
                       {post.ticker && (() => {
                         const stock = getStockInfo(post.ticker);
@@ -501,11 +623,10 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
 
                             {/* Change Rate Pill */}
                             <span
-                              className={`font-semibold tabular-nums text-[11px] px-1.5 py-0.5 rounded ${
-                                isUp
-                                  ? 'bg-[#34C759]/15 text-[#34C759] dark:text-[#30D158]'
-                                  : 'bg-[#FF3B30]/15 text-[#FF3B30] dark:text-[#FF453A]'
-                              }`}
+                              className={`font-semibold tabular-nums text-[11px] px-1.5 py-0.5 rounded ${isUp
+                                ? 'bg-[#34C759]/15 text-[#34C759] dark:text-[#30D158]'
+                                : 'bg-[#FF3B30]/15 text-[#FF3B30] dark:text-[#FF453A]'
+                                }`}
                             >
                               {stock.change}
                             </span>
@@ -531,24 +652,35 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                       })()}
 
                       {/* Post Content */}
-                      <div className="text-[#424245] dark:text-[#D1D1D6] leading-relaxed whitespace-pre-line font-normal">
-                        {post.content}
-                      </div>
+                      <MarkdownRenderer content={post.content} />
 
-                      {/* Tags */}
-                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                        {post.tags.map((tag, idx) => (
+                      {/* Centered Upvote & Downvote Button Bar (Same as Panel Area) */}
+                      <div className="flex justify-center pt-2 pb-0.5">
+                        <div className="flex items-center bg-[#F5F5F7] dark:bg-[#2C2C2E] rounded-xl p-0.5 border border-black/[0.04] dark:border-white/[0.08]">
                           <button
-                            key={idx}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSearchQuery(tag);
-                            }}
-                            className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#6E6E73] dark:text-[#A1A1A6] hover:text-[#0071E3] dark:hover:text-[#2997FF] transition-colors cursor-pointer"
+                            onClick={() => handleVote(post.id, 'up')}
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] transition-all cursor-pointer ${post.userVote === 'up'
+                              ? 'bg-[#34C759]/15 dark:bg-[#34C759]/25 text-[#34C759] dark:text-[#30D158] font-bold'
+                              : 'hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] text-[#86868B]'
+                              }`}
+                            title="추천"
                           >
-                            #{tag}
+                            <ThumbsUp className="w-3 h-3" />
+                            <span className="tabular-nums font-semibold">{post.upvotes}</span>
                           </button>
-                        ))}
+                          <div className="w-px h-3 bg-black/[0.06] dark:bg-white/[0.1] mx-0.5" />
+                          <button
+                            onClick={() => handleVote(post.id, 'down')}
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] transition-all cursor-pointer ${post.userVote === 'down'
+                              ? 'bg-[#FF3B30]/15 dark:bg-[#FF3B30]/25 text-[#FF3B30] dark:text-[#FF453A] font-bold'
+                              : 'hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] text-[#86868B]'
+                              }`}
+                            title="비추천"
+                          >
+                            <ThumbsDown className="w-3 h-3" />
+                            <span className="tabular-nums font-semibold">{post.downvotes}</span>
+                          </button>
+                        </div>
                       </div>
 
                       {/* Embedded Comments Section (With Fold / Unfold Toggle) */}
@@ -567,25 +699,32 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                         {!isCommentsFolded && (
                           <>
                             {post.comments && post.comments.length > 0 ? (
-                              <div className="space-y-2">
+                              <div className="divide-y divide-black/[0.06] dark:divide-white/[0.08] border-y border-black/[0.06] dark:border-white/[0.08] my-2">
                                 {post.comments.map((comment) => (
                                   <div
                                     key={comment.id}
-                                    className="bg-[#F5F5F7] dark:bg-[#2C2C2E]/60 rounded-xl p-3 text-xs space-y-1.5 border border-black/[0.02] dark:border-white/[0.04]"
+                                    className="py-2.5 px-1 text-xs"
                                   >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="font-bold text-[#1D1D1F] dark:text-[#F5F5F7]">
+                                    <div className="flex items-start gap-2.5 sm:gap-3 text-xs">
+                                      {/* 작성자 고정 컬럼 (수직 줄맞춤) */}
+                                      <div className="w-24 sm:w-28 shrink-0 pt-0.5">
+                                        <span className="font-bold text-[#1D1D1F] dark:text-[#F5F5F7] truncate block" title={comment.author.name}>
                                           {comment.author.name}
                                         </span>
                                       </div>
-                                      <span className="text-[10px] text-[#86868B] dark:text-[#86868B]">
-                                        {comment.createdAt}
-                                      </span>
+
+                                      {/* 댓글 본문 (진하고 선명한 텍스트 색상) */}
+                                      <div className="min-w-0 flex-1 leading-relaxed text-[#1D1D1F] dark:text-[#F5F5F7] break-words font-medium pt-0.5">
+                                        {comment.content}
+                                      </div>
+
+                                      {/* 작성 시각 */}
+                                      <div className="w-12 sm:w-14 text-right shrink-0 pt-0.5">
+                                        <span className="text-[11px] text-[#6E6E73] dark:text-[#86868B] whitespace-nowrap">
+                                          {comment.createdAt}
+                                        </span>
+                                      </div>
                                     </div>
-                                    <p className="text-[#424245] dark:text-[#D1D1D6] leading-relaxed">
-                                      {comment.content}
-                                    </p>
                                   </div>
                                 ))}
                               </div>
@@ -699,30 +838,113 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
               </div>
 
               <div>
-                <label className="block font-bold text-[#1D1D1F] dark:text-[#F5F5F7] mb-1">
-                  분석 본문
-                </label>
-                <textarea
-                  required
-                  rows={6}
-                  value={modalContent}
-                  onChange={(e) => setModalContent(e.target.value)}
-                  placeholder={t('contentPlaceholder')}
-                  className="w-full bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] p-3 rounded-xl border border-black/[0.06] dark:border-white/[0.1] focus:outline-none focus:border-[#0071E3] dark:focus:border-[#2997FF] resize-none leading-relaxed placeholder-[#86868B]"
-                />
-              </div>
+                <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
+                  <label className="block font-bold text-[#1D1D1F] dark:text-[#F5F5F7] text-xs sm:text-sm">
+                    분석 본문
+                  </label>
 
-              <div>
-                <label className="block font-bold text-[#1D1D1F] dark:text-[#F5F5F7] mb-1">
-                  {t('tagsLabel')}
-                </label>
-                <input
-                  type="text"
-                  value={modalTags}
-                  onChange={(e) => setModalTags(e.target.value)}
-                  placeholder="예: 워런버핏, 1달러테스트, FCF"
-                  className="w-full bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] p-2.5 rounded-xl border border-black/[0.06] dark:border-white/[0.1] focus:outline-none focus:border-[#0071E3] dark:focus:border-[#2997FF] placeholder-[#86868B]"
-                />
+                  {/* Quick Formatting Toolbar & Preset Guides */}
+                  <div className="flex items-center gap-1 flex-wrap text-xs">
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdownSymbol('**', '**')}
+                      className="p-1.5 rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/10 dark:hover:bg-white/15 border border-black/[0.06] dark:border-white/[0.1] transition-colors cursor-pointer"
+                      title="굵게 (**텍스트**)"
+                    >
+                      <Bold className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdownSymbol('### ')}
+                      className="p-1.5 rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/10 dark:hover:bg-white/15 border border-black/[0.06] dark:border-white/[0.1] transition-colors cursor-pointer"
+                      title="제목 (### 제목)"
+                    >
+                      <Heading className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdownSymbol('- ')}
+                      className="p-1.5 rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/10 dark:hover:bg-white/15 border border-black/[0.06] dark:border-white/[0.1] transition-colors cursor-pointer"
+                      title="불릿 리스트 (- 항목)"
+                    >
+                      <List className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdownSymbol('1. ')}
+                      className="p-1.5 rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/10 dark:hover:bg-white/15 border border-black/[0.06] dark:border-white/[0.1] transition-colors cursor-pointer"
+                      title="번호 리스트 (1. 항목)"
+                    >
+                      <ListOrdered className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdownSymbol('> ')}
+                      className="p-1.5 rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/10 dark:hover:bg-white/15 border border-black/[0.06] dark:border-white/[0.1] transition-colors cursor-pointer"
+                      title="인용구 (> 내용)"
+                    >
+                      <Quote className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdownSymbol('`', '`')}
+                      className="p-1.5 rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/10 dark:hover:bg-white/15 border border-black/[0.06] dark:border-white/[0.1] transition-colors cursor-pointer"
+                      title="코드 (`코드`)"
+                    >
+                      <Code className="w-3.5 h-3.5" />
+                    </button>
+
+                    <div className="w-px h-4 bg-black/10 dark:bg-white/15 mx-0.5" />
+
+                    {/* Template Guides */}
+                    <button
+                      type="button"
+                      onClick={() => applyTemplate('buffett')}
+                      className="px-2 py-1 rounded-lg bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF] hover:bg-[#0071E3]/20 border border-[#0071E3]/20 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                      title="버핏 가치분석 양식 불러오기"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>버핏 양식</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyTemplate('discussion')}
+                      className="px-2 py-1 rounded-lg bg-black/[0.05] dark:bg-white/[0.08] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/[0.1] dark:hover:bg-white/[0.15] border border-black/[0.06] dark:border-white/[0.1] text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                      title="토론/질문 양식 불러오기"
+                    >
+                      <FileText className="w-3 h-3" />
+                      <span>토론 양식</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Always Side-by-side Split View Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <textarea
+                      id="community-write-textarea"
+                      required
+                      rows={7}
+                      value={modalContent}
+                      onChange={(e) => setModalContent(e.target.value)}
+                      placeholder={t('contentPlaceholder')}
+                      className="w-full h-full min-h-[170px] bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] p-3 rounded-xl border border-black/[0.06] dark:border-white/[0.1] focus:outline-none focus:border-[#0071E3] dark:focus:border-[#2997FF] resize-none leading-relaxed placeholder-[#86868B] text-xs sm:text-sm font-medium"
+                    />
+                  </div>
+                  <div className="w-full h-full min-h-[170px] max-h-[280px] sm:max-h-none overflow-y-auto bg-[#F5F5F7] dark:bg-[#2C2C2E] p-3.5 rounded-xl border border-black/[0.06] dark:border-white/[0.1] space-y-1">
+                    <div className="text-[11px] font-bold text-[#86868B] pb-1 border-b border-black/[0.04] dark:border-white/[0.06] mb-2 flex items-center justify-between">
+                      <span>실시간 마크다운 미리보기</span>
+                      <span className="text-[10px] font-normal text-[#0071E3] dark:text-[#2997FF]">Live</span>
+                    </div>
+                    {modalContent.trim() ? (
+                      <MarkdownRenderer content={modalContent} />
+                    ) : (
+                      <p className="text-xs text-[#86868B] italic pt-2">
+                        왼쪽 입력창에 내용을 작성하면 이곳에 실시간 서식이 적용되어 표시됩니다.
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">
@@ -746,6 +968,48 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
         </div>
       )}
 
+      {/* Community Post Detail Slide-over Panel (Side Panel View Mode) */}
+      <CommunityDetailDrawer
+        post={discussions.find((p) => p.id === selectedPanelPostId) || null}
+        isOpen={viewMode === 'panel' && Boolean(selectedPanelPostId)}
+        onClose={() => setSelectedPanelPostId(null)}
+        postList={filteredDiscussions}
+        onSelectPost={(postId) => setSelectedPanelPostId(postId)}
+        onWidthChange={(w) => setDrawerWidth(w)}
+        onResizingChange={(r) => setIsDrawerResizing(r)}
+        onVote={handleVote}
+        onToggleBookmark={handleToggleBookmark}
+        isBookmarked={selectedPanelPostId ? bookmarkedIds.has(selectedPanelPostId) : false}
+        onAddComment={(postId, commentText) => {
+          setNewCommentText((prev) => ({ ...prev, [postId]: commentText }));
+          const text = commentText.trim();
+          if (!text) return;
+          const now = new Date();
+          const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+          const newComment: Comment = {
+            id: `c-${Date.now()}`,
+            author: { name: '나 (가치투자자)' },
+            createdAt: currentTime,
+            content: text,
+            likes: 0,
+          };
+          setDiscussions((prev) =>
+            prev.map((post) => {
+              if (post.id !== postId) return post;
+              return {
+                ...post,
+                commentsCount: post.commentsCount + 1,
+                comments: [...(post.comments || []), newComment],
+              };
+            })
+          );
+          showToast('댓글이 등록되었습니다.');
+        }}
+        onSelectStock={onSelectStock}
+        showToast={showToast}
+      />
+
     </div>
   );
 };
+

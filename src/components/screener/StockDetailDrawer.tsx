@@ -206,7 +206,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
+    <div className="fixed inset-0 z-50 overflow-hidden flex items-end sm:items-stretch justify-center sm:justify-end">
       {/* 1. Backdrop Overlay */}
       <div
         onClick={onClose}
@@ -214,16 +214,20 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
         aria-hidden="true"
       />
 
-      {/* 2. Slide-over Panel Container (Resizable) */}
+      {/* 2. Slide Panel Container (Desktop: Right Slide, Mobile: Bottom Sheet Slide Up) */}
       <aside
         style={{ width: typeof window !== 'undefined' && window.innerWidth < 640 ? '100%' : `${drawerWidth}px` }}
-        className={`relative z-10 w-full max-w-full bg-[#FBFBFD] dark:bg-black h-full flex flex-col shadow-2xl border-l border-black/[0.08] dark:border-white/[0.1] transform translate-x-0 ${
-          isResizing ? 'select-none transition-none' : 'transition-[width] duration-150 ease-out'
+        className={`relative z-10 w-full max-w-full bg-[#FBFBFD] dark:bg-black h-[85vh] sm:h-full max-h-[92vh] sm:max-h-full rounded-t-3xl sm:rounded-none flex flex-col shadow-2xl border-t sm:border-t-0 sm:border-l border-black/[0.08] dark:border-white/[0.1] transform translate-y-0 sm:translate-y-0 sm:translate-x-0 ${
+          isResizing ? 'select-none transition-none' : 'transition-all duration-150 ease-out'
         }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="drawer-stock-title"
       >
+        {/* Mobile Top Grab Bar Indicator */}
+        <div className="sm:hidden w-full flex items-center justify-center pt-2.5 pb-1 shrink-0">
+          <div className="w-10 h-1 rounded-full bg-black/20 dark:bg-white/20" />
+        </div>
         {/* Left Drag Resize Handle (Desktop/Tablet) */}
         <div
           onMouseDown={handleMouseDown}

@@ -41,7 +41,6 @@ export interface DiscussionPost {
   userVote?: 'up' | 'down' | null;
   commentsCount: number;
   viewsCount: number;
-  tags: string[];
   comments?: Comment[];
 }
 
