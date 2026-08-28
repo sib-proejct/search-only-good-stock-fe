@@ -1,5 +1,4 @@
-import React from 'react';
-import { BookOpen, Check, X, Award, TrendingUp } from 'lucide-react';
+import { BookOpen, Check, X, TrendingUp } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import { GuideType } from '../components/common/TopNavBar';
 

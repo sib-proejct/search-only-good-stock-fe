@@ -12,7 +12,6 @@ import {
   Bookmark,
   Send,
   ArrowRight,
-  CheckCircle2,
 } from 'lucide-react';
 
 interface CommunityDetailDrawerProps {

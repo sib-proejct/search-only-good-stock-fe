@@ -477,7 +477,7 @@ success + 다음 페이지 요청 -> 기존 items 유지 + loadingMore
   결과와 일치합니다.
 - nullable 값과 N/A가 깨지거나 0·FAIL로 표시되지 않습니다.
 - **커밋 메시지**: `feat(frontend): connect screener to stock api`
-- **완료 처리 여부**: [ ] 미완료
+- **완료 처리 여부**: [x] 완료
 
 ### 5.4 Phase F3 — 상세 전환과 Mock 정리
 
@@ -495,7 +495,7 @@ success + 다음 페이지 요청 -> 기존 items 유지 + loadingMore
 - 존재하지 않는 ticker의 404 화면과 목록 복귀가 동작합니다.
 - 주식 목록·상세 실행 경로에서 `MOCK_STOCKS`를 참조하지 않습니다.
 - **커밋 메시지**: `feat(frontend): connect stock detail analysis`
-- **완료 처리 여부**: [ ] 미완료
+- **완료 처리 여부**: [x] 완료
 
 ### 5.5 품질 명령과 수동 통합 시나리오
 

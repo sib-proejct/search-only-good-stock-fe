@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Search, X } from 'lucide-react';
-import { Stock } from '../../types/stock';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
 
 export type NavTab = 'screener' | 'detail' | 'guide' | 'community';
@@ -11,7 +10,6 @@ interface TopNavBarProps {
   onSelectTab: (tab: NavTab, guideType?: GuideType) => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
-  selectedStock?: Stock | null;
   activeGuide?: GuideType;
 }
 

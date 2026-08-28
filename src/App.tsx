@@ -5,28 +5,17 @@ import { ScreenerPage } from './pages/ScreenerPage';
 import { StockDetailPage } from './pages/StockDetailPage';
 import { RuleGuidePage } from './pages/RuleGuidePage';
 import { CommunityPage } from './pages/CommunityPage';
-import { MOCK_STOCKS } from './services/mockData';
 import { Sun, Moon, Globe } from 'lucide-react';
 
 function AppContent() {
   const { t, theme, toggleTheme, language, toggleLanguage } = useAppConfig();
   const [currentTab, setCurrentTab] = useState<NavTab>('screener');
   const [selectedGuide, setSelectedGuide] = useState<GuideType>('buffett');
-  const [selectedStockId, setSelectedStockId] = useState<string>('aapl');
+  const [selectedTicker, setSelectedTicker] = useState<string | null>('SYN-PASS');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const selectedStock = MOCK_STOCKS.find((s) => s.id === selectedStockId) || MOCK_STOCKS[0];
-
-  const handleSelectStock = (stockId: string) => {
-    // Check if stock exists by id or ticker
-    const found = MOCK_STOCKS.find(
-      (s) => s.id.toLowerCase() === stockId.toLowerCase() || s.ticker.toLowerCase() === stockId.toLowerCase()
-    );
-    if (found) {
-      setSelectedStockId(found.id);
-    } else {
-      setSelectedStockId(stockId.toLowerCase());
-    }
+  const handleSelectStock = (ticker: string) => {
+    setSelectedTicker(ticker);
     setCurrentTab('detail');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -41,14 +30,12 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-[#FBFBFD] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7] flex flex-col font-sans selection:bg-[#0071E3]/15 selection:text-[#0071E3] transition-colors duration-300">
-
       {/* 1. Frosted Glass Top Navigation Bar */}
       <TopNavBar
         currentTab={currentTab}
         onSelectTab={handleSelectTab}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        selectedStock={selectedStock}
         activeGuide={selectedGuide}
       />
 
@@ -63,7 +50,7 @@ function AppContent() {
 
         {currentTab === 'detail' && (
           <StockDetailPage
-            stockId={selectedStockId}
+            ticker={selectedTicker}
             onBack={() => setCurrentTab('screener')}
             onSelectStock={handleSelectStock}
           />
@@ -85,7 +72,6 @@ function AppContent() {
       {/* 3. Apple Minimalist Footer with Inline Controls on a Single Line */}
       <footer className="border-t border-black/[0.04] dark:border-white/[0.08] bg-[#FBFBFD] dark:bg-black py-8 px-6 sm:px-8 text-xs text-[#86868B] font-sans transition-colors duration-300">
         <div className="max-w-[1280px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-
           {/* Left: Copyright */}
           <div className="font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">
             {t('footerCopyright')}
@@ -126,12 +112,9 @@ function AppContent() {
                 )}
               </button>
             </div>
-
           </div>
-
         </div>
       </footer>
-
     </div>
   );
 }

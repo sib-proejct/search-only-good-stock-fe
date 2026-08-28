@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Stock } from '../../types/stock';
+import { StockSummaryDTO, StockDetailDTO } from '../../types/api';
+import { stockApi } from '../../services/api';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
 import {
   X,
@@ -7,21 +8,21 @@ import {
   ChevronRight,
   ArrowUpRight,
   Calendar,
+  CheckCircle2,
+  XCircle,
+  HelpCircle,
+  ShieldCheck,
+  TrendingUp,
+  AlertTriangle,
 } from 'lucide-react';
-import { Buffett6RuleDiagnosis } from '../detail/Buffett6RuleDiagnosis';
-import { DcfIntrinsicValueCard } from '../detail/DcfIntrinsicValueCard';
-import { OneDollarRetainedCard } from '../detail/OneDollarRetainedCard';
-import { CapitalAllocationCookCard } from '../detail/CapitalAllocationCookCard';
-import { CompanyProfileCard } from '../detail/CompanyProfileCard';
-import { YearlyFinancialsTable } from '../detail/YearlyFinancialsTable';
 
 interface StockDetailDrawerProps {
-  stock: Stock | null;
+  stock: StockSummaryDTO | null;
   isOpen: boolean;
   onClose: () => void;
-  onNavigateToFullDetail: (stockId: string) => void;
-  stockList: Stock[];
-  onSelectStock: (stockId: string) => void;
+  onNavigateToFullDetail: (ticker: string) => void;
+  stockList: StockSummaryDTO[];
+  onSelectStock: (ticker: string) => void;
 }
 
 export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
@@ -32,11 +33,12 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
   stockList,
   onSelectStock,
 }) => {
-  const { t, language } = useAppConfig();
-  const [trendPeriod, setTrendPeriod] = useState<'1Y' | '5Y'>('1Y');
+  const { t } = useAppConfig();
+  const [detail, setDetail] = useState<StockDetailDTO | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   // Drawer resize state
-  const DEFAULT_WIDTH = 820;
+  const DEFAULT_WIDTH = 760;
   const MIN_WIDTH = 480;
 
   const [drawerWidth, setDrawerWidth] = useState<number>(() => {
@@ -54,6 +56,35 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
     return DEFAULT_WIDTH;
   });
   const [isResizing, setIsResizing] = useState(false);
+
+  // Fetch detail when stock changes
+  useEffect(() => {
+    if (!stock || !isOpen) {
+      setDetail(null);
+      return;
+    }
+    let isCancelled = false;
+    setDetailLoading(true);
+
+    stockApi
+      .getStockDetail(stock.ticker)
+      .then((data) => {
+        if (!isCancelled) {
+          setDetail(data);
+          setDetailLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setDetail(null);
+          setDetailLoading(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [stock, isOpen]);
 
   // Resize mouse drag handling
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -107,13 +138,13 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
 
   const handlePrevStock = useCallback(() => {
     if (hasPrev && currentIndex > 0) {
-      onSelectStock(stockList[currentIndex - 1].id);
+      onSelectStock(stockList[currentIndex - 1].ticker);
     }
   }, [hasPrev, currentIndex, stockList, onSelectStock]);
 
   const handleNextStock = useCallback(() => {
     if (hasNext && currentIndex < stockList.length - 1) {
-      onSelectStock(stockList[currentIndex + 1].id);
+      onSelectStock(stockList[currentIndex + 1].ticker);
     }
   }, [hasNext, currentIndex, stockList, onSelectStock]);
 
@@ -151,58 +182,28 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
     return null;
   }
 
-  const isPricePositive = stock.priceChangePct >= 0;
-  const companyName = language === 'ko' ? stock.nameKo : stock.nameEn;
-  const subtitleName = language === 'ko' ? stock.nameEn : stock.nameKo;
-
-  // Sparkline calculations (1Y vs 5Y)
-  const activeSparkPoints =
-    trendPeriod === '1Y'
-      ? stock.sparkline1Yr && stock.sparkline1Yr.length > 0
-        ? stock.sparkline1Yr
-        : stock.sparkline5Yr
-      : stock.sparkline5Yr;
-
-  const sparkMin = Math.min(...activeSparkPoints);
-  const sparkMax = Math.max(...activeSparkPoints);
-  const sparkRange = sparkMax - sparkMin || 1;
-
-  // Period change % calculation
-  const firstPrice = activeSparkPoints[0] || stock.currentPrice;
-  const lastPrice = activeSparkPoints[activeSparkPoints.length - 1] || stock.currentPrice;
-  const periodChangePct =
-    trendPeriod === '1Y' && stock.priceChange1YrPct !== undefined
-      ? stock.priceChange1YrPct
-      : ((lastPrice - firstPrice) / (firstPrice || 1)) * 100;
-  const isPeriodPositive = periodChangePct >= 0;
-
-  // SVG dimensions & points
-  const sparkWidth = 140;
-  const sparkHeight = 40;
-  const paddingY = 5;
-  const sparkPointsList = activeSparkPoints.map((val, idx) => {
-    const x = (idx / (activeSparkPoints.length - 1 || 1)) * sparkWidth;
-    const y =
-      sparkHeight -
-      paddingY -
-      ((val - sparkMin) / sparkRange) * (sparkHeight - paddingY * 2);
-    return { x, y };
-  });
-
-  const sparkSvgPath = sparkPointsList
-    .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
-    .join(' ');
-  const sparkAreaPath = `${sparkSvgPath} L ${sparkWidth} ${sparkHeight} L 0 ${sparkHeight} Z`;
-
-  // 52-Week Range calculation
-  const low52W = stock.low52W !== undefined ? stock.low52W : Math.min(...stock.sparkline5Yr);
-  const high52W = stock.high52W !== undefined ? stock.high52W : Math.max(...stock.sparkline5Yr);
-
-  const formatPrice = (val: number) => {
-    if (stock.currency === 'USD') {
+  const formatPrice = (val: number | null, curr: string) => {
+    if (val === null || val === undefined) return '—';
+    if (curr === 'USD') {
       return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
     return `${Math.round(val).toLocaleString()}원`;
+  };
+
+  const formatMarketCap = (val: number | null, curr: string) => {
+    if (val === null || val === undefined) return '—';
+    if (curr === 'USD') {
+      if (val >= 1000) return `$${(val / 1000).toFixed(1)}B`;
+      return `$${val.toFixed(1)}M`;
+    }
+    if (val >= 10000) return `${(val / 10000).toFixed(1)}조원`;
+    return `${val.toLocaleString()}억원`;
+  };
+
+  const formatPercent = (val: number | null) => {
+    if (val === null || val === undefined) return '—';
+    const pct = val * 100;
+    return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
   };
 
   return (
@@ -214,20 +215,16 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
         aria-hidden="true"
       />
 
-      {/* 2. Slide Panel Container (Desktop: Right Slide, Mobile: Bottom Sheet Slide Up) */}
+      {/* 2. Slide Panel Container */}
       <aside
         style={{ width: typeof window !== 'undefined' && window.innerWidth < 640 ? '100%' : `${drawerWidth}px` }}
-        className={`relative z-10 w-full max-w-full bg-[#FBFBFD] dark:bg-black h-[85vh] sm:h-full max-h-[92vh] sm:max-h-full rounded-t-3xl sm:rounded-none flex flex-col shadow-2xl border-t sm:border-t-0 sm:border-l border-black/[0.08] dark:border-white/[0.1] transform translate-y-0 sm:translate-y-0 sm:translate-x-0 ${
+        className={`relative z-10 w-full max-w-full bg-[#FBFBFD] dark:bg-black h-[85vh] sm:h-full max-h-[92vh] sm:max-h-full rounded-t-3xl sm:rounded-none flex flex-col shadow-2xl border-t sm:border-t-0 sm:border-l border-black/[0.08] dark:border-white/[0.1] ${
           isResizing ? 'select-none transition-none' : 'transition-all duration-150 ease-out'
         }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="drawer-stock-title"
       >
-        {/* Mobile Top Grab Bar Indicator */}
-        <div className="sm:hidden w-full flex items-center justify-center pt-2.5 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full bg-black/20 dark:bg-white/20" />
-        </div>
         {/* Left Drag Resize Handle (Desktop/Tablet) */}
         <div
           onMouseDown={handleMouseDown}
@@ -238,7 +235,6 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
           title="드래그하여 너비 조절 (더블클릭: 기본 너비)"
           aria-label="Resize panel width"
         >
-          {/* Subtle grab bar indicator */}
           <div
             className={`w-1 rounded-full transition-all duration-200 ${
               isResizing
@@ -248,9 +244,8 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
           />
         </div>
 
-        {/* Top Header Bar with Navigation Controls */}
+        {/* Top Header Bar */}
         <div className="sticky top-0 z-20 px-5 sm:px-7 py-3.5 sm:py-4 bg-[#FBFBFD]/95 dark:bg-black/90 backdrop-blur-xl border-b border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between gap-3">
-
           {/* Left: Quick stock pagination & navigation */}
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono text-[#86868B] tabular-nums font-medium">
@@ -261,10 +256,11 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
               <button
                 onClick={handlePrevStock}
                 disabled={!hasPrev}
-                className={`p-1.5 rounded-full border transition-all cursor-pointer ${hasPrev
+                className={`p-1.5 rounded-full border transition-all cursor-pointer ${
+                  hasPrev
                     ? 'text-[#1D1D1F] dark:text-[#F5F5F7] bg-white dark:bg-[#1C1C1E] hover:bg-[#EBEBED] dark:hover:bg-[#2C2C2E] border-black/[0.08] dark:border-white/[0.08]'
                     : 'text-[#C7C7CC] dark:text-[#48484A] bg-transparent border-transparent cursor-not-allowed'
-                  }`}
+                }`}
                 title={`${t('prevStock')} (←)`}
                 aria-label={t('prevStock')}
               >
@@ -274,10 +270,11 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
               <button
                 onClick={handleNextStock}
                 disabled={!hasNext}
-                className={`p-1.5 rounded-full border transition-all cursor-pointer ${hasNext
+                className={`p-1.5 rounded-full border transition-all cursor-pointer ${
+                  hasNext
                     ? 'text-[#1D1D1F] dark:text-[#F5F5F7] bg-white dark:bg-[#1C1C1E] hover:bg-[#EBEBED] dark:hover:bg-[#2C2C2E] border-black/[0.08] dark:border-white/[0.08]'
                     : 'text-[#C7C7CC] dark:text-[#48484A] bg-transparent border-transparent cursor-not-allowed'
-                  }`}
+                }`}
                 title={`${t('nextStock')} (→)`}
                 aria-label={t('nextStock')}
               >
@@ -289,7 +286,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
           {/* Right: Full detail page shortcut & Close button */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => onNavigateToFullDetail(stock.id)}
+              onClick={() => onNavigateToFullDetail(stock.ticker)}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] bg-[#0071E3]/10 dark:bg-[#2997FF]/15 hover:bg-[#0071E3]/20 rounded-full transition-all cursor-pointer"
               title={t('viewFullAnalysis')}
             >
@@ -306,241 +303,237 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
               <X className="w-5 h-5" />
             </button>
           </div>
-
         </div>
 
         {/* Scrollable Drawer Body */}
         <div className="flex-1 overflow-y-auto px-5 sm:px-7 py-5 sm:py-6 space-y-6">
-
-          {/* 1. Hero Stock Identity & Interactive Sparkline Card */}
+          {/* 1. Hero Stock Identity Card */}
           <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-5 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm transition-colors duration-300">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-              {/* Left: Ticker & Names & Tags */}
-              <div className="space-y-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1.5">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h1 id="drawer-stock-title" className="text-xl sm:text-2xl font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
-                    {companyName}
+                    {stock.name}
                   </h1>
                   <span className="font-mono text-sm font-semibold text-[#86868B]">
                     {stock.ticker}
                   </span>
 
-                  {stock.isMasterPass ? (
+                  {stock.coreStatus === 'PASS' && (
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#34C759] bg-[#34C759]/10 dark:bg-[#34C759]/20 px-2.5 py-0.5 rounded-full border border-[#34C759]/20">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#34C759]" />
-                      <span className="font-mono tabular-nums">{stock.passCount}/6</span>
-                      <span>{t('masterPass') || '버핏 올패스'}</span>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>{t('pass')}</span>
                     </span>
-                  ) : (
+                  )}
+                  {stock.coreStatus === 'FAIL' && (
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FF3B30] bg-[#FF3B30]/10 dark:bg-[#FF3B30]/20 px-2.5 py-0.5 rounded-full border border-[#FF3B30]/20">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF3B30]" />
-                      <span className="font-mono tabular-nums">{stock.passCount}/6</span>
-                      <span>{t('fail') || '버핏 기준 탈락'}</span>
+                      <XCircle className="w-3.5 h-3.5" />
+                      <span>{t('fail')}</span>
+                    </span>
+                  )}
+                  {stock.coreStatus === 'N/A' && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#86868B] bg-black/[0.04] dark:bg-white/[0.06] px-2.5 py-0.5 rounded-full border border-black/[0.06] dark:border-white/[0.08]">
+                      <HelpCircle className="w-3.5 h-3.5" />
+                      <span>{t('na')}</span>
                     </span>
                   )}
 
                   <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#86868B] bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 rounded-full">
                     <Calendar className="w-3 h-3 text-[#86868B]" />
-                    <span>{t('asOfDateLabel')}</span>
+                    <span>{stock.dataAsOf.slice(0, 10)}</span>
                   </span>
                 </div>
 
-                <div className="text-xs text-[#86868B] flex items-center gap-2 flex-wrap">
-                  <span>{subtitleName}</span>
-                  <span>·</span>
+                <div className="text-xs text-[#86868B] flex items-center gap-2">
                   <span>{stock.market}</span>
                   <span>·</span>
                   <span>{stock.sector}</span>
+                  <span>·</span>
+                  <span className="px-1.5 py-0.5 bg-black/[0.04] dark:bg-white/[0.06] rounded text-[10px] font-mono">
+                    {stock.sourceType}
+                  </span>
                 </div>
               </div>
 
-              {/* Right: 52W Low/High, Trend Chart & Current Price */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 self-start lg:self-center shrink-0">
-                {/* 52W Low / High Stats */}
-                <div className="flex sm:flex-col justify-between sm:justify-center gap-2 sm:gap-1 text-xs text-[#86868B] min-w-[100px]">
-                  <div className="flex items-center sm:justify-end gap-1.5">
-                    <span className="text-[10px] font-medium text-[#86868B]">{t('low52W')}</span>
-                    <span className="font-mono font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums text-xs">
-                      {formatPrice(low52W)}
-                    </span>
-                  </div>
-                  <div className="flex items-center sm:justify-end gap-1.5">
-                    <span className="text-[10px] font-medium text-[#86868B]">{t('high52W')}</span>
-                    <span className="font-mono font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums text-xs">
-                      {formatPrice(high52W)}
-                    </span>
-                  </div>
+              {/* Price & Market Cap */}
+              <div className="text-left sm:text-right shrink-0">
+                <div className="text-2xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight tabular-nums">
+                  {formatPrice(stock.currentPrice, stock.currency)}
                 </div>
-
-                {/* 1Y / 5Y Interactive Price Trend Mini Chart */}
-                <div className="bg-[#F5F5F7] dark:bg-[#252528] rounded-2xl p-2.5 sm:p-3 border border-black/[0.04] dark:border-white/[0.06] transition-colors">
-                  <div className="flex items-center justify-between gap-2.5 mb-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
-                        {trendPeriod === '1Y' ? t('priceTrend1Y') : t('priceTrend5Y')}
-                      </span>
-                      <span className={`text-[9px] font-mono font-bold tabular-nums px-1.5 py-0.5 rounded-md ${isPeriodPositive
-                          ? 'bg-[#34C759]/15 text-[#34C759]'
-                          : 'bg-[#FF3B30]/15 text-[#FF3B30]'
-                        }`}>
-                        {isPeriodPositive ? `+${periodChangePct.toFixed(1)}%` : `${periodChangePct.toFixed(1)}%`}
-                      </span>
-                    </div>
-
-                    {/* 1Y / 5Y Switcher */}
-                    <div className="flex items-center bg-black/[0.06] dark:bg-white/[0.08] p-0.5 rounded-lg">
-                      <button
-                        onClick={() => setTrendPeriod('1Y')}
-                        className={`px-1.5 py-0.5 text-[9px] font-bold rounded transition-all cursor-pointer select-none ${trendPeriod === '1Y'
-                            ? 'bg-white dark:bg-[#1C1C1E] text-[#0071E3] dark:text-[#2997FF] shadow-xs'
-                            : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
-                          }`}
-                      >
-                        {t('period1Y')}
-                      </button>
-                      <button
-                        onClick={() => setTrendPeriod('5Y')}
-                        className={`px-1.5 py-0.5 text-[9px] font-bold rounded transition-all cursor-pointer select-none ${trendPeriod === '5Y'
-                            ? 'bg-white dark:bg-[#1C1C1E] text-[#0071E3] dark:text-[#2997FF] shadow-xs'
-                            : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
-                          }`}
-                      >
-                        {t('period5Y')}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* SVG Sparkline */}
-                  <div className="relative">
-                    <svg className="w-34 sm:w-38 h-9 overflow-visible" viewBox="0 0 140 40">
-                      <defs>
-                        <linearGradient id={`drawerSparkGrad-${stock.id}-${trendPeriod}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={isPeriodPositive ? '#34C759' : '#FF3B30'} stopOpacity="0.25" />
-                          <stop offset="100%" stopColor={isPeriodPositive ? '#34C759' : '#FF3B30'} stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
-                      <path
-                        d={sparkAreaPath}
-                        fill={`url(#drawerSparkGrad-${stock.id}-${trendPeriod})`}
-                      />
-                      <path
-                        d={sparkSvgPath}
-                        fill="none"
-                        stroke={isPeriodPositive ? '#34C759' : '#FF3B30'}
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      {sparkPointsList.length > 0 && (
-                        <circle
-                          cx={sparkPointsList[sparkPointsList.length - 1].x}
-                          cy={sparkPointsList[sparkPointsList.length - 1].y}
-                          r="2.5"
-                          fill={isPeriodPositive ? '#34C759' : '#FF3B30'}
-                        />
-                      )}
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Price & Cap */}
-                <div className="text-left sm:text-right min-w-[110px]">
-                  <div className="flex items-baseline justify-start sm:justify-end gap-1.5">
-                    <span className="text-xl sm:text-2xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight tabular-nums">
-                      {formatPrice(stock.currentPrice)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-start sm:justify-end gap-1.5 mt-0.5">
-                    <span className={`text-xs font-mono font-bold tabular-nums ${isPricePositive ? 'text-[#34C759]' : 'text-[#FF3B30]'
-                      }`}>
-                      {isPricePositive ? `+${stock.priceChangePct.toFixed(2)}%` : `${stock.priceChangePct.toFixed(2)}%`}
-                    </span>
-                    <span className="text-[10px] text-[#86868B]">1D</span>
-                  </div>
-
-                  <div className="text-[11px] text-[#86868B] mt-1">
-                    {t('marketCapLabel')}: <span className="font-semibold font-mono tabular-nums text-[#1D1D1F] dark:text-[#F5F5F7]">{stock.marketCapFormatted}</span>
-                  </div>
+                <div className="text-xs text-[#86868B] mt-0.5">
+                  {t('marketCapLabel')}: <span className="font-semibold font-mono tabular-nums text-[#1D1D1F] dark:text-[#F5F5F7]">{formatMarketCap(stock.marketCap, stock.currency)}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 2. Key KPI Strip (Apple Minimal Typography Stats) */}
+          {/* 2. Key KPI Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {/* Core Status */}
             <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">5Y Avg ROE</span>
-              <div className="mt-1.5">
-                <span className="text-xl sm:text-2xl font-bold font-mono text-[#34C759] tracking-tight tabular-nums block">
-                  {stock.avgRoe5Yr.toFixed(1)}%
+              <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">{t('coreStatusLabel')}</span>
+              <div className="mt-2">
+                <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight block ${
+                  stock.coreStatus === 'PASS' ? 'text-[#34C759]' : stock.coreStatus === 'FAIL' ? 'text-[#FF3B30]' : 'text-[#86868B]'
+                }`}>
+                  {stock.coreStatus}
                 </span>
-                <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
-                  <span>기준 &gt; <span className="font-mono tabular-nums">15%</span></span>
-                  <span className="text-[#34C759] font-medium font-mono text-[9px]">PASS</span>
+                <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06] font-mono tabular-nums">
+                  {stock.corePassCount}P / {stock.coreFailCount}F / {stock.coreNaCount}NA
                 </div>
               </div>
             </div>
 
+            {/* Valuation Status */}
             <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">5Y Avg ROIC</span>
-              <div className="mt-1.5">
-                <span className="text-xl sm:text-2xl font-bold font-mono text-[#0071E3] dark:text-[#2997FF] tracking-tight tabular-nums block">
-                  {stock.avgRoic5Yr.toFixed(1)}%
+              <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">{t('valuationStatusLabel')}</span>
+              <div className="mt-2">
+                <span className="text-sm sm:text-base font-bold text-[#0071E3] dark:text-[#2997FF] tracking-tight block truncate">
+                  {stock.valuationStatus.replace(/_/g, ' ')}
                 </span>
-                <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
-                  <span>기준 &gt; <span className="font-mono tabular-nums">10%</span></span>
-                  <span className="text-[#0071E3] dark:text-[#2997FF] font-medium font-mono text-[9px]">PASS</span>
+                <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06]">
+                  DCF Owner Earnings
                 </div>
               </div>
             </div>
 
+            {/* Margin of Safety */}
             <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">5Y EPS CAGR</span>
-              <div className="mt-1.5">
-                <span className="text-xl sm:text-2xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight tabular-nums block">
-                  {stock.epsCagr5Yr >= 0 ? `+${stock.epsCagr5Yr.toFixed(1)}%` : `${stock.epsCagr5Yr.toFixed(1)}%`}
+              <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">{t('marginOfSafety')}</span>
+              <div className="mt-2">
+                <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight tabular-nums block ${
+                  stock.conservativeMarginOfSafety !== null && stock.conservativeMarginOfSafety >= 0
+                    ? 'text-[#34C759]'
+                    : stock.conservativeMarginOfSafety !== null
+                    ? 'text-[#FF3B30]'
+                    : 'text-[#86868B]'
+                }`}>
+                  {formatPercent(stock.conservativeMarginOfSafety)}
                 </span>
-                <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
-                  <span>10Y 복리성장</span>
-                  <span className="text-[#34C759] font-medium font-mono text-[9px]">PASS</span>
+                <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06]">
+                  {stock.conservativeIntrinsicValue !== null ? `IV: ${formatPrice(stock.conservativeIntrinsicValue, stock.currency)}` : '—'}
                 </div>
               </div>
             </div>
 
+            {/* Confidence */}
             <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">{t('debtRatio')} (D/E)</span>
-              <div className="mt-1.5">
-                <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight tabular-nums block ${stock.debtToEquity <= 80 ? 'text-[#34C759]' : 'text-[#FF9500]'
-                  }`}>
-                  {stock.debtToEquity.toFixed(0)}%
+              <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">{t('confidence')}</span>
+              <div className="mt-2">
+                <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight block ${
+                  stock.confidence === 'HIGH' ? 'text-[#34C759]' : stock.confidence === 'MEDIUM' ? 'text-[#FF9500]' : 'text-[#86868B]'
+                }`}>
+                  {stock.confidence}
                 </span>
-                <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
-                  <span>무차입 안전</span>
-                  <span className="text-[#34C759] font-medium font-mono text-[9px]">PASS</span>
+                <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06]">
+                  Data Quality Grade
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 3. Row 1: Symmetrical Bento Grid (Buffett 6-Rule Diagnosis & DCF Valuation) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-stretch">
-            <Buffett6RuleDiagnosis stock={stock} />
-            <DcfIntrinsicValueCard currentPrice={stock.currentPrice} currency={stock.currency} />
-          </div>
+          {/* 3. Detailed Rule Evaluations (When loaded) */}
+          {detailLoading && (
+            <div className="py-8 text-center bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08]">
+              <div className="inline-block w-6 h-6 border-2 border-[#0071E3] dark:border-[#2997FF] border-t-transparent rounded-full animate-spin mb-2" />
+              <p className="text-xs text-[#86868B]">{t('loadingStocks')}</p>
+            </div>
+          )}
 
-          {/* 4. Row 2: Symmetrical Bento Grid ($1 Retained Test & Capital Allocation) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-stretch">
-            <OneDollarRetainedCard testResult={stock.oneDollarTest} />
-            <CapitalAllocationCookCard governance={stock.governance} />
-          </div>
+          {detail && !detailLoading && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-bold text-[#1D1D1F] dark:text-[#F5F5F7] flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-[#0071E3] dark:text-[#2997FF]" />
+                  <span>Rule Evaluations ({detail.ruleEvaluations.length})</span>
+                </h2>
+                {detail.warnings && detail.warnings.length > 0 && (
+                  <span className="text-[11px] text-[#FF9500] font-medium flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span>{detail.warnings.length} Warning(s)</span>
+                  </span>
+                )}
+              </div>
 
-          {/* 5. Row 3: Company Profile & Key Statistics (Apple Stocks Style Tabbed Section) */}
-          <CompanyProfileCard stock={stock} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {detail.ruleEvaluations.map((evalItem) => (
+                  <div
+                    key={evalItem.ruleId}
+                    className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs flex flex-col justify-between"
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] font-mono">
+                        {evalItem.ruleId}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full font-mono ${
+                          evalItem.status === 'PASS'
+                            ? 'bg-[#34C759]/15 text-[#34C759]'
+                            : evalItem.status === 'FAIL'
+                            ? 'bg-[#FF3B30]/15 text-[#FF3B30]'
+                            : 'bg-black/[0.06] dark:bg-white/[0.08] text-[#86868B]'
+                        }`}
+                      >
+                        {evalItem.status}
+                      </span>
+                    </div>
 
-          {/* 6. Row 4: 5-Year Financial Statements Trend Table */}
-          <YearlyFinancialsTable stock={stock} />
+                    <div className="space-y-1">
+                      {evalItem.metrics.map((m, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-[11px] text-[#86868B]">
+                          <span className="font-mono">{m.metricId}</span>
+                          <span className="font-mono font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
+                            {m.value !== null ? (m.unit === 'RATIO' ? `${(m.value * 100).toFixed(1)}%` : m.value.toFixed(2)) : '—'}
+                          </span>
+                        </div>
+                      ))}
+                      {evalItem.reasonCodes.length > 0 && (
+                        <div className="text-[10px] text-[#FF9500] font-mono pt-1">
+                          Reason: {evalItem.reasonCodes.join(', ')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
 
+              {/* DCF Valuation Details Card */}
+              {detail.dcf && (
+                <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-[#1D1D1F] dark:text-[#F5F5F7] flex items-center gap-1.5">
+                      <TrendingUp className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />
+                      <span>DCF Valuation Scenarios</span>
+                    </h3>
+                    <span className="text-[10px] font-mono text-[#86868B]">{detail.dcf.method}</span>
+                  </div>
+
+                  {detail.dcf.scenarios && (
+                    <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                      <div className="p-2.5 rounded-xl bg-[#F5F5F7] dark:bg-[#252528]">
+                        <div className="text-[10px] text-[#86868B]">Conservative</div>
+                        <div className="text-xs font-bold font-mono mt-1 text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
+                          {formatPrice(detail.dcf.scenarios.conservative.intrinsicValuePerShare, stock.currency)}
+                        </div>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-[#F5F5F7] dark:bg-[#252528] border border-[#0071E3]/20">
+                        <div className="text-[10px] text-[#0071E3] dark:text-[#2997FF] font-semibold">Base</div>
+                        <div className="text-xs font-bold font-mono mt-1 text-[#0071E3] dark:text-[#2997FF] tabular-nums">
+                          {formatPrice(detail.dcf.scenarios.base.intrinsicValuePerShare, stock.currency)}
+                        </div>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-[#F5F5F7] dark:bg-[#252528]">
+                        <div className="text-[10px] text-[#86868B]">Optimistic</div>
+                        <div className="text-xs font-bold font-mono mt-1 text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
+                          {formatPrice(detail.dcf.scenarios.optimistic.intrinsicValuePerShare, stock.currency)}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Sticky Bottom Action Footer */}
@@ -553,14 +546,13 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
           </button>
 
           <button
-            onClick={() => onNavigateToFullDetail(stock.id)}
+            onClick={() => onNavigateToFullDetail(stock.ticker)}
             className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-bold text-white bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#2997FF] dark:hover:bg-[#0071E3] shadow-sm hover:shadow transition-all cursor-pointer"
           >
             <span>{t('viewFullAnalysis')}</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
         </div>
-
       </aside>
     </div>
   );

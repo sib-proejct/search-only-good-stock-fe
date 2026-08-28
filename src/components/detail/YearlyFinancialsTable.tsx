@@ -1,75 +1,146 @@
 import React from 'react';
-import { Stock } from '../../types/stock';
+import { AnnualFinancialDTO, Currency, IndustryType } from '../../types/api';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
+import { FileSpreadsheet } from 'lucide-react';
 
 interface YearlyFinancialsTableProps {
-  stock: Stock;
+  financials: AnnualFinancialDTO[];
+  currency: Currency;
+  industryType?: IndustryType;
 }
 
-export const YearlyFinancialsTable: React.FC<YearlyFinancialsTableProps> = ({ stock }) => {
+export const YearlyFinancialsTable: React.FC<YearlyFinancialsTableProps> = ({
+  financials,
+  currency,
+  industryType,
+}) => {
   const { t, language } = useAppConfig();
-  const financials = stock.yearlyFinancials;
 
-  if (!financials || financials.length === 0) return null;
+  if (!financials || financials.length === 0) {
+    return null;
+  }
+
+  // Sort chronological ascending (or latest first)
+  const sortedFinancials = [...financials].sort((a, b) => a.fiscalYear - b.fiscalYear);
+
+  const formatNumber = (val: number | null, isEps: boolean = false): string => {
+    if (val === null || val === undefined) return '—';
+    if (isEps) {
+      if (currency === 'USD') {
+        return `$${val.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`;
+      }
+      return `${Math.round(val).toLocaleString()}원`;
+    }
+    if (currency === 'USD') {
+      return `$${val.toLocaleString(undefined, {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 2,
+      })}M`;
+    }
+    return `${val.toLocaleString()}억`;
+  };
 
   return (
     <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-6 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-4 transition-colors duration-300">
       {/* Header */}
-      <div className="flex items-center justify-between pb-1 border-b border-black/[0.04] dark:border-white/[0.06]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-black/[0.04] dark:border-white/[0.06]">
         <div>
-          <h2 className="text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
-            {t('fiveYearFinancialTrends')}
-          </h2>
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5 text-[#0071E3] dark:text-[#2997FF]" />
+            <h2 className="text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
+              {t('fiveYearFinancialTrends')}
+            </h2>
+          </div>
           <p className="text-xs text-[#86868B] mt-0.5 font-normal">
-            {language === 'ko' ? '5개년 핵심 손익 및 자본수익률(ROE/ROIC) 추이' : '5-Year Earnings & Capital Return History'}
+            {language === 'ko'
+              ? 'API가 제공하는 연차 재무제표 원자료 (가공/추정 없는 실제 수신값)'
+              : 'Raw annual financial statements received directly from the backend API'}
           </p>
         </div>
-        <span className="text-[10px] sm:text-xs text-[#86868B]">
-          Unit: {stock.currency === 'USD' ? '$ (Billion)' : 'KRW (십억원)'}
-        </span>
+
+        <div className="flex items-center gap-2 text-xs font-mono text-[#86868B]">
+          {industryType && (
+            <span className="px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] font-semibold text-[10px]">
+              {industryType}
+            </span>
+          )}
+          <span>단위: {currency === 'USD' ? '$ (Millions)' : 'KRW (억원)'}</span>
+        </div>
       </div>
 
       {/* Financials Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="border-b border-black/[0.04] dark:border-white/[0.06] text-[#86868B] font-medium whitespace-nowrap">
-              <th className="py-3 px-3 text-left">{language === 'ko' ? '회계연도' : 'Fiscal Year'}</th>
-              <th className="py-3 px-3 text-right">{t('revenueLabel')}</th>
-              <th className="py-3 px-3 text-right">{t('operatingMarginLabel')}</th>
-              <th className="py-3 px-3 text-right">{t('netIncomeLabel')}</th>
-              <th className="py-3 px-3 text-right font-bold text-[#34C759]">ROE</th>
-              <th className="py-3 px-3 text-right font-bold text-[#0071E3] dark:text-[#2997FF]">ROIC</th>
-              <th className="py-3 px-3 text-right">EPS</th>
-              <th className="py-3 px-3 text-right">{t('debtRatio')}</th>
+            <tr className="border-b border-black/[0.06] dark:border-white/[0.08] text-[#86868B] font-medium whitespace-nowrap bg-black/[0.01] dark:bg-white/[0.01]">
+              <th className="py-3 px-3.5 text-left font-semibold">회계연도 (Period)</th>
+              <th className="py-3 px-3.5 text-right font-semibold">순이익 (Net Income)</th>
+              <th className="py-3 px-3.5 text-right font-semibold">EBIT</th>
+              <th className="py-3 px-3.5 text-right font-semibold">자기자본 (Equity)</th>
+              <th className="py-3 px-3.5 text-right font-semibold">차입부채 (Debt)</th>
+              <th className="py-3 px-3.5 text-right font-semibold">현금성자산 (Cash)</th>
+              <th className="py-3 px-3.5 text-right font-semibold text-[#0071E3] dark:text-[#2997FF]">영업현금흐름 (CFO)</th>
+              <th className="py-3 px-3.5 text-right font-semibold">자본지출 (CapEx)</th>
+              <th className="py-3 px-3.5 text-right font-semibold">지급이자 (Interest)</th>
+              <th className="py-3 px-3.5 text-right font-semibold font-mono text-[#34C759]">희석 EPS</th>
+              <th className="py-3 px-3.5 text-right font-semibold font-mono">희석주식수</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-black/[0.03] dark:divide-white/[0.04] font-mono tabular-nums">
-            {financials.map((f) => (
-              <tr key={f.year} className="hover:bg-[#F5F5F7]/80 dark:hover:bg-[#2C2C2E]/60 transition-colors">
-                <td className="py-3 px-3 font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
-                  {f.year}
+            {sortedFinancials.map((f) => (
+              <tr
+                key={f.fiscalYear}
+                className="hover:bg-[#F5F5F7]/80 dark:hover:bg-[#2C2C2E]/60 transition-colors"
+              >
+                <td className="py-3.5 px-3.5 font-bold text-[#1D1D1F] dark:text-[#F5F5F7] whitespace-nowrap">
+                  <span>{f.fiscalYear}</span>
+                  <span className="text-[10px] text-[#86868B] ml-1 font-normal">
+                    ({f.periodEnd.slice(0, 10)})
+                  </span>
                 </td>
-                <td className="py-3 px-3 text-right text-[#1D1D1F] dark:text-[#F5F5F7]">
-                  {stock.currency === 'USD' ? `$${f.revenue}B` : `${f.revenue.toLocaleString()}억`}
+                <td
+                  className={`py-3.5 px-3.5 text-right font-semibold ${
+                    f.netIncomeCommon !== null && f.netIncomeCommon >= 0
+                      ? 'text-[#1D1D1F] dark:text-[#F5F5F7]'
+                      : 'text-[#FF3B30]'
+                  }`}
+                >
+                  {formatNumber(f.netIncomeCommon)}
                 </td>
-                <td className="py-3 px-3 text-right text-[#1D1D1F] dark:text-[#F5F5F7]">
-                  {f.operatingMargin.toFixed(1)}%
+                <td className="py-3.5 px-3.5 text-right text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  {formatNumber(f.ebit)}
                 </td>
-                <td className="py-3 px-3 text-right text-[#1D1D1F] dark:text-[#F5F5F7]">
-                  {stock.currency === 'USD' ? `$${f.netIncome}B` : `${f.netIncome.toLocaleString()}억`}
+                <td className="py-3.5 px-3.5 text-right text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  {formatNumber(f.commonEquity)}
                 </td>
-                <td className="py-3 px-3 text-right font-bold text-[#34C759]">
-                  {f.roe.toFixed(1)}%
+                <td className="py-3.5 px-3.5 text-right text-[#86868B]">
+                  {formatNumber(f.interestBearingDebt)}
                 </td>
-                <td className="py-3 px-3 text-right font-bold text-[#0071E3] dark:text-[#2997FF]">
-                  {f.roic.toFixed(1)}%
+                <td className="py-3.5 px-3.5 text-right text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  {formatNumber(f.cashAndEquivalents)}
                 </td>
-                <td className="py-3 px-3 text-right text-[#1D1D1F] dark:text-[#F5F5F7]">
-                  {stock.currency === 'USD' ? `$${f.eps.toFixed(2)}` : `${f.eps.toLocaleString()}원`}
+                <td className="py-3.5 px-3.5 text-right font-bold text-[#0071E3] dark:text-[#2997FF]">
+                  {formatNumber(f.cfo)}
                 </td>
-                <td className="py-3 px-3 text-right text-[#86868B]">
-                  {f.debtToEquity.toFixed(0)}%
+                <td className="py-3.5 px-3.5 text-right text-[#86868B]">
+                  {formatNumber(f.capex)}
+                </td>
+                <td className="py-3.5 px-3.5 text-right text-[#86868B]" title={`분류: ${f.interestPaidClassification}`}>
+                  <span>{formatNumber(f.interestPaid)}</span>
+                  {f.interestPaidClassification && (
+                    <span className="text-[9px] text-[#86868B] ml-1">
+                      ({f.interestPaidClassification})
+                    </span>
+                  )}
+                </td>
+                <td className="py-3.5 px-3.5 text-right font-bold text-[#34C759]">
+                  {formatNumber(f.dilutedEps, true)}
+                </td>
+                <td className="py-3.5 px-3.5 text-right text-[#86868B]">
+                  {f.dilutedShares !== null ? `${f.dilutedShares.toLocaleString()}M` : '—'}
                 </td>
               </tr>
             ))}

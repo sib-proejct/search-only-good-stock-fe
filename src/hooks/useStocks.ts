@@ -1,109 +1,235 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Stock } from '../types/stock';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  StockSummaryDTO,
+  StockListQuery,
+  Market,
+  CoreStatus,
+  ValuationStatus,
+  StockSort,
+  SortOrder,
+} from '../types/api';
 import { stockApi } from '../services/api';
-import { useRuleEngine } from './useRuleEngine';
 
-export type SortField = 'buffettScore' | 'avgRoe5Yr' | 'epsCagr5Yr' | 'marketCap' | 'oneDollar';
-export type ViewMode = 'table' | 'grid';
+export type MarketFilter = Market | 'ALL';
+export type CoreStatusFilter = CoreStatus | 'ALL';
+export type ValuationStatusFilter = ValuationStatus | 'ALL';
 
-export function useStocks() {
-  const [stocks, setStocks] = useState<Stock[]>([]);
+export interface UseStocksReturn {
+  stocks: StockSummaryDTO[];
+  total: number;
+  loading: boolean;
+  loadingMore: boolean;
+  error: string | null;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  market: MarketFilter;
+  setMarket: (market: MarketFilter) => void;
+  coreStatus: CoreStatusFilter;
+  setCoreStatus: (status: CoreStatusFilter) => void;
+  valuationStatus: ValuationStatusFilter;
+  setValuationStatus: (status: ValuationStatusFilter) => void;
+  sortField: StockSort;
+  setSortField: (field: StockSort) => void;
+  sortOrder: SortOrder;
+  setSortOrder: (order: SortOrder) => void;
+  toggleSortOrder: () => void;
+  passedStockCount: number;
+  totalStockCount: number;
+  hasMore: boolean;
+  loadMore: () => void;
+  retry: () => void;
+  resetFilters: () => void;
+}
+
+export function useStocks(): UseStocksReturn {
+  const [stocks, setStocks] = useState<StockSummaryDTO[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Filter & Query States
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<SortField>('buffettScore');
-  const [sortAsc, setSortAsc] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('table');
-  const [expandedStockId, setExpandedStockId] = useState<string | null>('msft'); // 기본적으로 마이크로소프트 인라인 펼침
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [market, setMarket] = useState<MarketFilter>('ALL');
+  const [coreStatus, setCoreStatus] = useState<CoreStatusFilter>('ALL');
+  const [valuationStatus, setValuationStatus] = useState<ValuationStatusFilter>('ALL');
+  const [sortField, setSortField] = useState<StockSort>('conservativeMarginOfSafety');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [offset, setOffset] = useState(0);
+  const limit = 50;
 
-  const ruleEngine = useRuleEngine();
+  // Passed stock count (for hero card statistic)
+  const [passedStockCount, setPassedStockCount] = useState(0);
 
+  // Debounce search input by 300ms
   useEffect(() => {
-    async function load() {
-      setLoading(true);
-      const data = await stockApi.getStocks();
-      setStocks(data);
-      setLoading(false);
-    }
-    load();
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  // 검색 및 동적 규칙 평가를 반영한 필터링 & 정렬
-  const filteredStocks = useMemo(() => {
-    let result = stocks.map((stock) => {
-      const evaluation = ruleEngine.evaluateStock(stock);
-      return {
-        ...stock,
-        dynamicBuffettScore: evaluation.score,
-        dynamicPassCount: evaluation.passedRuleCount,
-        dynamicIsMasterPass: evaluation.passed,
-        dynamicTotalRules: evaluation.totalActiveRules,
-      };
-    });
+  // Reset offset when filters change
+  useEffect(() => {
+    setOffset(0);
+  }, [debouncedSearch, market, coreStatus, valuationStatus, sortField, sortOrder]);
 
-    // 1. 검색어 필터 (종목명 or 티커 or 업종)
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      result = result.filter(
-        (s) =>
-          s.nameKo.toLowerCase().includes(q) ||
-          s.ticker.toLowerCase().includes(q) ||
-          s.sector.toLowerCase().includes(q)
-      );
-    }
+  // Active abort controllers
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const passCountAbortRef = useRef<AbortController | null>(null);
 
-    // 2. 정렬
-    result.sort((a, b) => {
-      let valA = 0;
-      let valB = 0;
-
-      switch (sortField) {
-        case 'buffettScore':
-          valA = a.dynamicBuffettScore;
-          valB = b.dynamicBuffettScore;
-          break;
-        case 'avgRoe5Yr':
-          valA = a.avgRoe5Yr;
-          valB = b.avgRoe5Yr;
-          break;
-        case 'epsCagr5Yr':
-          valA = a.epsCagr5Yr;
-          valB = b.epsCagr5Yr;
-          break;
-        case 'marketCap':
-          valA = a.marketCap;
-          valB = b.marketCap;
-          break;
-        case 'oneDollar':
-          valA = a.oneDollarTest.valueCreatedPerDollar;
-          valB = b.oneDollarTest.valueCreatedPerDollar;
-          break;
+  // Fetch stocks function
+  const fetchStocks = useCallback(
+    async (isLoadMore: boolean = false) => {
+      // Abort any ongoing request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
 
-      return sortAsc ? valA - valB : valB - valA;
-    });
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
 
-    return result;
-  }, [stocks, searchQuery, sortField, sortAsc, ruleEngine]);
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+        setError(null);
+      }
 
-  const toggleExpand = (id: string) => {
-    setExpandedStockId((prev) => (prev === id ? null : id));
-  };
+      try {
+        const query: StockListQuery = {
+          limit,
+          offset: isLoadMore ? offset : 0,
+        };
+
+        if (debouncedSearch.trim()) {
+          query.search = debouncedSearch.trim();
+        }
+        if (market !== 'ALL') {
+          query.market = market;
+        }
+        if (coreStatus !== 'ALL') {
+          query.coreStatus = coreStatus;
+        }
+        if (valuationStatus !== 'ALL') {
+          query.valuationStatus = valuationStatus;
+        }
+        if (sortField) {
+          query.sort = sortField;
+          query.order = sortOrder;
+        }
+
+        const response = await stockApi.getStocks(query, controller.signal);
+
+        if (isLoadMore) {
+          setStocks((prev) => [...prev, ...response.items]);
+        } else {
+          setStocks(response.items);
+        }
+        setTotal(response.total);
+        setError(null);
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          return;
+        }
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        setError(message);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [debouncedSearch, market, coreStatus, valuationStatus, sortField, sortOrder, offset]
+  );
+
+  // Fetch passed stocks total count for current market/search condition
+  const fetchPassedCount = useCallback(async () => {
+    if (passCountAbortRef.current) {
+      passCountAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    passCountAbortRef.current = controller;
+
+    try {
+      const query: StockListQuery = {
+        coreStatus: 'PASS',
+        limit: 1,
+        offset: 0,
+      };
+      if (debouncedSearch.trim()) {
+        query.search = debouncedSearch.trim();
+      }
+      if (market !== 'ALL') {
+        query.market = market;
+      }
+      const res = await stockApi.getStocks(query, controller.signal);
+      setPassedStockCount(res.total);
+    } catch {
+      // ignore abort or stats error
+    }
+  }, [debouncedSearch, market]);
+
+  // Initial & Filter Triggered Load
+  useEffect(() => {
+    fetchStocks(offset > 0);
+  }, [fetchStocks, offset]);
+
+  // Trigger passed count load
+  useEffect(() => {
+    fetchPassedCount();
+  }, [fetchPassedCount]);
+
+  const toggleSortOrder = useCallback(() => {
+    setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+  }, []);
+
+  const loadMore = useCallback(() => {
+    if (!loading && !loadingMore && stocks.length < total) {
+      setOffset(stocks.length);
+    }
+  }, [loading, loadingMore, stocks.length, total]);
+
+  const retry = useCallback(() => {
+    fetchStocks(false);
+    fetchPassedCount();
+  }, [fetchStocks, fetchPassedCount]);
+
+  const resetFilters = useCallback(() => {
+    setSearchQuery('');
+    setDebouncedSearch('');
+    setMarket('ALL');
+    setCoreStatus('ALL');
+    setValuationStatus('ALL');
+    setSortField('conservativeMarginOfSafety');
+    setSortOrder('desc');
+    setOffset(0);
+  }, []);
 
   return {
-    stocks: filteredStocks,
-    totalStockCount: stocks.length,
-    passedStockCount: filteredStocks.filter((s) => s.dynamicIsMasterPass).length,
+    stocks,
+    total,
     loading,
+    loadingMore,
+    error,
     searchQuery,
     setSearchQuery,
+    market,
+    setMarket,
+    coreStatus,
+    setCoreStatus,
+    valuationStatus,
+    setValuationStatus,
     sortField,
     setSortField,
-    sortAsc,
-    setSortAsc,
-    viewMode,
-    setViewMode,
-    expandedStockId,
-    toggleExpand,
-    ruleEngine,
+    sortOrder,
+    setSortOrder,
+    toggleSortOrder,
+    passedStockCount,
+    totalStockCount: total,
+    hasMore: stocks.length < total,
+    loadMore,
+    retry,
+    resetFilters,
   };
 }
