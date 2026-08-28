@@ -45,9 +45,10 @@ flowchart TD
 
 ## 2. 프론트엔드 페이지별 구성 및 요구 데이터
 
-프론트엔드는 애플(Apple) 특유의 인간 중심 디자인(Clarity, Deference, Depth, Tabular Precision)을 기반으로 총 4개의 핵심 탭 페이지와 컴포넌트들로 구현되어 있습니다.
+프론트엔드는 `react-router-dom` 기반의 클라이언트 사이드 라우팅(SPA Routing) 체계로 구성되어 있으며, 새로고침 및 브라우저 탐색(뒤로가기/앞으로가기) 시 현재 화면과 파라미터가 보존됩니다.
 
 ### 2.1 스크리너 화면 (`ScreenerPage`)
+- **URL 경로**: `/` (별칭: `/screener`)
 - **컴포넌트**: `HorizontalRibbonFilter`, `StockCardGrid`, `WideStockTable`, `InlineStockExpansion`, `StockDetailDrawer`
 - **핵심 기능**:
   - **프리셋 필터**: '워런 버핏 6대 원칙 마스터 (6/6 통과)', '해자 & 고수익 자본배치 (ROE 20%+)', '주주환원 & 주식 소각', '재무안정성 초우량 (무차입/고이자보상)'
@@ -64,6 +65,7 @@ flowchart TD
   - **종목 검색**: 종목명(한/영), 티커, 섹터 실시간 검색
 
 ### 2.2 종목 상세 화면 (`StockDetailPage`)
+- **URL 경로**: `/stock/:ticker` (하위 호환: `/detail/:ticker`)
 - **컴포넌트**:
   - `StockHeader`: 현재가, 일일 등락률, 시가총액, 섹터, 버핏 스코어 뱃지, 마스터 패스 상태
   - `Buffett6RuleDiagnosis` & `BuffettRuleGrid`: 6대 원칙 통과/미달 상세 진단 카드 (실제값 vs 기준값)
@@ -78,12 +80,14 @@ flowchart TD
   - `FinancialTrendChart` & `YearlyFinancialsTable`: 5개년 연도별 재무제표(ROE, ROIC, EPS, BPS, 매출, 순이익, 영업이익률, 부채비율, 주가)
 
 ### 2.3 규칙 가이드 화면 (`RuleGuidePage`)
+- **URL 경로**: `/guide/buffett` (워런 버핏 6대 원칙), `/guide/lynch` (피터 린치 4대 원칙)
 - **컴포넌트**: `BuffettGuide`, `PeterLynchGuide`
 - **핵심 기능**:
   - 워런 버핏의 6대 핵심 투자 원칙 이론 배경, 계산 공식, 합격 기준 설명
   - 피터 린치의 PEG, 체력 지표, 6가지 기업 분류 가이드
 
 ### 2.4 커뮤니티 화면 (`CommunityPage`)
+- **URL 경로**: `/community`
 - **컴포넌트**: `DiscussionFeed`, `SentimentPollWidget`, `TopContributorsCard`
 - **핵심 기능**:
   - 종목별 가치투자 토론글(Buffett, Lynch, 분석, 가치평가 카테고리)

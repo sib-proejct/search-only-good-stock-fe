@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useStocks, MarketFilter, CoreStatusFilter, ValuationStatusFilter } from '../hooks/useStocks';
 import {
   CheckCircle2,
@@ -18,11 +19,12 @@ import { StockDetailDrawer } from '../components/screener/StockDetailDrawer';
 import { StockSort, StockSummaryDTO } from '../types/api';
 
 interface ScreenerPageProps {
-  onSelectStock: (stockId: string) => void;
+  onSelectStock?: (stockId: string) => void;
   searchQuery: string;
 }
 
 export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searchQuery: globalSearchQuery }) => {
+  const navigate = useNavigate();
   const { t } = useAppConfig();
   const {
     stocks,
@@ -663,7 +665,10 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
         onClose={() => setDrawerStockTicker(null)}
         onNavigateToFullDetail={(ticker) => {
           setDrawerStockTicker(null);
-          onSelectStock(ticker);
+          if (onSelectStock) {
+            onSelectStock(ticker);
+          }
+          navigate(`/stock/${ticker}`);
         }}
         stockList={stocks}
         onSelectStock={(ticker) => setDrawerStockTicker(ticker)}

@@ -64,3 +64,12 @@ npm run lint
    - 재사용 가능한 모듈식 컴포넌트 단위로 개발합니다.
    - Tailwind CSS 기반 모바일, 태블릿, 데스크톱 환경을 지원하는 반응형 웹 레이아웃을 구현합니다.
    - 에러 바운더리와 로딩 스켈레톤(Suspense)을 적절히 배치하여 사용자 경험을 극대화합니다.
+
+4. **SPA 라우팅 및 새로고침 대응**:
+   - `react-router-dom`의 `BrowserRouter`를 사용하여 페이지/종목별 고유 URL을 관리합니다.
+   - 표준 라우트:
+     - `/` (스크리너 메인)
+     - `/stock/:ticker` (종목 상세 분석, 예: `/stock/AAPL`, `/stock/005930`)
+     - `/guide/buffett`, `/guide/lynch` (투자 원칙 가이드)
+     - `/community` (투자자 커뮤니티)
+   - 상용 웹 서버(Nginx, AWS CloudFront/S3 등) 배포 시 직접 URL 진입 및 새로고침을 위한 SPA fallback(`try_files $uri $uri/ /index.html;`) 설정이 필수입니다.

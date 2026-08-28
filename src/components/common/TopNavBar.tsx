@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, X } from 'lucide-react';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
 
@@ -6,24 +7,65 @@ export type NavTab = 'screener' | 'detail' | 'guide' | 'community';
 export type GuideType = 'buffett' | 'lynch';
 
 interface TopNavBarProps {
-  currentTab: NavTab;
-  onSelectTab: (tab: NavTab, guideType?: GuideType) => void;
+  currentTab?: NavTab;
+  onSelectTab?: (tab: NavTab, guideType?: GuideType) => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
   activeGuide?: GuideType;
+  currentTicker?: string | null;
 }
 
 export const TopNavBar: React.FC<TopNavBarProps> = ({
-  currentTab,
+  currentTab: propCurrentTab,
   onSelectTab,
   searchQuery,
   onSearchChange,
-  activeGuide = 'buffett',
+  activeGuide: propActiveGuide,
+  currentTicker = 'SYN-PASS',
 }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { t } = useAppConfig();
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+
+  // Compute active tab from pathname
+  const currentTab = useMemo<NavTab>(() => {
+    if (propCurrentTab) return propCurrentTab;
+    const path = location.pathname;
+    if (path.startsWith('/stock') || path.startsWith('/detail')) return 'detail';
+    if (path.startsWith('/guide')) return 'guide';
+    if (path.startsWith('/community')) return 'community';
+    return 'screener';
+  }, [propCurrentTab, location.pathname]);
+
+  // Compute active guide from pathname
+  const activeGuide = useMemo<GuideType>(() => {
+    if (propActiveGuide) return propActiveGuide;
+    const path = location.pathname;
+    if (path.includes('lynch')) return 'lynch';
+    return 'buffett';
+  }, [propActiveGuide, location.pathname]);
+
   const isDetail = currentTab === 'detail';
+
+  const handleNavigateTab = (tab: NavTab, guideType?: GuideType) => {
+    if (onSelectTab) {
+      onSelectTab(tab, guideType);
+    }
+    if (tab === 'screener') {
+      navigate('/');
+    } else if (tab === 'detail') {
+      const targetTicker = currentTicker || 'SYN-PASS';
+      navigate(`/stock/${targetTicker}`);
+    } else if (tab === 'guide') {
+      const targetGuide = guideType || (activeGuide === 'lynch' ? 'lynch' : 'buffett');
+      navigate(`/guide/${targetGuide}`);
+    } else if (tab === 'community') {
+      navigate('/community');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-[#FBFBFD]/90 dark:bg-black/85 backdrop-blur-xl border-b border-black/[0.04] dark:border-white/[0.08] transition-colors duration-300">
@@ -58,7 +100,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
             {/* Left: Brand (Clean Typographic SOGS Logo) */}
             <div className="flex items-center shrink-0">
               <button
-                onClick={() => onSelectTab('screener')}
+                onClick={() => handleNavigateTab('screener')}
                 className="text-left group cursor-pointer focus:outline-none flex items-center gap-1.5 sm:gap-2"
               >
                 <span className="text-sm sm:text-lg font-black tracking-tight text-[#0071E3] dark:text-[#2997FF] group-hover:opacity-80 transition-opacity">
@@ -74,7 +116,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
             {/* Center: Clean Nav Links with Horizontal Scroll Shelf on Mobile */}
             <nav className="flex items-center space-x-1 sm:space-x-6 overflow-x-auto no-scrollbar py-1 min-w-0">
               <button
-                onClick={() => onSelectTab('screener')}
+                onClick={() => handleNavigateTab('screener')}
                 className={`text-xs sm:text-sm font-medium py-1 px-1.5 sm:px-0.5 shrink-0 relative transition-colors focus:outline-none whitespace-nowrap cursor-pointer ${currentTab === 'screener'
                   ? 'text-[#0071E3] dark:text-[#2997FF] font-semibold'
                   : 'text-[#6E6E73] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
@@ -87,7 +129,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
               </button>
 
               <button
-                onClick={() => onSelectTab('detail')}
+                onClick={() => handleNavigateTab('detail')}
                 className={`text-xs sm:text-sm font-medium py-1 px-1.5 sm:px-0.5 shrink-0 relative transition-colors focus:outline-none whitespace-nowrap cursor-pointer ${currentTab === 'detail'
                   ? 'text-[#0071E3] dark:text-[#2997FF] font-semibold'
                   : 'text-[#6E6E73] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
@@ -108,8 +150,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
               >
                 <button
                   onClick={() => {
-                    // 투자 원칙 가이드를 누르면 맨 첫번째인 버핏 규칙으로 이동
-                    onSelectTab('guide', 'buffett');
+                    handleNavigateTab('guide', 'buffett');
                     setIsGuideOpen(false);
                   }}
                   className={`text-xs sm:text-sm font-medium py-1 px-1.5 sm:px-0.5 relative transition-colors focus:outline-none whitespace-nowrap cursor-pointer flex items-center gap-1 ${currentTab === 'guide'
@@ -132,7 +173,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                       {/* Sub-guide 1: Warren Buffett Rules */}
                       <button
                         onClick={() => {
-                          onSelectTab('guide', 'buffett');
+                          handleNavigateTab('guide', 'buffett');
                           setIsGuideOpen(false);
                         }}
                         className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all cursor-pointer ${currentTab === 'guide' && activeGuide === 'buffett'
@@ -149,7 +190,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                       {/* Sub-guide 2: Peter Lynch Rules */}
                       <button
                         onClick={() => {
-                          onSelectTab('guide', 'lynch');
+                          handleNavigateTab('guide', 'lynch');
                           setIsGuideOpen(false);
                         }}
                         className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all cursor-pointer ${currentTab === 'guide' && activeGuide === 'lynch'
@@ -167,7 +208,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
 
               {/* Community Tab */}
               <button
-                onClick={() => onSelectTab('community')}
+                onClick={() => handleNavigateTab('community')}
                 className={`text-xs sm:text-sm font-medium py-1 px-1.5 sm:px-0.5 shrink-0 relative transition-colors focus:outline-none whitespace-nowrap cursor-pointer ${currentTab === 'community'
                   ? 'text-[#0071E3] dark:text-[#2997FF] font-semibold'
                   : 'text-[#6E6E73] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'

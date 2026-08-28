@@ -1,3 +1,4 @@
+import { useParams, useNavigate } from 'react-router-dom';
 import { BookOpen, Check, X, TrendingUp } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import { GuideType } from '../components/common/TopNavBar';
@@ -7,8 +8,11 @@ interface RuleGuidePageProps {
 }
 
 export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
-  activeGuide = 'buffett',
+  activeGuide: propActiveGuide,
 }) => {
+  const { guideType: urlGuideType } = useParams<{ guideType?: string }>();
+  const navigate = useNavigate();
+  const activeGuide: GuideType = (urlGuideType === 'lynch' || propActiveGuide === 'lynch') ? 'lynch' : 'buffett';
   const { t, language } = useAppConfig();
 
   const buffettRules = [
@@ -314,19 +318,45 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
       
       {/* 1. Editorial Header Section */}
       <header className="space-y-4 pb-8 border-b border-black/[0.08] dark:border-white/[0.10]">
-        {/* Eyebrow / Kicker */}
-        <div className="flex items-center gap-2 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF]">
-          {activeGuide === 'buffett' ? (
-            <>
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>{language === 'ko' ? '버크셔 해서웨이 주주 서한 & 사업 원칙' : 'Berkshire Hathaway Owner Principles'}</span>
-            </>
-          ) : (
-            <>
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>{language === 'ko' ? '마젤란 펀드 성장주 발굴 원칙' : 'Magellan Fund Growth Principles'}</span>
-            </>
-          )}
+        {/* Top Controls: Eyebrow + Guide Switcher Pill */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF]">
+            {activeGuide === 'buffett' ? (
+              <>
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>{language === 'ko' ? '버크셔 해서웨이 주주 서한 & 사업 원칙' : 'Berkshire Hathaway Owner Principles'}</span>
+              </>
+            ) : (
+              <>
+                <TrendingUp className="w-3.5 h-3.5" />
+                <span>{language === 'ko' ? '마젤란 펀드 성장주 발굴 원칙' : 'Magellan Fund Growth Principles'}</span>
+              </>
+            )}
+          </div>
+
+          {/* Switch Guide Segmented Pill */}
+          <div className="flex items-center gap-1 p-1 bg-[#F5F5F7] dark:bg-[#1C1C1E] rounded-xl w-fit border border-black/[0.04] dark:border-white/[0.08]">
+            <button
+              onClick={() => navigate('/guide/buffett')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                activeGuide === 'buffett'
+                  ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-xs'
+                  : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
+              }`}
+            >
+              {t('guideBuffett')}
+            </button>
+            <button
+              onClick={() => navigate('/guide/lynch')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                activeGuide === 'lynch'
+                  ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-xs'
+                  : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
+              }`}
+            >
+              {t('guideLynch')}
+            </button>
+          </div>
         </div>
 
         {/* H1 Headline */}

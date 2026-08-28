@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   MessageSquare, Clock, Calendar,
   ThumbsUp, ThumbsDown, MessageCircle, Share2, Bookmark,
@@ -25,7 +26,15 @@ interface CommunityPageProps {
 }
 
 export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) => {
+  const navigate = useNavigate();
   const { t, language } = useAppConfig();
+
+  const handleStockClick = (ticker: string) => {
+    if (onSelectStock) {
+      onSelectStock(ticker);
+    }
+    navigate(`/stock/${ticker}`);
+  };
 
   const getStockInfo = (ticker: string) => {
     const matched = TRENDING_TICKERS.find((t) => t.ticker.toUpperCase() === ticker.toUpperCase());
@@ -640,7 +649,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onSelectStock?.(post.ticker!);
+                                handleStockClick(post.ticker!);
                               }}
                               className="inline-flex items-center gap-1 font-bold text-xs text-[#0071E3] dark:text-[#2997FF] hover:underline cursor-pointer ml-1"
                             >
@@ -1005,7 +1014,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
           );
           showToast('댓글이 등록되었습니다.');
         }}
-        onSelectStock={onSelectStock}
+        onSelectStock={handleStockClick}
         showToast={showToast}
       />
 

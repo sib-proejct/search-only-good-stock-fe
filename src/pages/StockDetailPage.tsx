@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   RuleDefinitionDTO,
   StockDetailDTO,
@@ -29,7 +30,7 @@ import {
 interface StockDetailPageProps {
   stockId?: string;
   ticker?: string | null;
-  onBack: () => void;
+  onBack?: () => void;
   onSelectStock?: (ticker: string) => void;
 }
 
@@ -39,7 +40,9 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   onBack,
   onSelectStock,
 }) => {
-  const currentTicker = propTicker || stockId || null;
+  const { ticker: urlTicker } = useParams<{ ticker?: string }>();
+  const navigate = useNavigate();
+  const currentTicker = urlTicker || propTicker || stockId || 'SYN-PASS';
   const { t } = useAppConfig();
 
   const [detail, setDetail] = useState<StockDetailDTO | null>(null);
@@ -137,11 +140,20 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
     };
   }, [currentTicker]);
 
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate('/');
+    }
+  };
+
   const handleSelectFromList = (targetTicker: string) => {
     setIsDropdownOpen(false);
     if (onSelectStock) {
       onSelectStock(targetTicker);
     }
+    navigate(`/stock/${targetTicker}`);
   };
 
   const handleRetry = () => {
@@ -215,7 +227,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
         </p>
         <div className="pt-2">
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="px-6 py-2.5 rounded-full text-xs font-bold text-white bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#2997FF] dark:hover:bg-[#0071E3] shadow-sm transition-all cursor-pointer"
           >
             {t('backToScreener')}
@@ -252,7 +264,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
         </p>
         <div className="pt-2 flex items-center justify-center gap-3">
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="px-5 py-2.5 rounded-full text-xs font-bold text-white bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#2997FF] dark:hover:bg-[#0071E3] transition-all cursor-pointer"
           >
             {t('backToScreener')}
@@ -290,7 +302,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
             <span>{t('retry')}</span>
           </button>
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="px-5 py-2.5 rounded-full text-xs font-semibold bg-[#F5F5F7] dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#EBEBED] dark:hover:bg-[#2C2C2E] border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer"
           >
             {t('backToScreener')}
@@ -308,7 +320,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
       {/* 1. Sub Header: Back Button & Synthetic Fixture Quick Buttons & Stock Switcher Dropdown */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <button
-          onClick={onBack}
+          onClick={handleBack}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#6E6E73] dark:text-[#86868B] hover:text-[#0071E3] dark:hover:text-[#2997FF] transition-colors focus:outline-none cursor-pointer w-fit"
         >
           <ArrowLeft className="w-4 h-4" />
