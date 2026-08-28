@@ -1,91 +1,83 @@
 import { useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeLanguageProvider, useAppConfig } from './context/ThemeLanguageContext';
-import { TopNavBar, GuideType, NavTab } from './components/common/TopNavBar';
+import { TopNavBar } from './components/common/TopNavBar';
 import { ScreenerPage } from './pages/ScreenerPage';
 import { StockDetailPage } from './pages/StockDetailPage';
 import { RuleGuidePage } from './pages/RuleGuidePage';
 import { CommunityPage } from './pages/CommunityPage';
-import { MOCK_STOCKS } from './services/mockData';
 import { Sun, Moon, Globe } from 'lucide-react';
 
 function AppContent() {
   const { t, theme, toggleTheme, language, toggleLanguage } = useAppConfig();
-  const [currentTab, setCurrentTab] = useState<NavTab>('screener');
-  const [selectedGuide, setSelectedGuide] = useState<GuideType>('buffett');
-  const [selectedStockId, setSelectedStockId] = useState<string>('aapl');
   const [searchQuery, setSearchQuery] = useState<string>('');
-
-  const selectedStock = MOCK_STOCKS.find((s) => s.id === selectedStockId) || MOCK_STOCKS[0];
-
-  const handleSelectStock = (stockId: string) => {
-    // Check if stock exists by id or ticker
-    const found = MOCK_STOCKS.find(
-      (s) => s.id.toLowerCase() === stockId.toLowerCase() || s.ticker.toLowerCase() === stockId.toLowerCase()
-    );
-    if (found) {
-      setSelectedStockId(found.id);
-    } else {
-      setSelectedStockId(stockId.toLowerCase());
-    }
-    setCurrentTab('detail');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleSelectTab = (tab: NavTab, guideType?: GuideType) => {
-    if (guideType) {
-      setSelectedGuide(guideType);
-    }
-    setCurrentTab(tab);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   return (
     <div className="min-h-screen bg-[#FBFBFD] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7] flex flex-col font-sans selection:bg-[#0071E3]/15 selection:text-[#0071E3] transition-colors duration-300">
-
       {/* 1. Frosted Glass Top Navigation Bar */}
       <TopNavBar
-        currentTab={currentTab}
-        onSelectTab={handleSelectTab}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        selectedStock={selectedStock}
-        activeGuide={selectedGuide}
       />
 
-      {/* 2. Main Body Content */}
+      {/* 2. Main Body Content with Client-Side Routing */}
       <main className="flex-1 w-full pb-16">
-        {currentTab === 'screener' && (
-          <ScreenerPage
-            onSelectStock={handleSelectStock}
-            searchQuery={searchQuery}
+        <Routes>
+          {/* Screener (Home) */}
+          <Route
+            path="/"
+            element={<ScreenerPage searchQuery={searchQuery} />}
           />
-        )}
+          <Route
+            path="/screener"
+            element={<Navigate to="/" replace />}
+          />
 
-        {currentTab === 'detail' && (
-          <StockDetailPage
-            stockId={selectedStockId}
-            onBack={() => setCurrentTab('screener')}
-            onSelectStock={handleSelectStock}
+          {/* Stock Analysis Detail */}
+          <Route
+            path="/stock/:ticker"
+            element={<StockDetailPage />}
           />
-        )}
+          <Route
+            path="/stock"
+            element={<Navigate to="/stock/SYN-PASS" replace />}
+          />
+          <Route
+            path="/detail/:ticker"
+            element={<StockDetailPage />}
+          />
+          <Route
+            path="/detail"
+            element={<Navigate to="/stock/SYN-PASS" replace />}
+          />
 
-        {currentTab === 'guide' && (
-          <RuleGuidePage
-            activeGuide={selectedGuide}
+          {/* Investment Principle Guides */}
+          <Route
+            path="/guide"
+            element={<Navigate to="/guide/buffett" replace />}
           />
-        )}
+          <Route
+            path="/guide/:guideType"
+            element={<RuleGuidePage />}
+          />
 
-        {currentTab === 'community' && (
-          <CommunityPage
-            onSelectStock={handleSelectStock}
+          {/* Community Discussions */}
+          <Route
+            path="/community"
+            element={<CommunityPage />}
           />
-        )}
+
+          {/* Fallback */}
+          <Route
+            path="*"
+            element={<Navigate to="/" replace />}
+          />
+        </Routes>
       </main>
 
       {/* 3. Apple Minimalist Footer with Inline Controls on a Single Line */}
       <footer className="border-t border-black/[0.04] dark:border-white/[0.08] bg-[#FBFBFD] dark:bg-black py-8 px-6 sm:px-8 text-xs text-[#86868B] font-sans transition-colors duration-300">
         <div className="max-w-[1280px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-
           {/* Left: Copyright */}
           <div className="font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">
             {t('footerCopyright')}
@@ -126,12 +118,9 @@ function AppContent() {
                 )}
               </button>
             </div>
-
           </div>
-
         </div>
       </footer>
-
     </div>
   );
 }
@@ -145,3 +134,4 @@ export function App() {
 }
 
 export default App;
+

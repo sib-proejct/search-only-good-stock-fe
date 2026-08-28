@@ -1,10 +1,4 @@
-export type DiscussionCategory = 
-  | 'all' 
-  | 'buffett' 
-  | 'lynch' 
-  | 'analysis' 
-  | 'valuation' 
-  | 'outlook';
+export type DiscussionCategory = 'all' | string;
 
 export type DiscussionSort = 'daily' | 'weekly' | 'monthly' | 'latest' | 'top';
 

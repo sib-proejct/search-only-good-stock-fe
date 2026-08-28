@@ -1,40 +1,117 @@
-import { Stock } from '../types/stock';
-import { MOCK_STOCKS } from './mockData';
+import {
+  RuleListResponse,
+  StockDetailDTO,
+  StockListQuery,
+  StockListResponse,
+} from '../types/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-export const stockApi = {
-  // 전체 종목 목록 조회
-  async getStocks(): Promise<Stock[]> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/stocks`, {
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return await response.json();
-    } catch (err) {
-      console.info('BE API 서버 연결 전이거나 오프라인 상태이므로 내장 Mock 데이터를 사용합니다.', err);
-      return MOCK_STOCKS;
-    }
-  },
-
-  // 특정 종목 상세 조회
-  async getStockDetail(tickerOrId: string): Promise<Stock | null> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/stocks/${tickerOrId}`, {
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return await response.json();
-    } catch {
-      const found = MOCK_STOCKS.find(
-        (s) => s.id.toLowerCase() === tickerOrId.toLowerCase() || s.ticker.toLowerCase() === tickerOrId.toLowerCase()
-      );
-      return found || MOCK_STOCKS[0];
+async function parseErrorMessage(response: Response): Promise<string> {
+  const errorBody = await response.json().catch(() => null);
+  if (typeof errorBody?.detail === 'string' && errorBody.detail.trim() !== '') {
+    return errorBody.detail;
+  }
+  if (Array.isArray(errorBody?.detail)) {
+    const messages = errorBody.detail
+      .map((item: { msg?: string }) => item?.msg || '')
+      .filter(Boolean);
+    if (messages.length > 0) {
+      return messages.join(', ');
     }
   }
+  return `HTTP error! status: ${response.status}`;
+}
+
+export const stockApi = {
+  async getRules(signal?: AbortSignal): Promise<RuleListResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/rules`, {
+      headers: { 'Content-Type': 'application/json' },
+      signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
+
+  async getStocks(
+    query?: StockListQuery,
+    signal?: AbortSignal
+  ): Promise<StockListResponse> {
+    const params = new URLSearchParams();
+
+    if (query) {
+      if (query.search && query.search.trim() !== '') {
+        params.set('search', query.search.trim());
+      }
+      if (query.market) {
+        params.set('market', query.market);
+      }
+      if (query.sector && query.sector.trim() !== '') {
+        params.set('sector', query.sector.trim());
+      }
+      if (query.coreStatus) {
+        params.set('coreStatus', query.coreStatus);
+      }
+      if (query.valuationStatus) {
+        params.set('valuationStatus', query.valuationStatus);
+      }
+      if (query.sort) {
+        params.set('sort', query.sort);
+      }
+      if (query.order) {
+        params.set('order', query.order);
+      }
+      if (typeof query.limit === 'number') {
+        params.set('limit', String(query.limit));
+      }
+      if (typeof query.offset === 'number') {
+        params.set('offset', String(query.offset));
+      }
+    }
+
+    const queryString = params.toString();
+    const url = queryString
+      ? `${API_BASE_URL}/api/stocks?${queryString}`
+      : `${API_BASE_URL}/api/stocks`;
+
+    const response = await fetch(url, {
+      headers: { 'Content-Type': 'application/json' },
+      signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
+
+  async getStockDetail(
+    ticker: string,
+    signal?: AbortSignal
+  ): Promise<StockDetailDTO> {
+    const trimmedTicker = ticker?.trim();
+    if (!trimmedTicker) {
+      throw new Error('Ticker is required');
+    }
+
+    const encodedTicker = encodeURIComponent(trimmedTicker);
+    const response = await fetch(
+      `${API_BASE_URL}/api/stocks/${encodedTicker}`,
+      {
+        headers: { 'Content-Type': 'application/json' },
+        signal,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
 };
