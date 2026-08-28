@@ -61,25 +61,27 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
     if (metric.value === null || metric.value === undefined) {
       return '—';
     }
+    const valNum = typeof metric.value === 'string' ? parseFloat(metric.value) : metric.value;
+    if (isNaN(valNum)) return '—';
     switch (metric.unit) {
       case 'RATIO': {
-        const pct = metric.value * 100;
+        const pct = valNum * 100;
         return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
       }
       case 'MULTIPLE':
-        return `${metric.value.toFixed(2)}x`;
+        return `${valNum.toFixed(2)}x`;
       case 'CURRENCY':
         if (currency === 'USD') {
-          return `$${metric.value.toLocaleString(undefined, {
+          return `$${valNum.toLocaleString(undefined, {
             minimumFractionDigits: 1,
             maximumFractionDigits: 2,
           })}M`;
         }
-        return `${metric.value.toLocaleString()}억`;
+        return `${valNum.toLocaleString()}억`;
       case 'COUNT':
-        return `${metric.value.toLocaleString()}`;
+        return `${valNum.toLocaleString()}`;
       default:
-        return `${metric.value}`;
+        return `${valNum}`;
     }
   };
 
@@ -90,13 +92,16 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
     return def.defaultThresholds
       .map((th) => {
         const op = th.operator === 'GTE' ? '≥' : th.operator === 'LTE' ? '≤' : th.operator === 'GT' ? '>' : '<';
+        const numVal = typeof th.value === 'string' ? parseFloat(th.value) : th.value;
         let valStr = `${th.value}`;
-        if (th.unit === 'RATIO') {
-          valStr = `${(th.value * 100).toFixed(0)}%`;
-        } else if (th.unit === 'MULTIPLE') {
-          valStr = `${th.value.toFixed(1)}x`;
-        } else if (th.unit === 'CURRENCY') {
-          valStr = currency === 'USD' ? `$${th.value}` : `${th.value}원`;
+        if (!isNaN(numVal)) {
+          if (th.unit === 'RATIO') {
+            valStr = `${(numVal * 100).toFixed(0)}%`;
+          } else if (th.unit === 'MULTIPLE') {
+            valStr = `${numVal.toFixed(1)}x`;
+          } else if (th.unit === 'CURRENCY') {
+            valStr = currency === 'USD' ? `$${numVal}` : `${numVal}원`;
+          }
         }
         return `${th.metricId} ${op} ${valStr}`;
       })

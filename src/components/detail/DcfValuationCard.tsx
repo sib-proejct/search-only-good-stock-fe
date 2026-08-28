@@ -29,20 +29,24 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
 }) => {
   const { t, language } = useAppConfig();
 
-  const formatPrice = (val: number | null): string => {
+  const formatPrice = (val: number | string | null): string => {
     if (val === null || val === undefined) return '—';
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(num)) return '—';
     if (currency === 'USD') {
-      return `$${val.toLocaleString(undefined, {
+      return `$${num.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })}`;
     }
-    return `${Math.round(val).toLocaleString()}원`;
+    return `${Math.round(num).toLocaleString()}원`;
   };
 
-  const formatPercent = (val: number | null): string => {
+  const formatPercent = (val: number | string | null): string => {
     if (val === null || val === undefined) return '—';
-    const pct = val * 100;
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(num)) return '—';
+    const pct = num * 100;
     return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
   };
 

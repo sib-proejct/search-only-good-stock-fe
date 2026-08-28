@@ -155,7 +155,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
               <span className="text-xs font-medium text-[#86868B] block truncate">
                 {t('currentMarketScan')}
               </span>
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF] bg-[#0071E3]/10 dark:bg-[#2997FF]/15 px-2 py-0.5 rounded-full font-mono">
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF] font-mono">
                 <Database className="w-3 h-3" />
                 <span>FIXTURE</span>
               </span>
@@ -586,14 +586,14 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                         {/* Valuation Status */}
                         <td className="py-4 px-4 text-center whitespace-nowrap">
                           <span
-                            className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                            className={`text-[11px] font-semibold ${
                               stock.valuationStatus === 'PASS_WITH_MARGIN'
-                                ? 'bg-[#34C759]/10 text-[#34C759]'
+                                ? 'text-[#34C759]'
                                 : stock.valuationStatus === 'WATCH'
-                                ? 'bg-[#FF9500]/10 text-[#FF9500]'
+                                ? 'text-[#FF9500]'
                                 : stock.valuationStatus === 'NO_MARGIN'
-                                ? 'bg-[#FF3B30]/10 text-[#FF3B30]'
-                                : 'bg-black/[0.04] dark:bg-white/[0.06] text-[#86868B]'
+                                ? 'text-[#FF3B30]'
+                                : 'text-[#86868B]'
                             }`}
                           >
                             {stock.valuationStatus === 'PASS_WITH_MARGIN'
@@ -622,12 +622,12 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                         {/* Confidence */}
                         <td className="py-4 pr-6 sm:pr-7 pl-4 text-center font-mono whitespace-nowrap">
                           <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                            className={`text-[10px] font-bold ${
                               stock.confidence === 'HIGH'
-                                ? 'bg-[#34C759]/15 text-[#34C759]'
+                                ? 'text-[#34C759]'
                                 : stock.confidence === 'MEDIUM'
-                                ? 'bg-[#FF9500]/15 text-[#FF9500]'
-                                : 'bg-black/[0.06] dark:bg-white/[0.08] text-[#86868B]'
+                                ? 'text-[#FF9500]'
+                                : 'text-[#86868B]'
                             }`}
                           >
                             {stock.confidence}

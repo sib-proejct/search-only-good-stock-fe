@@ -24,27 +24,38 @@ export const MarketBenchmarkCard: React.FC<MarketBenchmarkCardProps> = ({
   const { language } = useAppConfig();
   const [showQuarterly, setShowQuarterly] = useState(false);
 
-  const formatPrice = (val: number | null): string => {
+  const formatPrice = (val: number | string | null): string => {
     if (val === null || val === undefined) return '—';
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(num)) return '—';
     if (currency === 'USD') {
-      return `$${val.toLocaleString(undefined, {
+      return `$${num.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })}`;
     }
-    return `${Math.round(val).toLocaleString()}원`;
+    return `${Math.round(num).toLocaleString()}원`;
   };
 
-  const formatMarketCap = (val: number | null): string => {
+  const formatMarketCap = (val: number | string | null): string => {
     if (val === null || val === undefined) return '—';
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(num)) return '—';
     if (currency === 'USD') {
-      return `$${val.toLocaleString(undefined, {
+      return `$${num.toLocaleString(undefined, {
         minimumFractionDigits: 1,
         maximumFractionDigits: 2,
       })}M`;
     }
-    return `${val.toLocaleString()}억원`;
+    return `${num.toLocaleString()}억원`;
   };
+
+  const dilutedSharesNum = currentMarket.dilutedShares !== null && currentMarket.dilutedShares !== undefined
+    ? Number(currentMarket.dilutedShares)
+    : null;
+  const riskFreeRateNum = currentMarket.riskFreeRate !== null && currentMarket.riskFreeRate !== undefined
+    ? Number(currentMarket.riskFreeRate)
+    : null;
 
   return (
     <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-6 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-5 transition-colors duration-300">
@@ -91,14 +102,14 @@ export const MarketBenchmarkCard: React.FC<MarketBenchmarkCardProps> = ({
         <div className="p-3.5 rounded-2xl bg-[#FBFBFD] dark:bg-[#252528]/50 border border-black/[0.04] dark:border-white/[0.06]">
           <span className="text-[10px] text-[#86868B] uppercase font-semibold block">희석주식수 (Diluted Shares)</span>
           <span className="font-mono text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums mt-1 block">
-            {currentMarket.dilutedShares !== null ? `${currentMarket.dilutedShares.toLocaleString()}M` : '—'}
+            {dilutedSharesNum !== null && !isNaN(dilutedSharesNum) ? `${dilutedSharesNum.toLocaleString()}M` : '—'}
           </span>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-[#FBFBFD] dark:bg-[#252528]/50 border border-black/[0.04] dark:border-white/[0.06]">
           <span className="text-[10px] text-[#86868B] uppercase font-semibold block">무위험수익률 (Risk-Free Rate)</span>
           <span className="font-mono text-base sm:text-lg font-bold text-[#0071E3] dark:text-[#2997FF] tabular-nums mt-1 block">
-            {currentMarket.riskFreeRate !== null ? `${(currentMarket.riskFreeRate * 100).toFixed(2)}%` : '—'}
+            {riskFreeRateNum !== null && !isNaN(riskFreeRateNum) ? `${(riskFreeRateNum * 100).toFixed(2)}%` : '—'}
           </span>
         </div>
       </div>
@@ -112,17 +123,20 @@ export const MarketBenchmarkCard: React.FC<MarketBenchmarkCardProps> = ({
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {benchmarkPoints.map((bp, idx) => (
-              <div
-                key={idx}
-                className="p-2.5 rounded-xl bg-white dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between"
-              >
-                <span className="font-mono text-xs text-[#86868B]">{bp.periodEnd.slice(0, 10)}</span>
-                <span className="font-mono text-xs font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
-                  {bp.indexValue !== null ? bp.indexValue.toFixed(2) : '—'}
-                </span>
-              </div>
-            ))}
+            {benchmarkPoints.map((bp, idx) => {
+              const idxNum = bp.indexValue !== null && bp.indexValue !== undefined ? Number(bp.indexValue) : null;
+              return (
+                <div
+                  key={idx}
+                  className="p-2.5 rounded-xl bg-white dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between"
+                >
+                  <span className="font-mono text-xs text-[#86868B]">{bp.periodEnd.slice(0, 10)}</span>
+                  <span className="font-mono text-xs font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
+                    {idxNum !== null && !isNaN(idxNum) ? idxNum.toFixed(2) : '—'}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -152,8 +166,10 @@ export const MarketBenchmarkCard: React.FC<MarketBenchmarkCardProps> = ({
                 </thead>
                 <tbody className="divide-y divide-black/[0.03] dark:divide-white/[0.04] font-mono tabular-nums">
                   {quarterlyBookPrices.map((q, idx) => {
-                    const pb = q.adjustedClosePrice && q.bvps && q.bvps > 0
-                      ? (q.adjustedClosePrice / q.bvps).toFixed(2)
+                    const adjCloseNum = Number(q.adjustedClosePrice);
+                    const bvpsNum = Number(q.bvps);
+                    const pb = !isNaN(adjCloseNum) && !isNaN(bvpsNum) && bvpsNum > 0
+                      ? (adjCloseNum / bvpsNum).toFixed(2)
                       : '—';
                     return (
                       <tr key={idx} className="hover:bg-[#F9FAFB] dark:hover:bg-[#252528]/50">
@@ -174,3 +190,4 @@ export const MarketBenchmarkCard: React.FC<MarketBenchmarkCardProps> = ({
     </div>
   );
 };
+

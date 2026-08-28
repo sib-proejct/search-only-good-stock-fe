@@ -23,24 +23,26 @@ export const YearlyFinancialsTable: React.FC<YearlyFinancialsTableProps> = ({
   // Sort chronological ascending (or latest first)
   const sortedFinancials = [...financials].sort((a, b) => a.fiscalYear - b.fiscalYear);
 
-  const formatNumber = (val: number | null, isEps: boolean = false): string => {
+  const formatNumber = (val: number | string | null, isEps: boolean = false): string => {
     if (val === null || val === undefined) return '—';
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(num)) return '—';
     if (isEps) {
       if (currency === 'USD') {
-        return `$${val.toLocaleString(undefined, {
+        return `$${num.toLocaleString(undefined, {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}`;
       }
-      return `${Math.round(val).toLocaleString()}원`;
+      return `${Math.round(num).toLocaleString()}원`;
     }
     if (currency === 'USD') {
-      return `$${val.toLocaleString(undefined, {
+      return `$${num.toLocaleString(undefined, {
         minimumFractionDigits: 1,
         maximumFractionDigits: 2,
       })}M`;
     }
-    return `${val.toLocaleString()}억`;
+    return `${num.toLocaleString()}억`;
   };
 
   return (

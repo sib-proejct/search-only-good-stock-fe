@@ -214,7 +214,8 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                   : 'text-[#6E6E73] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                   }`}
               >
-                <span>{t('community')}</span>
+                <span className="hidden sm:inline">{t('community')}</span>
+                <span className="sm:hidden">{t('communityShort')}</span>
                 {currentTab === 'community' && (
                   <span className="absolute -bottom-1 left-1 right-1 sm:left-0 sm:right-0 h-0.5 bg-[#0071E3] dark:bg-[#2997FF] rounded-full" />
                 )}

@@ -180,25 +180,31 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   };
 
   // Format price & market cap
-  const formatPrice = (val: number | null, curr: string) => {
+  const formatPrice = (val: number | string | null, curr: string) => {
     if (val === null || val === undefined) return '—';
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(num)) return '—';
     if (curr === 'USD') {
-      return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
-    return `${Math.round(val).toLocaleString()}원`;
+    return `${Math.round(num).toLocaleString()}원`;
   };
 
-  const formatMarketCap = (val: number | null, curr: string) => {
+  const formatMarketCap = (val: number | string | null, curr: string) => {
     if (val === null || val === undefined) return '—';
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(num)) return '—';
     if (curr === 'USD') {
-      return `$${val.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}M`;
+      return `$${num.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}M`;
     }
-    return `${val.toLocaleString()}억원`;
+    return `${num.toLocaleString()}억원`;
   };
 
-  const formatPercent = (val: number | null) => {
+  const formatPercent = (val: number | string | null) => {
     if (val === null || val === undefined) return '—';
-    const pct = val * 100;
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(num)) return '—';
+    const pct = num * 100;
     return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
   };
 

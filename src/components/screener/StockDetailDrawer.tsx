@@ -479,14 +479,17 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                     </div>
 
                     <div className="space-y-1">
-                      {evalItem.metrics.map((m, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-[11px] text-[#86868B]">
-                          <span className="font-mono">{m.metricId}</span>
-                          <span className="font-mono font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
-                            {m.value !== null ? (m.unit === 'RATIO' ? `${(m.value * 100).toFixed(1)}%` : m.value.toFixed(2)) : '—'}
-                          </span>
-                        </div>
-                      ))}
+                      {evalItem.metrics.map((m, idx) => {
+                        const mNum = m.value !== null && m.value !== undefined ? Number(m.value) : null;
+                        return (
+                          <div key={idx} className="flex items-center justify-between text-[11px] text-[#86868B]">
+                            <span className="font-mono">{m.metricId}</span>
+                            <span className="font-mono font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
+                              {mNum !== null && !isNaN(mNum) ? (m.unit === 'RATIO' ? `${(mNum * 100).toFixed(1)}%` : mNum.toFixed(2)) : '—'}
+                            </span>
+                          </div>
+                        );
+                      })}
                       {evalItem.reasonCodes.length > 0 && (
                         <div className="text-[10px] text-[#FF9500] font-mono pt-1">
                           Reason: {evalItem.reasonCodes.join(', ')}
