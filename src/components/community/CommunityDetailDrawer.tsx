@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { DiscussionCategory, DiscussionPost } from '../../types/community';
+import { DiscussionPost } from '../../types/community';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
 import { TRENDING_TICKERS } from '../../services/communityData';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
@@ -267,23 +267,6 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
     return null;
   }
 
-  const getCategoryKeyword = (cat: DiscussionCategory): string => {
-    switch (cat) {
-      case 'analysis':
-        return '분석';
-      case 'valuation':
-        return '정보';
-      case 'buffett':
-        return '버핏밸류';
-      case 'lynch':
-        return '피터린치';
-      case 'outlook':
-        return '전망';
-      default:
-        return '일반';
-    }
-  };
-
   const getStockInfo = (ticker: string) => {
     const matched = TRENDING_TICKERS.find((t) => t.ticker.toUpperCase() === ticker.toUpperCase());
     if (matched) return matched;
@@ -367,7 +350,7 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
           {/* Left: Section Label */}
           <div className="flex items-center gap-2">
             <span className="text-xs sm:text-sm font-bold text-[#1D1D1F] dark:text-[#F5F5F7]">
-              게시글 상세
+              내재가치 분석 상세
             </span>
           </div>
 
@@ -388,7 +371,7 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
             <button
               onClick={() => {
                 navigator.clipboard?.writeText(window.location.href);
-                if (showToast) showToast('토론 링크가 복사되었습니다.');
+                if (showToast) showToast('내재가치 글 링크가 복사되었습니다.');
               }}
               className="p-1.5 rounded-full text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] bg-white dark:bg-[#1C1C1E] border border-black/[0.08] dark:border-white/[0.08] transition-colors cursor-pointer"
               title="공유하기"
@@ -423,11 +406,11 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
             {/* 1. Compact 2-Line Article Header Section (No Avatar, No Badge) */}
             <div className="space-y-2.5 pb-1">
 
-              {/* Line 1: [말머리 뱃지] + [게시글 제목] + [작성 시각] */}
+              {/* Line 1: [종목명 말머리 뱃지] + [게시글 제목] + [작성 시각] */}
               <div className="flex items-center justify-between gap-3 text-xs sm:text-sm">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] border border-black/[0.04] dark:border-white/[0.08] whitespace-nowrap shrink-0">
-                    {getCategoryKeyword(post.category)}
+                  <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] border border-[#0071E3]/20 dark:border-[#2997FF]/30 whitespace-nowrap shrink-0">
+                    {post.category}
                   </span>
                   <h1
                     id="drawer-post-title"
