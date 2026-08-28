@@ -460,7 +460,7 @@ success + 다음 페이지 요청 -> 기존 items 유지 + loadingMore
 - 상세의 N/A, null, reason code와 DCF 시나리오가 손실 없이 전달됩니다.
 - 실패 요청이 Mock 성공 응답으로 바뀌지 않습니다.
 - **커밋 메시지**: `refactor(frontend): adopt stock analysis api contract`
-- **완료 처리 여부**: [ ] 미완료
+- **완료 처리 여부**: [x] 완료
 
 ### 5.3 Phase F2 — 스크리너 전환
 
