@@ -40,6 +40,9 @@ npm run dev
 # 프로덕션 빌드 (dist/ 생성)
 npm run build
 
+# 실행 중인 BE /openapi.json에서 API 타입 재생성
+npm run generate:api
+
 # 프로덕션 빌드 미리보기
 npm run preview
 

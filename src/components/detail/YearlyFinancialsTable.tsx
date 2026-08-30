@@ -37,12 +37,23 @@ export const YearlyFinancialsTable: React.FC<YearlyFinancialsTableProps> = ({
       return `${Math.round(num).toLocaleString()}원`;
     }
     if (currency === 'USD') {
-      return `$${num.toLocaleString(undefined, {
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 2,
-      })}M`;
+      if (Math.abs(num) >= 1_000_000_000_000) return `$${(num / 1_000_000_000_000).toFixed(1)}T`;
+      if (Math.abs(num) >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(1)}B`;
+      if (Math.abs(num) >= 1_000_000) return `$${(num / 1_000_000).toFixed(1)}M`;
+      return `$${num.toLocaleString()}`;
     }
-    return `${num.toLocaleString()}억`;
+    if (Math.abs(num) >= 1_000_000_000_000) return `${(num / 1_000_000_000_000).toFixed(1)}조원`;
+    if (Math.abs(num) >= 100_000_000) return `${(num / 100_000_000).toFixed(1)}억원`;
+    return `${num.toLocaleString()}원`;
+  };
+
+  const formatShares = (val: string | null): string => {
+    if (val === null) return '—';
+    const num = Number(val);
+    if (isNaN(num)) return '—';
+    if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B`;
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`;
+    return num.toLocaleString();
   };
 
   return (
@@ -69,7 +80,7 @@ export const YearlyFinancialsTable: React.FC<YearlyFinancialsTableProps> = ({
               {industryType}
             </span>
           )}
-          <span>단위: {currency === 'USD' ? '$ (Millions)' : 'KRW (억원)'}</span>
+          <span>{currency} 원단위 · 화면 축약 표기</span>
         </div>
       </div>
 
@@ -105,7 +116,7 @@ export const YearlyFinancialsTable: React.FC<YearlyFinancialsTableProps> = ({
                 </td>
                 <td
                   className={`py-3.5 px-3.5 text-right font-semibold ${
-                    f.netIncomeCommon !== null && f.netIncomeCommon >= 0
+                    f.netIncomeCommon !== null && Number(f.netIncomeCommon) >= 0
                       ? 'text-[#1D1D1F] dark:text-[#F5F5F7]'
                       : 'text-[#FF3B30]'
                   }`}
@@ -142,7 +153,7 @@ export const YearlyFinancialsTable: React.FC<YearlyFinancialsTableProps> = ({
                   {formatNumber(f.dilutedEps, true)}
                 </td>
                 <td className="py-3.5 px-3.5 text-right text-[#86868B]">
-                  {f.dilutedShares !== null ? `${f.dilutedShares.toLocaleString()}M` : '—'}
+                  {formatShares(f.dilutedShares)}
                 </td>
               </tr>
             ))}

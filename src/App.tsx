@@ -40,7 +40,7 @@ function AppContent() {
           />
           <Route
             path="/stock"
-            element={<Navigate to="/stock/SYN-PASS" replace />}
+            element={<Navigate to="/" replace />}
           />
           <Route
             path="/detail/:ticker"
@@ -48,7 +48,7 @@ function AppContent() {
           />
           <Route
             path="/detail"
-            element={<Navigate to="/stock/SYN-PASS" replace />}
+            element={<Navigate to="/" replace />}
           />
 
           {/* Investment Principle Guides */}
@@ -134,4 +134,3 @@ export function App() {
 }
 
 export default App;
-

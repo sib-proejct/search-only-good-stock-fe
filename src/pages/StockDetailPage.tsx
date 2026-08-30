@@ -17,7 +17,6 @@ import {
   ArrowLeft,
   ChevronDown,
   Check,
-  Sparkles,
   AlertTriangle,
   Calendar,
   CheckCircle2,
@@ -42,7 +41,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
 }) => {
   const { ticker: urlTicker } = useParams<{ ticker?: string }>();
   const navigate = useNavigate();
-  const currentTicker = urlTicker || propTicker || stockId || 'SYN-PASS';
+  const currentTicker = urlTicker || propTicker || stockId;
   const { t } = useAppConfig();
 
   const [detail, setDetail] = useState<StockDetailDTO | null>(null);
@@ -195,9 +194,14 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
     const num = typeof val === 'string' ? parseFloat(val) : val;
     if (isNaN(num)) return '—';
     if (curr === 'USD') {
-      return `$${num.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}M`;
+      if (num >= 1_000_000_000_000) return `$${(num / 1_000_000_000_000).toFixed(1)}T`;
+      if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(1)}B`;
+      if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(1)}M`;
+      return `$${num.toLocaleString()}`;
     }
-    return `${num.toLocaleString()}억원`;
+    if (num >= 1_000_000_000_000) return `${(num / 1_000_000_000_000).toFixed(1)}조원`;
+    if (num >= 100_000_000) return `${(num / 100_000_000).toFixed(1)}억원`;
+    return `${num.toLocaleString()}원`;
   };
 
   const formatPercent = (val: number | string | null) => {
@@ -275,12 +279,6 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
           >
             {t('backToScreener')}
           </button>
-          <button
-            onClick={() => handleSelectFromList('SYN-PASS')}
-            className="px-5 py-2.5 rounded-full text-xs font-semibold bg-[#F5F5F7] dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#EBEBED] dark:hover:bg-[#2C2C2E] border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer"
-          >
-            {t('goodStockExample')}
-          </button>
         </div>
       </div>
     );
@@ -318,12 +316,9 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
     );
   }
 
-  const isGoodStockSelected = detail.ticker === 'SYN-PASS';
-  const isBadStockSelected = detail.ticker === 'SYN-FAIL';
-
   return (
     <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-6 animate-fade-in">
-      {/* 1. Sub Header: Back Button & Synthetic Fixture Quick Buttons & Stock Switcher Dropdown */}
+      {/* 1. Sub Header: Back Button & Stock Switcher Dropdown */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <button
           onClick={handleBack}
@@ -333,36 +328,8 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
           <span>{t('backToScreener')}</span>
         </button>
 
-        {/* Action Group: Example 1, Example 2, and Stock Selector Capsule */}
+        {/* Stock Selector Capsule */}
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-          {/* Quick Example 1: SYN-PASS */}
-          <button
-            onClick={() => handleSelectFromList('SYN-PASS')}
-            className={`h-8 px-3.5 rounded-full flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer select-none focus:outline-none ${
-              isGoodStockSelected
-                ? 'bg-[#34C759]/15 dark:bg-[#34C759]/25 text-[#34C759] border border-[#34C759]/40 shadow-xs'
-                : 'bg-[#F5F5F7] dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#EBEBED] dark:hover:bg-[#2C2C2E] border border-black/[0.06] dark:border-white/[0.08]'
-            }`}
-            title="워런 버핏 규칙 7/7 전체 통과 대표 합성 우량주"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#34C759]" />
-            <span>{t('goodStockExample')}</span>
-          </button>
-
-          {/* Quick Example 2: SYN-FAIL */}
-          <button
-            onClick={() => handleSelectFromList('SYN-FAIL')}
-            className={`h-8 px-3.5 rounded-full flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer select-none focus:outline-none ${
-              isBadStockSelected
-                ? 'bg-[#FF3B30]/15 dark:bg-[#FF3B30]/25 text-[#FF3B30] border border-[#FF3B30]/40 shadow-xs'
-                : 'bg-[#F5F5F7] dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#EBEBED] dark:hover:bg-[#2C2C2E] border border-black/[0.06] dark:border-white/[0.08]'
-            }`}
-            title="EPS 성장률 기준 미달 및 안전마진 불합격 예시"
-          >
-            <AlertTriangle className="w-3.5 h-3.5 text-[#FF3B30]" />
-            <span>{t('badStockExample')}</span>
-          </button>
-
           {/* Stock Selector Capsule Dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
@@ -515,6 +482,14 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
                 <Calendar className="w-3 h-3 text-[#86868B]" />
                 <span>{detail.dataAsOf.slice(0, 10)}</span>
               </span>
+              {detail.isStale && (
+                <span
+                  className="inline-flex items-center text-[10px] font-bold text-[#FF9500] bg-[#FF9500]/10 px-2.5 py-0.5 rounded-full"
+                  title={`Last successful: ${detail.lastSuccessfulAt}`}
+                >
+                  STALE
+                </span>
+              )}
             </div>
 
             <div className="text-xs sm:text-[13px] text-[#86868B] flex items-center gap-2 flex-wrap">

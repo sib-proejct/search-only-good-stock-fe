@@ -21,7 +21,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
   searchQuery,
   onSearchChange,
   activeGuide: propActiveGuide,
-  currentTicker = 'SYN-PASS',
+  currentTicker = null,
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -56,8 +56,11 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
     if (tab === 'screener') {
       navigate('/');
     } else if (tab === 'detail') {
-      const targetTicker = currentTicker || 'SYN-PASS';
-      navigate(`/stock/${targetTicker}`);
+      const routeTicker = location.pathname.match(
+        /^\/(?:stock|detail)\/([^/]+)/
+      )?.[1];
+      const targetTicker = currentTicker || routeTicker;
+      navigate(targetTicker ? `/stock/${targetTicker}` : '/');
     } else if (tab === 'guide') {
       const targetGuide = guideType || (activeGuide === 'lynch' ? 'lynch' : 'buffett');
       navigate(`/guide/${targetGuide}`);

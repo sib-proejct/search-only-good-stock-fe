@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="ko" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Only Good Stock — Design Presentation Deck</title>
+  
+  <!-- Google Fonts & Pretendard -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            apple: {
+              canvas: '#F5F5F7',
+              canvasDark: '#000000',
+              surface: '#FFFFFF',
+              surfaceDark: '#1C1C1E',
+              subtle: '#EBEBED',
+              subtleDark: '#2C2C2E',
+              border: 'rgba(0, 0, 0, 0.08)',
+              borderDark: 'rgba(255, 255, 255, 0.12)',
+              divider: 'rgba(0, 0, 0, 0.05)',
+              dividerDark: 'rgba(255, 255, 255, 0.06)',
+              text: {
+                primary: '#1D1D1F',
+                primaryDark: '#F5F5F7',
+                secondary: '#86868B',
+                secondaryDark: '#A1A1A6',
+                tertiary: '#A1A1A6',
+                tertiaryDark: '#636366',
+              },
+              blue: {
+                DEFAULT: '#0071E3',
+                hover: '#0077ED',
+                light: '#E8F2FD',
+                dark: '#0A84FF',
+              },
+              green: {
+                DEFAULT: '#34C759',
+                light: '#EAF8EE',
+                dark: '#30D158',
+              },
+              red: {
+                DEFAULT: '#FF3B30',
+                light: '#FEECEB',
+                dark: '#FF453A',
+              },
+              orange: {
+                DEFAULT: '#FF9500',
+                light: '#FFF4E5',
+                dark: '#FF9F0A',
+              },
+              gold: {
+                DEFAULT: '#D97706',
+                light: '#FEF3C7',
+                dark: '#FFD60A',
+              },
+            }
+          },
+          fontFamily: {
+            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'SF Mono', 'monospace'],
+            serif: ['Newsreader', 'Georgia', 'serif'],
+          },
+          boxShadow: {
+            'apple-card': '0 2px 12px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.02)',
+            'apple-hover': '0 12px 32px 0 rgba(0, 0, 0, 0.08), 0 2px 6px 0 rgba(0, 0, 0, 0.04)',
+            'apple-pill': '0 1px 3px 0 rgba(0, 0, 0, 0.08)',
+            'apple-modal': '0 24px 64px -12px rgba(0, 0, 0, 0.2)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Base Apple Smoothing */
+    * {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    body {
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      user-select: none;
+    }
+
+    /* Tabular numbers for financial precision */
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Custom Glassmorphism */
+    .apple-glass {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    .dark .apple-glass {
+      background: rgba(28, 28, 30, 0.75);
+    }
+
+    .apple-glass-card {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .dark .apple-glass-card {
+      background: rgba(36, 36, 38, 0.88);
+    }
+
+    /* Slide Transition */
+    .slide-container {
+      transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+    }
+
+    /* Slide Aspect Ratio Container */
+    .deck-frame {
+      aspect-ratio: 16 / 9;
+      max-height: 92vh;
+      max-width: calc(92vh * 16 / 9);
+    }
+
+    /* Print / PDF Mode */
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
+        overflow: visible !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .slide-page {
+        page-break-after: always;
+        page-break-inside: avoid;
+        display: block !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: none !important;
+        max-height: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 2.5rem !important;
+        border-radius: 0 !important;
+      }
+      .presentation-viewport {
+        overflow: visible !important;
+        height: auto !important;
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 9999px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body class="h-full bg-apple-canvas dark:bg-apple-canvasDark text-apple-text-primary dark:text-apple-text-primaryDark flex flex-col font-sans transition-colors duration-300 overflow-hidden">
+
+  <!-- Top Apple Nav / Control Bar -->
+  <header class="no-print h-14 apple-glass border-b border-apple-border dark:border-apple-borderDark z-50 flex items-center justify-between px-6 shrink-0 select-none">
+    <div class="flex items-center gap-3">
+      <!-- Apple Logo Icon -->
+      <div class="w-8 h-8 rounded-xl bg-apple-text-primary dark:bg-white text-white dark:text-black flex items-center justify-center shadow-apple-pill font-semibold text-xs tracking-tighter">
+        <i data-lucide="sparkles" class="w-4 h-4 text-apple-blue dark:text-apple-blue"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-sm tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark">Search Only Good Stock</span>
+          <span class="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded-full bg-apple-blue/10 text-apple-blue dark:bg-apple-blue/20">Design Deck</span>
+        </div>
+        <p class="text-[11px] text-apple-text-secondary dark:text-apple-text-secondaryDark hidden sm:block">Apple Design Edition — 가치투자 디자인 시스템 & 프로덕트 프레젠테이션</p>
+      </div>
+    </div>
+
+    <!-- Center Slide Counter & Progress -->
+    <div class="flex items-center gap-3">
+      <div class="hidden md:flex items-center gap-2 bg-apple-subtle dark:bg-apple-subtleDark p-1 rounded-full text-xs">
+        <button id="prevBtn" onclick="prevSlide()" class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-apple-surfaceDark transition-all text-apple-text-primary dark:text-apple-text-primaryDark disabled:opacity-30">
+          <i data-lucide="chevron-left" class="w-4 h-4"></i>
+        </button>
+        <span class="px-2 font-mono font-medium text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark">
+          <span id="currentSlideNum" class="text-apple-text-primary dark:text-apple-text-primaryDark font-bold">1</span> / <span id="totalSlideNum">10</span>
+        </span>
+        <button id="nextBtn" onclick="nextSlide()" class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white dark:hover:bg-apple-surfaceDark transition-all text-apple-text-primary dark:text-apple-text-primaryDark disabled:opacity-30">
+          <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Controls -->
+    <div class="flex items-center gap-2">
+      <!-- Grid Overview Toggle Button -->
+      <button onclick="toggleOverview()" title="슬라이드 전체보기 (O)" class="w-8 h-8 rounded-lg flex items-center justify-center bg-apple-subtle dark:bg-apple-subtleDark hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-apple-text-secondary hover:text-apple-text-primary dark:text-apple-text-secondaryDark dark:hover:text-apple-text-primaryDark">
+        <i data-lucide="layout-grid" class="w-4 h-4"></i>
+      </button>
+
+      <!-- Presenter Notes Toggle Button -->
+      <button onclick="toggleNotes()" title="발표자 노트 (P)" class="w-8 h-8 rounded-lg flex items-center justify-center bg-apple-subtle dark:bg-apple-subtleDark hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-apple-text-secondary hover:text-apple-text-primary dark:text-apple-text-secondaryDark dark:hover:text-apple-text-primaryDark">
+        <i data-lucide="file-text" class="w-4 h-4"></i>
+      </button>
+
+      <!-- Dark Mode Toggle -->
+      <button onclick="toggleTheme()" title="다크 모드 토글 (T)" class="w-8 h-8 rounded-lg flex items-center justify-center bg-apple-subtle dark:bg-apple-subtleDark hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-apple-text-secondary hover:text-apple-text-primary dark:text-apple-text-secondaryDark dark:hover:text-apple-text-primaryDark">
+        <i data-lucide="moon" class="w-4 h-4 hidden dark:block"></i>
+        <i data-lucide="sun" class="w-4 h-4 block dark:hidden"></i>
+      </button>
+
+      <!-- Fullscreen Toggle -->
+      <button onclick="toggleFullscreen()" title="전체화면 (F)" class="w-8 h-8 rounded-lg flex items-center justify-center bg-apple-subtle dark:bg-apple-subtleDark hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-apple-text-secondary hover:text-apple-text-primary dark:text-apple-text-secondaryDark dark:hover:text-apple-text-primaryDark">
+        <i data-lucide="maximize" class="w-4 h-4"></i>
+      </button>
+
+      <!-- Interactive Web Edition Switch Button -->
+      <a href="interactive-showcase.html" title="인터랙티브 웹 에디션으로 전환" class="px-3 h-8 rounded-lg flex items-center gap-1.5 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-apple-text-primary dark:text-apple-text-primaryDark text-xs font-semibold transition border border-apple-border dark:border-apple-borderDark">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-apple-blue"></i>
+        <span class="hidden sm:inline">인터랙티브 웹</span>
+      </a>
+
+      <!-- Print / PDF Export Button -->
+      <button onclick="window.print()" title="PDF 내보내기 / 인쇄" class="px-3 h-8 rounded-lg flex items-center gap-1.5 bg-apple-blue hover:bg-apple-blue-hover text-white text-xs font-medium transition shadow-sm">
+        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+        <span class="hidden sm:inline">PDF 인쇄</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Progress Bar (Top) -->
+  <div class="no-print w-full h-[3px] bg-apple-border dark:bg-apple-borderDark">
+    <div id="progressBar" class="h-full bg-apple-blue transition-all duration-300 ease-out" style="width: 10%;"></div>
+  </div>
+
+  <!-- Main Presentation Canvas Viewport -->
+  <main class="presentation-viewport flex-1 flex items-center justify-center p-4 md:p-6 overflow-hidden relative">
+    
+    <!-- Slides View Container (Presentation Mode) -->
+    <div id="deckContainer" class="deck-frame w-full h-full relative rounded-3xl bg-apple-surface dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark shadow-apple-hover overflow-hidden flex flex-col transition-all duration-500">
+      
+      <!-- ========================================== -->
+      <!-- SLIDE 1: COVER (애플 스타일 키노트 타이틀) -->
+      <!-- ========================================== -->
+      <section class="slide-page absolute inset-0 p-10 md:p-14 flex flex-col justify-between opacity-100 transition-opacity duration-300 z-10" data-slide="1" data-notes="[발표 팁] Search Only Good Stock의 정체성과 애플 디자인 철학 결합 배경을 강력하게 소개하세요. '왜 주식 사이트는 복잡하고 난잡해야 하는가?'라는 질문으로 시작하면 청중의 몰입도가 높아집니다.">
+        
+        <!-- Header / Category Badge -->
+        <div class="flex items-center justify-between">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-apple-subtle dark:bg-apple-subtleDark border border-apple-border dark:border-apple-borderDark text-xs font-medium text-apple-text-secondary dark:text-apple-text-secondaryDark">
+            <span class="w-2 h-2 rounded-full bg-apple-green animate-pulse"></span>
+            Design System & Product Deck
+          </div>
+          <span class="font-mono text-xs text-apple-text-tertiary dark:text-apple-text-tertiaryDark">v2.0 • 2026</span>
+        </div>
+
+        <!-- Main Title & Hero Messaging -->
+        <div class="max-w-3xl space-y-6 my-auto">
+          <div class="space-y-2">
+            <div class="text-apple-blue font-semibold text-base tracking-wide uppercase">Apple Design Edition</div>
+            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark leading-[1.1]">
+              애플이 주식 사이트를<br />
+              만들면 이럴 것이다.
+            </h1>
+          </div>
+          <p class="text-lg md:text-xl text-apple-text-secondary dark:text-apple-text-secondaryDark leading-relaxed font-normal">
+            워런 버핏의 <span class="font-semibold text-apple-text-primary dark:text-apple-text-primaryDark">엄격한 6대 가치투자 원칙</span>과 
+            애플의 <span class="font-semibold text-apple-text-primary dark:text-apple-text-primaryDark">극도로 정제된 인간 중심 디자인</span>의 만남.
+            불필요한 노이즈와 AI 슬롭(AI-Slop)을 0%로 줄인 핀테크 경험을 소개합니다.
+          </p>
+
+          <!-- Core Stat Highlights -->
+          <div class="pt-4 grid grid-cols-3 gap-4 border-t border-apple-divider dark:border-apple-dividerDark max-w-lg">
+            <div>
+              <div class="text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark font-medium">합격 기준 통과율</div>
+              <div class="text-2xl md:text-3xl font-mono font-bold text-apple-blue mt-1">0.57%</div>
+              <div class="text-[11px] text-apple-text-tertiary">2,450개 중 단 14개</div>
+            </div>
+            <div>
+              <div class="text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark font-medium">검증 연수</div>
+              <div class="text-2xl md:text-3xl font-mono font-bold text-apple-green mt-1">10 Years</div>
+              <div class="text-[11px] text-apple-text-tertiary">연속 ROE/ROIC 검증</div>
+            </div>
+            <div>
+              <div class="text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark font-medium">디자인 노이즈</div>
+              <div class="text-2xl md:text-3xl font-mono font-bold text-apple-text-primary dark:text-apple-text-primaryDark mt-1">0%</div>
+              <div class="text-[11px] text-apple-text-tertiary">Zero AI-Slop</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="flex items-center justify-between text-xs text-apple-text-tertiary dark:text-apple-text-tertiaryDark pt-4 border-t border-apple-divider dark:border-apple-dividerDark">
+          <div>Presenter: <span class="text-apple-text-secondary dark:text-apple-text-secondaryDark font-medium">Product & Design Team</span></div>
+          <div>Press <kbd class="px-1.5 py-0.5 rounded bg-apple-subtle dark:bg-apple-subtleDark font-mono text-[10px]">Space</kbd> or <kbd class="px-1.5 py-0.5 rounded bg-apple-subtle dark:bg-apple-subtleDark font-mono text-[10px]">→</kbd> to navigate</div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- SLIDE 2: PHILOSOPHY (4대 핵심 디자인 철학) -->
+      <!-- ========================================== -->
+      <section class="slide-page absolute inset-0 p-10 md:p-14 flex flex-col justify-between opacity-0 pointer-events-none transition-opacity duration-300 z-10" data-slide="2" data-notes="[발표 팁] 애플 디자인 3대 원칙(Clarity, Deference, Depth)에 금융 특화 'Tabular Precision'을 더한 4대 원칙을 차례로 설명하세요. 화려한 장식보다 숫자의 신뢰성이 핵심임을 강조합니다.">
+        
+        <div>
+          <div class="text-apple-blue font-semibold text-xs tracking-wider uppercase">Design Foundation</div>
+          <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark mt-1">
+            4대 핵심 디자인 철학
+          </h2>
+          <p class="text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark mt-1">
+            가독성을 해치는 저급한 네온 그라디언트와 조잡한 장식을 배제하고 본질에 집중합니다.
+          </p>
+        </div>
+
+        <!-- 4 Bento Pillars -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 my-auto">
+          <!-- Pillar 1 -->
+          <div class="p-6 rounded-2xl bg-apple-subtle/50 dark:bg-apple-subtleDark/50 border border-apple-border dark:border-apple-borderDark hover:bg-apple-subtle dark:hover:bg-apple-subtleDark transition">
+            <div class="w-10 h-10 rounded-xl bg-apple-blue/10 text-apple-blue flex items-center justify-center mb-4">
+              <i data-lucide="eye" class="w-5 h-5"></i>
+            </div>
+            <div class="font-bold text-lg text-apple-text-primary dark:text-apple-text-primaryDark">01. 명료함 (Clarity)</div>
+            <p class="text-xs md:text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark mt-2 leading-relaxed">
+              사용자가 기업의 <span class="font-semibold text-apple-text-primary dark:text-apple-text-primaryDark">본질적 가치(Intrinsic Value)</span>와 <span class="font-semibold text-apple-text-primary dark:text-apple-text-primaryDark">소유주 이익(Owner Earnings)</span>을 가장 직관적으로 읽을 수 있도록 모든 픽셀과 여백을 정교하게 설계합니다.
+            </p>
+          </div>
+
+          <!-- Pillar 2 -->
+          <div class="p-6 rounded-2xl bg-apple-subtle/50 dark:bg-apple-subtleDark/50 border border-apple-border dark:border-apple-borderDark hover:bg-apple-subtle dark:hover:bg-apple-subtleDark transition">
+            <div class="w-10 h-10 rounded-xl bg-apple-green/10 text-apple-green flex items-center justify-center mb-4">
+              <i data-lucide="layers" class="w-5 h-5"></i>
+            </div>
+            <div class="font-bold text-lg text-apple-text-primary dark:text-apple-text-primaryDark">02. 겸손함 (Deference)</div>
+            <p class="text-xs md:text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark mt-2 leading-relaxed">
+              UI는 투자 데이터를 돋보이게 하는 투명한 무대 역할을 수행합니다. 반투명 블러 글래스 네비게이션과 부드러운 24px 벤토 박스(Bento Box) 구조를 적용합니다.
+            </p>
+          </div>
+
+          <!-- Pillar 3 -->
+          <div class="p-6 rounded-2xl bg-apple-subtle/50 dark:bg-apple-subtleDark/50 border border-apple-border dark:border-apple-borderDark hover:bg-apple-subtle dark:hover:bg-apple-subtleDark transition">
+            <div class="w-10 h-10 rounded-xl bg-apple-orange/10 text-apple-orange flex items-center justify-center mb-4">
+              <i data-lucide="sparkles" class="w-5 h-5"></i>
+            </div>
+            <div class="font-bold text-lg text-apple-text-primary dark:text-apple-text-primaryDark">03. 깊이감 (Depth)</div>
+            <p class="text-xs md:text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark mt-2 leading-relaxed">
+              섬세한 그림자(Apple Shadow)와 부드러운 마이크로 모션 인터랙션을 통해 평면 화면 위에서 손에 잡힐 듯한 질감과 유기적인 깊이감을 구현합니다.
+            </p>
+          </div>
+
+          <!-- Pillar 4 -->
+          <div class="p-6 rounded-2xl bg-apple-subtle/50 dark:bg-apple-subtleDark/50 border border-apple-border dark:border-apple-borderDark hover:bg-apple-subtle dark:hover:bg-apple-subtleDark transition">
+            <div class="w-10 h-10 rounded-xl bg-apple-gold/10 text-apple-gold flex items-center justify-center mb-4">
+              <i data-lucide="binary" class="w-5 h-5"></i>
+            </div>
+            <div class="font-bold text-lg text-apple-text-primary dark:text-apple-text-primaryDark">04. 숫자의 정밀성 (Tabular Precision)</div>
+            <p class="text-xs md:text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark mt-2 leading-relaxed">
+              모든 재무 수치, 가격, ROE, 1달러 테스트 지표에 <code class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10">tabular-nums font-mono</code>를 일관되게 적용하여 완벽한 자릿수 정렬과 시인성을 제공합니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-apple-text-tertiary">
+          <span>Search Only Good Stock • Design Edition</span>
+          <span>Slide 2 / 10</span>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- SLIDE 3: COLOR SYSTEM (Apple Color Tokens) -->
+      <!-- ========================================== -->
+      <section class="slide-page absolute inset-0 p-10 md:p-14 flex flex-col justify-between opacity-0 pointer-events-none transition-opacity duration-300 z-10" data-slide="3" data-notes="[발표 팁] 금융 플랫폼에서 색상이 갖는 시각적 의미를 설명하세요. 애플 클린 라이트 배경과 통과(Pass, #34C759), 탈락(Fail, #FF3B30), 주의(Caution, #FF9500), 100점 마스터 뱃지(Gold, #D97706)의 체계를 짚어줍니다.">
+        
+        <div>
+          <div class="text-apple-blue font-semibold text-xs tracking-wider uppercase">Visual Architecture</div>
+          <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark mt-1">
+            Apple Color System & Financial Semantics
+          </h2>
+          <p class="text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark mt-1">
+            눈의 피로를 최소화하는 Signature Off-White 캔버스와 직관적인 금융 시맨틱 토큰 체계
+          </p>
+        </div>
+
+        <!-- Color Palette Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-auto">
+          
+          <!-- Background & Surface -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-apple-text-secondary">Surface & Canvas</h3>
+            <div class="space-y-2">
+              <div class="p-3.5 rounded-xl bg-[#F5F5F7] dark:bg-[#1C1C1E] border border-apple-border dark:border-apple-borderDark flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-apple-text-primary dark:text-apple-text-primaryDark">Apple Canvas</div>
+                  <div class="text-[11px] text-apple-text-secondary">페이지 전체 배경</div>
+                </div>
+                <span class="font-mono text-xs font-semibold text-apple-text-secondary">#F5F5F7</span>
+              </div>
+              <div class="p-3.5 rounded-xl bg-white dark:bg-[#2C2C2E] border border-apple-border dark:border-apple-borderDark flex items-center justify-between shadow-sm">
+                <div>
+                  <div class="text-xs font-bold text-apple-text-primary dark:text-apple-text-primaryDark">Apple Surface</div>
+                  <div class="text-[11px] text-apple-text-secondary">벤토 카드 / 모달</div>
+                </div>
+                <span class="font-mono text-xs font-semibold text-apple-text-secondary">#FFFFFF</span>
+              </div>
+              <div class="p-3.5 rounded-xl bg-[#EBEBED] dark:bg-[#3A3A3C] border border-apple-border dark:border-apple-borderDark flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-apple-text-primary dark:text-apple-text-primaryDark">Surface Subtle</div>
+                  <div class="text-[11px] text-apple-text-secondary">세그먼트 / 검색 트랙</div>
+                </div>
+                <span class="font-mono text-xs font-semibold text-apple-text-secondary">#EBEBED</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Brand & Typography -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-apple-text-secondary">Brand & Typography</h3>
+            <div class="space-y-2">
+              <div class="p-3.5 rounded-xl bg-[#0071E3] text-white flex items-center justify-between shadow-sm">
+                <div>
+                  <div class="text-xs font-bold">Apple Blue</div>
+                  <div class="text-[11px] opacity-80">메인 액센트 & CTA 버튼</div>
+                </div>
+                <span class="font-mono text-xs font-semibold">#0071E3</span>
+              </div>
+              <div class="p-3.5 rounded-xl bg-[#1D1D1F] text-white flex items-center justify-between shadow-sm">
+                <div>
+                  <div class="text-xs font-bold">Text Primary</div>
+                  <div class="text-[11px] opacity-80">헤드라인 & 핵심 수치</div>
+                </div>
+                <span class="font-mono text-xs font-semibold">#1D1D1F</span>
+              </div>
+              <div class="p-3.5 rounded-xl bg-[#86868B] text-white flex items-center justify-between shadow-sm">
+                <div>
+                  <div class="text-xs font-bold">Text Secondary</div>
+                  <div class="text-[11px] opacity-80">지표 레이블 & 서브텍스트</div>
+                </div>
+                <span class="font-mono text-xs font-semibold">#86868B</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Semantic Indicators -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-apple-text-secondary">Financial Semantics</h3>
+            <div class="space-y-2">
+              <div class="p-3.5 rounded-xl bg-apple-green/10 dark:bg-apple-green/20 border border-apple-green/30 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-apple-green"></span>
+                  <div>
+                    <div class="text-xs font-bold text-apple-green">Pass (버핏 통과)</div>
+                    <div class="text-[10px] text-apple-text-secondary">주가 상승 / ROE 초과</div>
+                  </div>
+                </div>
+                <span class="font-mono text-xs font-bold text-apple-green">#34C759</span>
+              </div>
+              <div class="p-3.5 rounded-xl bg-apple-red/10 dark:bg-apple-red/20 border border-apple-red/30 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-apple-red"></span>
+                  <div>
+                    <div class="text-xs font-bold text-apple-red">Fail (버핏 탈락)</div>
+                    <div class="text-[10px] text-apple-text-secondary">부채 과다 / 주식 희석</div>
+                  </div>
+                </div>
+                <span class="font-mono text-xs font-bold text-apple-red">#FF3B30</span>
+              </div>
+              <div class="p-3.5 rounded-xl bg-apple-gold/10 dark:bg-apple-gold/20 border border-apple-gold/30 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-apple-gold"></span>
+                  <div>
+                    <div class="text-xs font-bold text-apple-gold">Buffett Master 100</div>
+                    <div class="text-[10px] text-apple-text-secondary">6대 원칙 올패스 하이라이트</div>
+                  </div>
+                </div>
+                <span class="font-mono text-xs font-bold text-apple-gold">#D97706</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-apple-text-tertiary">
+          <span>Search Only Good Stock • Color Tokens</span>
+          <span>Slide 3 / 10</span>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- SLIDE 4: SCREEN 1 - BENTO HERO & SCREENER  -->
+      <!-- ========================================== -->
+      <section class="slide-page absolute inset-0 p-10 md:p-14 flex flex-col justify-between opacity-0 pointer-events-none transition-opacity duration-300 z-10" data-slide="4" data-notes="[발표 팁] 메인 스크리너 화면의 핵심 가치를 전달하세요. 2,450개 중 단 14개만 통과하는 가치투자 필터와, 사용자가 복잡한 수식을 몰라도 한눈에 퀄리티를 식별할 수 있는 벤토 UI 구조를 시연합니다.">
+        
+        <div>
+          <div class="text-apple-blue font-semibold text-xs tracking-wider uppercase">Key Experience 01</div>
+          <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark mt-1">
+            Apple Bento Hero & Smart Screener
+          </h2>
+          <p class="text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark mt-1">
+            진짜 우량 기업을 찾는 가장 명확한 기준 — 2,450개 상장사 중 단 0.57% 슈퍼 퀄리티 발굴
+          </p>
+        </div>
+
+        <!-- UI Mockup Container -->
+        <div class="my-auto rounded-2xl bg-apple-canvas dark:bg-apple-canvasDark border border-apple-border dark:border-apple-borderDark p-5 shadow-inner space-y-4">
+          
+          <!-- Bento Stat Hero Banner -->
+          <div class="p-5 rounded-xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-apple-blue text-white flex items-center justify-center font-bold text-xl shadow-apple-pill">
+                <i data-lucide="shield-check" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-base text-apple-text-primary dark:text-apple-text-primaryDark">엄격한 버핏 필터 통과율</span>
+                  <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-apple-green/10 text-apple-green">초우량 14종목 선정</span>
+                </div>
+                <p class="text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark mt-0.5">
+                  10년 연속 ROE 15% 이상, 무차입 또는 강력한 이자보상배율, 지속적 자사주 매입 충족
+                </p>
+              </div>
+            </div>
+            <div class="flex items-baseline gap-2 shrink-0">
+              <span class="text-3xl font-bold font-mono text-apple-blue">0.57%</span>
+              <span class="text-xs font-mono text-apple-text-tertiary">(14 / 2,450)</span>
+            </div>
+          </div>
+
+          <!-- Stock Card Row Mockup -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            
+            <!-- Stock Card 1: Apple Pass -->
+            <div class="p-4 rounded-xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark hover:shadow-apple-card transition">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-mono text-xs font-bold text-apple-blue bg-apple-blue/10 px-2 py-0.5 rounded-md">AAPL</span>
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-apple-green bg-apple-green/10 px-2 py-0.5 rounded-full">
+                  <i data-lucide="check" class="w-3 h-3"></i> 6/6 All Pass
+                </span>
+              </div>
+              <div class="font-bold text-sm text-apple-text-primary dark:text-apple-text-primaryDark">애플 (Apple Inc.)</div>
+              <div class="mt-3 flex items-baseline justify-between pt-2 border-t border-apple-divider dark:border-apple-dividerDark">
+                <span class="text-xs text-apple-text-secondary">10년 평균 ROE</span>
+                <span class="font-mono font-bold text-xs text-apple-green tabular-nums">48.2%</span>
+              </div>
+              <div class="flex items-baseline justify-between pt-1">
+                <span class="text-xs text-apple-text-secondary">1달러 가치창출</span>
+                <span class="font-mono font-bold text-xs text-apple-blue tabular-nums">$3.42</span>
+              </div>
+            </div>
+
+            <!-- Stock Card 2: MSFT Pass -->
+            <div class="p-4 rounded-xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark hover:shadow-apple-card transition">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-mono text-xs font-bold text-apple-blue bg-apple-blue/10 px-2 py-0.5 rounded-md">MSFT</span>
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-apple-green bg-apple-green/10 px-2 py-0.5 rounded-full">
+                  <i data-lucide="check" class="w-3 h-3"></i> 6/6 All Pass
+                </span>
+              </div>
+              <div class="font-bold text-sm text-apple-text-primary dark:text-apple-text-primaryDark">마이크로소프트</div>
+              <div class="mt-3 flex items-baseline justify-between pt-2 border-t border-apple-divider dark:border-apple-dividerDark">
+                <span class="text-xs text-apple-text-secondary">10년 평균 ROE</span>
+                <span class="font-mono font-bold text-xs text-apple-green tabular-nums">39.1%</span>
+              </div>
+              <div class="flex items-baseline justify-between pt-1">
+                <span class="text-xs text-apple-text-secondary">1달러 가치창출</span>
+                <span class="font-mono font-bold text-xs text-apple-blue tabular-nums">$2.89</span>
+              </div>
+            </div>
+
+            <!-- Stock Card 3: GOOGL Pass -->
+            <div class="p-4 rounded-xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark hover:shadow-apple-card transition">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-mono text-xs font-bold text-apple-blue bg-apple-blue/10 px-2 py-0.5 rounded-md">GOOGL</span>
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-apple-green bg-apple-green/10 px-2 py-0.5 rounded-full">
+                  <i data-lucide="check" class="w-3 h-3"></i> 6/6 All Pass
+                </span>
+              </div>
+              <div class="font-bold text-sm text-apple-text-primary dark:text-apple-text-primaryDark">알파벳 Class A</div>
+              <div class="mt-3 flex items-baseline justify-between pt-2 border-t border-apple-divider dark:border-apple-dividerDark">
+                <span class="text-xs text-apple-text-secondary">10년 평균 ROE</span>
+                <span class="font-mono font-bold text-xs text-apple-green tabular-nums">26.8%</span>
+              </div>
+              <div class="flex items-baseline justify-between pt-1">
+                <span class="text-xs text-apple-text-secondary">1달러 가치창출</span>
+                <span class="font-mono font-bold text-xs text-apple-blue tabular-nums">$2.15</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-apple-text-tertiary">
+          <span>Search Only Good Stock • Screener Experience</span>
+          <span>Slide 4 / 10</span>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- SLIDE 5: 6 BUFFETT RULES & 1 DOLLAR TEST   -->
+      <!-- ========================================== -->
+      <section class="slide-page absolute inset-0 p-10 md:p-14 flex flex-col justify-between opacity-0 pointer-events-none transition-opacity duration-300 z-10" data-slide="5" data-notes="[발표 팁] 워런 버핏의 6가지 핵심 정량 기준과 버핏의 1달러 법칙(1 Dollar Test)을 시각화한 컴포넌트를 보여주세요. 기업이 유보한 1달러가 시장에서 얼마의 시가총액으로 환산되었는지를 직관적으로 보여주는 것이 우리 서비스의 킬러 피처입니다.">
+        
+        <div>
+          <div class="text-apple-blue font-semibold text-xs tracking-wider uppercase">Key Experience 02</div>
+          <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark mt-1">
+            6대 버핏 원칙 & 1달러 테스트 시각화
+          </h2>
+          <p class="text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark mt-1">
+            복잡한 재무제표를 직관적인 게이지와 통과 뱃지로 요약하는 정밀 시각화
+          </p>
+        </div>
+
+        <!-- Rules Grid & 1 Dollar Showcase -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-5 my-auto">
+          
+          <!-- 6 Rules Mini List (7 Cols) -->
+          <div class="md:col-span-7 grid grid-cols-2 gap-3">
+            
+            <div class="p-3.5 rounded-xl bg-apple-subtle/60 dark:bg-apple-subtleDark/60 border border-apple-border dark:border-apple-borderDark">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-apple-text-primary dark:text-apple-text-primaryDark">01. 10년 ROE 지속성</span>
+                <span class="text-[10px] font-bold text-apple-green bg-apple-green/10 px-1.5 py-0.5 rounded">≥ 15%</span>
+              </div>
+              <p class="text-[11px] text-apple-text-secondary mt-1">자본 대비 높은 수익성 유지 여부</p>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-apple-subtle/60 dark:bg-apple-subtleDark/60 border border-apple-border dark:border-apple-borderDark">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-apple-text-primary dark:text-apple-text-primaryDark">02. 낮은 부채비율</span>
+                <span class="text-[10px] font-bold text-apple-green bg-apple-green/10 px-1.5 py-0.5 rounded">≤ 80%</span>
+              </div>
+              <p class="text-[11px] text-apple-text-secondary mt-1">영업이익으로 3년 내 상환 가능성</p>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-apple-subtle/60 dark:bg-apple-subtleDark/60 border border-apple-border dark:border-apple-borderDark">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-apple-text-primary dark:text-apple-text-primaryDark">03. 소유주 이익(Owner's)</span>
+                <span class="text-[10px] font-bold text-apple-green bg-apple-green/10 px-1.5 py-0.5 rounded">지속 성장</span>
+              </div>
+              <p class="text-[11px] text-apple-text-secondary mt-1">유지보수 CAPEX를 제외한 순 현금</p>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-apple-subtle/60 dark:bg-apple-subtleDark/60 border border-apple-border dark:border-apple-borderDark">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-apple-text-primary dark:text-apple-text-primaryDark">04. 자본배치 & 자사주</span>
+                <span class="text-[10px] font-bold text-apple-green bg-apple-green/10 px-1.5 py-0.5 rounded">주식수 감소</span>
+              </div>
+              <p class="text-[11px] text-apple-text-secondary mt-1">주주가치 희석 없는 적극적 소각</p>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-apple-subtle/60 dark:bg-apple-subtleDark/60 border border-apple-border dark:border-apple-borderDark">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-apple-text-primary dark:text-apple-text-primaryDark">05. 예측 가능한 해자</span>
+                <span class="text-[10px] font-bold text-apple-green bg-apple-green/10 px-1.5 py-0.5 rounded">지속 마진</span>
+              </div>
+              <p class="text-[11px] text-apple-text-secondary mt-1">강력한 브랜드와 가격 결정력</p>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-apple-subtle/60 dark:bg-apple-subtleDark/60 border border-apple-border dark:border-apple-borderDark">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-apple-text-primary dark:text-apple-text-primaryDark">06. 안전마진(MOS)</span>
+                <span class="text-[10px] font-bold text-apple-green bg-apple-green/10 px-1.5 py-0.5 rounded">적정가 이하</span>
+              </div>
+              <p class="text-[11px] text-apple-text-secondary mt-1">내재가치 대비 할인된 진입 가격</p>
+            </div>
+
+          </div>
+
+          <!-- 1-Dollar Test Visual Widget (5 Cols) -->
+          <div class="md:col-span-5 p-5 rounded-2xl bg-apple-blue/5 dark:bg-apple-blue/15 border border-apple-blue/20 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-apple-blue">워런 버핏의 1달러 법칙</span>
+                <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-apple-blue text-white">10Y Test</span>
+              </div>
+              <div class="mt-4">
+                <div class="text-3xl font-bold font-mono text-apple-text-primary dark:text-apple-text-primaryDark tabular-nums">$3.42</div>
+                <p class="text-xs text-apple-text-secondary mt-1">
+                  10년간 기업이 유보한 이익 1달러당 창출된 시가총액 가치 (기준치 $1.00 이상 통과)
+                </p>
+              </div>
+            </div>
+
+            <!-- Visual Comparison Bar -->
+            <div class="mt-4 space-y-1.5">
+              <div class="flex justify-between text-[11px] font-mono text-apple-text-secondary">
+                <span>기준치 ($1.00)</span>
+                <span class="font-bold text-apple-green">+242% 초과 달성</span>
+              </div>
+              <div class="w-full h-2.5 rounded-full bg-black/10 dark:bg-white/15 overflow-hidden flex">
+                <div class="h-full bg-apple-text-tertiary" style="width: 29.2%;"></div>
+                <div class="h-full bg-apple-green flex-1"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-apple-text-tertiary">
+          <span>Search Only Good Stock • Buffett Rules</span>
+          <span>Slide 5 / 10</span>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- SLIDE 6: SCREEN 2 - DEEP DIVE DRAWER       -->
+      <!-- ========================================== -->
+      <section class="slide-page absolute inset-0 p-10 md:p-14 flex flex-col justify-between opacity-0 pointer-events-none transition-opacity duration-300 z-10" data-slide="6" data-notes="[발표 팁] 종목 상세 분석 시 페이지를 벗어나지 않고 우측에서 부드럽게 열리는 'Apple Sliding Drawer'와 10개년 재무 테이블의 Tabular 정렬을 설명하세요.">
+        
+        <div>
+          <div class="text-apple-blue font-semibold text-xs tracking-wider uppercase">Key Experience 03</div>
+          <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark mt-1">
+            Deep-Dive Stock Drawer & 10Y Financials
+          </h2>
+          <p class="text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark mt-1">
+            페이지 이탈 없는 애플 슬라이딩 드로어와 흔들림 없는 모노스페이스 재무제표
+          </p>
+        </div>
+
+        <!-- Drawer Preview Mockup -->
+        <div class="my-auto grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+          
+          <!-- Left: Feature Explanations -->
+          <div class="md:col-span-5 space-y-4">
+            <div class="flex gap-3 items-start">
+              <div class="w-7 h-7 rounded-lg bg-apple-blue/10 text-apple-blue flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="panel-right" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-apple-text-primary dark:text-apple-text-primaryDark">컨텍스트 보존 드로어</div>
+                <p class="text-xs text-apple-text-secondary mt-0.5">스크리너 목록의 검색 상태와 스크롤 위치를 100% 유지하며 빠른 분석 가능</p>
+              </div>
+            </div>
+
+            <div class="flex gap-3 items-start">
+              <div class="w-7 h-7 rounded-lg bg-apple-green/10 text-apple-green flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="table" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-apple-text-primary dark:text-apple-text-primaryDark">10개년 연간 재무 히스토리</div>
+                <p class="text-xs text-apple-text-secondary mt-0.5">매출액, 영업이익, ROE, FCF, 발행주식수를 일목요연하게 10년 트렌드로 비교</p>
+              </div>
+            </div>
+
+            <div class="flex gap-3 items-start">
+              <div class="w-7 h-7 rounded-lg bg-apple-gold/10 text-apple-gold flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="award" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-apple-text-primary dark:text-apple-text-primaryDark">버핏 마스터 스코어 (0~100)</div>
+                <p class="text-xs text-apple-text-secondary mt-0.5">6대 규칙 통과 현황을 종합 가중치로 환산한 정량적 퀄리티 점수</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Drawer Visual UI Mockup -->
+          <div class="md:col-span-7 p-4 rounded-2xl bg-apple-surface dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark shadow-apple-card space-y-3">
+            <div class="flex items-center justify-between pb-3 border-b border-apple-divider dark:border-apple-dividerDark">
+              <div>
+                <span class="font-mono text-xs font-bold text-apple-blue">AAPL</span>
+                <h4 class="font-bold text-sm text-apple-text-primary dark:text-apple-text-primaryDark">애플 (Apple Inc.)</h4>
+              </div>
+              <div class="text-right">
+                <div class="text-xs font-mono font-bold text-apple-green">Master 100/100</div>
+                <div class="text-[10px] text-apple-text-tertiary">All 6 Rules Passed</div>
+              </div>
+            </div>
+
+            <!-- Mini Financial Table Mockup -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-[11px] font-mono">
+                <thead>
+                  <tr class="text-apple-text-secondary border-b border-apple-divider dark:border-apple-dividerDark text-left">
+                    <th class="py-1">지표</th>
+                    <th class="py-1 text-right">2022</th>
+                    <th class="py-1 text-right">2023</th>
+                    <th class="py-1 text-right">2024</th>
+                    <th class="py-1 text-right">10Y Avg</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-apple-divider dark:divide-apple-dividerDark">
+                  <tr>
+                    <td class="py-1.5 font-sans text-apple-text-primary dark:text-apple-text-primaryDark font-medium">ROE</td>
+                    <td class="py-1.5 text-right text-apple-green">175.0%</td>
+                    <td class="py-1.5 text-right text-apple-green">171.9%</td>
+                    <td class="py-1.5 text-right text-apple-green">160.6%</td>
+                    <td class="py-1.5 text-right font-bold text-apple-green">48.2%</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 font-sans text-apple-text-primary dark:text-apple-text-primaryDark font-medium">영업이익률</td>
+                    <td class="py-1.5 text-right">30.3%</td>
+                    <td class="py-1.5 text-right">29.8%</td>
+                    <td class="py-1.5 text-right">31.2%</td>
+                    <td class="py-1.5 text-right font-bold">29.5%</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 font-sans text-apple-text-primary dark:text-apple-text-primaryDark font-medium">발행주식수(M)</td>
+                    <td class="py-1.5 text-right">16,215</td>
+                    <td class="py-1.5 text-right">15,785</td>
+                    <td class="py-1.5 text-right text-apple-blue font-bold">15,408 ↓</td>
+                    <td class="py-1.5 text-right text-apple-blue">-38% (10Y)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-apple-text-tertiary">
+          <span>Search Only Good Stock • Deep-Dive Drawer</span>
+          <span>Slide 6 / 10</span>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- SLIDE 7: SCREEN 3 - VALUE INVESTOR COMMUNITY -->
+      <!-- ========================================== -->
+      <section class="slide-page absolute inset-0 p-10 md:p-14 flex flex-col justify-between opacity-0 pointer-events-none transition-opacity duration-300 z-10" data-slide="7" data-notes="[발표 팁] 단순 종목 토론방이 아닌 '진짜 가치투자자들의 고품격 토론 커뮤니티'를 보여주세요. 노이즈 없는 정제된 글 작성 템플릿과 투자 가설 검증 프로세스를 강조합니다.">
+        
+        <div>
+          <div class="text-apple-blue font-semibold text-xs tracking-wider uppercase">Key Experience 04</div>
+          <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark mt-1">
+            Value Investor Community & Insights
+          </h2>
+          <p class="text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark mt-1">
+            노이즈와 투기를 배제하고 기업의 본질 가치를 논의하는 정통 가치투자자 광장
+          </p>
+        </div>
+
+        <!-- Community UI Showcase -->
+        <div class="my-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <!-- Post Card 1 -->
+          <div class="p-5 rounded-2xl bg-apple-subtle/50 dark:bg-apple-subtleDark/50 border border-apple-border dark:border-apple-borderDark flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-mono font-bold text-apple-blue bg-apple-blue/10 px-2 py-0.5 rounded">AAPL • 가치분석</span>
+                <span class="text-apple-text-tertiary">3시간 전</span>
+              </div>
+              <h4 class="font-bold text-sm text-apple-text-primary dark:text-apple-text-primaryDark">
+                애플의 10년 자사주 소각과 서비스 부문 해자 확대 분석
+              </h4>
+              <p class="text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark line-clamp-2">
+                애플은 지난 10년간 발행주식수의 약 38%를 매입 소각하며 주당 순이익을 극대화했습니다. 하드웨어 설치 기반 위에 쌓인 서비스 매출의 마진율을 검토합니다...
+              </p>
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-apple-divider dark:border-apple-dividerDark text-xs text-apple-text-secondary mt-3">
+              <div class="flex items-center gap-1.5">
+                <div class="w-5 h-5 rounded-full bg-apple-blue text-white flex items-center justify-center text-[10px] font-bold">W</div>
+                <span>BuffettFollower</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="flex items-center gap-1"><i data-lucide="heart" class="w-3.5 h-3.5 text-apple-red"></i> 42</span>
+                <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5 text-apple-blue"></i> 18</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Post Card 2 -->
+          <div class="p-5 rounded-2xl bg-apple-subtle/50 dark:bg-apple-subtleDark/50 border border-apple-border dark:border-apple-borderDark flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-mono font-bold text-apple-green bg-apple-green/10 px-2 py-0.5 rounded">버핏 규칙 가이드</span>
+                <span class="text-apple-text-tertiary">1일 전</span>
+              </div>
+              <h4 class="font-bold text-sm text-apple-text-primary dark:text-apple-text-primaryDark">
+                ROE 15% 기준과 1달러 테스트를 함께 봐야 하는 이유
+              </h4>
+              <p class="text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark line-clamp-2">
+                ROE가 높아도 과도한 부채 레버리지에 의한 착시일 수 있습니다. 부채비율 80% 이하 조건과 유보이익 재투자 효율(1달러 법칙)을 교차 검증해야 합니다...
+              </p>
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-apple-divider dark:border-apple-dividerDark text-xs text-apple-text-secondary mt-3">
+              <div class="flex items-center gap-1.5">
+                <div class="w-5 h-5 rounded-full bg-apple-green text-white flex items-center justify-center text-[10px] font-bold">C</div>
+                <span>CharlieMunger_Fan</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="flex items-center gap-1"><i data-lucide="heart" class="w-3.5 h-3.5 text-apple-red"></i> 89</span>
+                <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5 text-apple-blue"></i> 34</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-apple-text-tertiary">
+          <span>Search Only Good Stock • Community Experience</span>
+          <span>Slide 7 / 10</span>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- SLIDE 8: INTERACTIVE UI KIT SHOWCASE       -->
+      <!-- ========================================== -->
+      <section class="slide-page absolute inset-0 p-10 md:p-14 flex flex-col justify-between opacity-0 pointer-events-none transition-opacity duration-300 z-10" data-slide="8" data-notes="[발표 팁] 실제 디자인 시스템의 버튼, 세그먼트 컨트롤, 알약 칩, 토글 등 인터랙티브 컴포넌트를 청중 앞에서 직접 클릭하며 보여주세요. 마이크로 인터랙션과 완성도를 입증할 수 있습니다.">
+        
+        <div>
+          <div class="text-apple-blue font-semibold text-xs tracking-wider uppercase">Component Architecture</div>
+          <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark mt-1">
+            Interactive UI Components & Tokens
+          </h2>
+          <p class="text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark mt-1">
+            재사용성과 직관성을 극대화한 Apple 스타일의 모듈식 UI 컴포넌트 킷
+          </p>
+        </div>
+
+        <!-- Interactive Component Sandbox -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 my-auto">
+          
+          <!-- Box 1: Segmented Controls & Buttons -->
+          <div class="p-5 rounded-2xl bg-apple-subtle/50 dark:bg-apple-subtleDark/50 border border-apple-border dark:border-apple-borderDark space-y-4">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-apple-text-secondary">Controls & Buttons</h4>
+            
+            <!-- Segmented Control Example -->
+            <div class="p-1 rounded-xl bg-apple-subtle dark:bg-apple-subtleDark border border-apple-border dark:border-apple-borderDark flex text-xs">
+              <button class="flex-1 py-1.5 font-medium rounded-lg bg-white dark:bg-apple-surfaceDark shadow-sm text-apple-text-primary dark:text-apple-text-primaryDark transition">전체</button>
+              <button class="flex-1 py-1.5 font-medium rounded-lg text-apple-text-secondary hover:text-apple-text-primary transition">버핏 통과</button>
+              <button class="flex-1 py-1.5 font-medium rounded-lg text-apple-text-secondary hover:text-apple-text-primary transition">관심 종목</button>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-2">
+              <button class="flex-1 py-2 px-3 rounded-xl bg-apple-blue hover:bg-apple-blue-hover text-white text-xs font-semibold shadow-apple-pill transition">
+                Primary Button
+              </button>
+              <button class="flex-1 py-2 px-3 rounded-xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark text-apple-text-primary dark:text-apple-text-primaryDark text-xs font-semibold hover:bg-apple-subtle transition">
+                Secondary
+              </button>
+            </div>
+          </div>
+
+          <!-- Box 2: Status Badges & Pills -->
+          <div class="p-5 rounded-2xl bg-apple-subtle/50 dark:bg-apple-subtleDark/50 border border-apple-border dark:border-apple-borderDark space-y-4">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-apple-text-secondary">Status Badges & Metrics</h4>
+            
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-apple-green/10 text-apple-green border border-apple-green/20">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Pass (6/6)
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-apple-red/10 text-apple-red border border-apple-red/20">
+                <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Fail
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-apple-orange/10 text-apple-orange border border-apple-orange/20">
+                <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Caution
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-apple-gold/15 text-apple-gold border border-apple-gold/30">
+                <i data-lucide="crown" class="w-3.5 h-3.5"></i> Master 100
+              </span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark flex items-center justify-between">
+              <span class="text-xs text-apple-text-secondary">자본수익률(ROIC)</span>
+              <span class="font-mono text-sm font-bold text-apple-green tabular-nums">28.4%</span>
+            </div>
+          </div>
+
+          <!-- Box 3: Typography & Monospace -->
+          <div class="p-5 rounded-2xl bg-apple-subtle/50 dark:bg-apple-subtleDark/50 border border-apple-border dark:border-apple-borderDark space-y-3">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-apple-text-secondary">Tabular Monospace</h4>
+            
+            <div class="space-y-1 font-mono text-xs bg-white dark:bg-apple-surfaceDark p-3 rounded-xl border border-apple-border dark:border-apple-borderDark">
+              <div class="flex justify-between">
+                <span class="text-apple-text-secondary">Revenue:</span>
+                <span class="font-bold tabular-nums">$383,285,000,000</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-apple-text-secondary">Net Income:</span>
+                <span class="font-bold tabular-nums text-apple-green">$96,995,000,000</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-apple-text-secondary">EPS (Diluted):</span>
+                <span class="font-bold tabular-nums text-apple-blue">$6.13</span>
+              </div>
+            </div>
+            <p class="text-[11px] text-apple-text-tertiary">JetBrains Mono 기반 열 정렬 보장</p>
+          </div>
+
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-apple-text-tertiary">
+          <span>Search Only Good Stock • UI Components</span>
+          <span>Slide 8 / 10</span>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- SLIDE 9: TECH STACK & ROADMAP              -->
+      <!-- ========================================== -->
+      <section class="slide-page absolute inset-0 p-10 md:p-14 flex flex-col justify-between opacity-0 pointer-events-none transition-opacity duration-300 z-10" data-slide="9" data-notes="[발표 팁] 백엔드 FastAPI(uv 기반)와 프론트엔드 React/TypeScript/Tailwind 분리 아키텍처 및 향후 로드맵을 발표하세요.">
+        
+        <div>
+          <div class="text-apple-blue font-semibold text-xs tracking-wider uppercase">Engineering & Future</div>
+          <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark mt-1">
+            System Architecture & Roadmap
+          </h2>
+          <p class="text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark mt-1">
+            타입 안전성과 초고속 응답을 보장하는 모던 풀스택 아키텍처
+          </p>
+        </div>
+
+        <!-- Architecture & Roadmap Split -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 my-auto">
+          
+          <!-- Architecture Card -->
+          <div class="p-6 rounded-2xl bg-apple-subtle/50 dark:bg-apple-subtleDark/50 border border-apple-border dark:border-apple-borderDark space-y-4">
+            <h4 class="text-sm font-bold text-apple-text-primary dark:text-apple-text-primaryDark flex items-center gap-2">
+              <i data-lucide="cpu" class="w-4 h-4 text-apple-blue"></i> Full-Stack Tech Stack
+            </h4>
+            <div class="space-y-2.5 text-xs">
+              <div class="p-3 rounded-xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark flex justify-between items-center">
+                <span class="font-medium text-apple-text-secondary">Frontend</span>
+                <span class="font-semibold text-apple-text-primary dark:text-apple-text-primaryDark">React, TypeScript, Vite, Tailwind CSS</span>
+              </div>
+              <div class="p-3 rounded-xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark flex justify-between items-center">
+                <span class="font-medium text-apple-text-secondary">Backend</span>
+                <span class="font-semibold text-apple-text-primary dark:text-apple-text-primaryDark">FastAPI (Python 3.12, <code class="font-mono text-apple-blue">uv</code>, Pydantic)</span>
+              </div>
+              <div class="p-3 rounded-xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark flex justify-between items-center">
+                <span class="font-medium text-apple-text-secondary">Financial Engine</span>
+                <span class="font-semibold text-apple-text-primary dark:text-apple-text-primaryDark">10Y Rolling ROE / 1-Dollar Test Validator</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Roadmap Card -->
+          <div class="p-6 rounded-2xl bg-apple-subtle/50 dark:bg-apple-subtleDark/50 border border-apple-border dark:border-apple-borderDark space-y-4">
+            <h4 class="text-sm font-bold text-apple-text-primary dark:text-apple-text-primaryDark flex items-center gap-2">
+              <i data-lucide="milestone" class="w-4 h-4 text-apple-green"></i> Release Roadmap
+            </h4>
+            <div class="space-y-3 text-xs">
+              <div class="flex items-start gap-3">
+                <span class="w-5 h-5 rounded-full bg-apple-green text-white flex items-center justify-center text-[10px] font-bold shrink-0">✓</span>
+                <div>
+                  <div class="font-bold text-apple-text-primary dark:text-apple-text-primaryDark">Phase 1: Design System & Screener (완료)</div>
+                  <p class="text-apple-text-secondary">애플 벤토 UI, 6대 원칙 스크리닝 및 10년 재무 드로어 구현</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <span class="w-5 h-5 rounded-full bg-apple-blue text-white flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
+                <div>
+                  <div class="font-bold text-apple-text-primary dark:text-apple-text-primaryDark">Phase 2: Community & Portfolio Sync (진행중)</div>
+                  <p class="text-apple-text-secondary">가치투자 토론 광장 및 실시간 알림 연동</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3">
+                <span class="w-5 h-5 rounded-full bg-apple-subtle dark:bg-apple-subtleDark text-apple-text-tertiary flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
+                <div>
+                  <div class="font-bold text-apple-text-primary dark:text-apple-text-primaryDark">Phase 3: Peter Lynch / Fisher Model Extension</div>
+                  <p class="text-apple-text-secondary">피터 린치 PEG 성장주 및 필립 피셔 정성 평가 모델 확장</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-apple-text-tertiary">
+          <span>Search Only Good Stock • Architecture & Roadmap</span>
+          <span>Slide 9 / 10</span>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- SLIDE 10: CLOSING & Q&A                    -->
+      <!-- ========================================== -->
+      <section class="slide-page absolute inset-0 p-10 md:p-14 flex flex-col justify-between opacity-0 pointer-events-none transition-opacity duration-300 z-10" data-slide="10" data-notes="[발표 팁] 청중에게 감사를 전하고 Q&A 세션을 진행하세요. '가장 단순하고 우아한 투자 경험'을 슬로건으로 마무리합니다.">
+        
+        <div class="flex items-center justify-between">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-apple-green/10 text-apple-green text-xs font-medium">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Presentation Complete
+          </div>
+          <span class="font-mono text-xs text-apple-text-tertiary">Search Only Good Stock</span>
+        </div>
+
+        <!-- Center Closing Content -->
+        <div class="max-w-2xl mx-auto text-center space-y-6 my-auto">
+          <div class="w-16 h-16 rounded-3xl bg-apple-blue text-white mx-auto flex items-center justify-center shadow-apple-card">
+            <i data-lucide="sparkles" class="w-8 h-8"></i>
+          </div>
+
+          <div class="space-y-2">
+            <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark">
+              가장 단순하고 우아한<br />가치투자 경험
+            </h2>
+            <p class="text-base md:text-lg text-apple-text-secondary dark:text-apple-text-secondaryDark">
+              복잡한 소음 속에서 진짜 기업의 가치를 찾는 여정을 함께합니다.
+            </p>
+          </div>
+
+          <div class="inline-flex items-center gap-3 p-2 rounded-2xl bg-apple-subtle dark:bg-apple-subtleDark border border-apple-border dark:border-apple-borderDark">
+            <button onclick="goToSlide(1)" class="px-5 py-2.5 rounded-xl bg-apple-blue hover:bg-apple-blue-hover text-white text-xs font-bold transition shadow-sm flex items-center gap-2">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> 처음으로 돌아가기
+            </button>
+            <button onclick="toggleOverview()" class="px-5 py-2.5 rounded-xl bg-white dark:bg-apple-surfaceDark text-apple-text-primary dark:text-apple-text-primaryDark text-xs font-bold hover:bg-apple-subtle transition shadow-sm flex items-center gap-2">
+              <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> 슬라이드 목록 보기
+            </button>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-between text-xs text-apple-text-tertiary dark:text-apple-text-tertiaryDark pt-4 border-t border-apple-divider dark:border-apple-dividerDark">
+          <div>Thank you for listening • <span class="font-medium text-apple-text-secondary">Q&A Session</span></div>
+          <div>Search Only Good Stock Team</div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Overview Grid Modal (O key) -->
+    <div id="overviewModal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 p-6 md:p-10 flex flex-col hidden opacity-0 transition-opacity duration-300">
+      <div class="flex items-center justify-between pb-6 max-w-7xl mx-auto w-full">
+        <div>
+          <h3 class="text-xl font-bold text-white">슬라이드 전체 개요</h3>
+          <p class="text-xs text-white/60">원하는 슬라이드를 클릭하여 바로 이동할 수 있습니다. (닫기: ESC 또는 O)</p>
+        </div>
+        <button onclick="toggleOverview()" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto max-w-7xl mx-auto w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 pb-8">
+        <!-- Generated Dynamically by JS -->
+      </div>
+    </div>
+
+    <!-- Presenter Notes Drawer (P key) -->
+    <div id="notesDrawer" class="no-print fixed bottom-6 right-6 w-96 max-w-[calc(100vw-3rem)] rounded-2xl bg-white/95 dark:bg-apple-surfaceDark/95 border border-apple-border dark:border-apple-borderDark shadow-apple-modal backdrop-blur-xl p-5 z-40 hidden flex flex-col space-y-3 transition-all duration-300">
+      <div class="flex items-center justify-between pb-2 border-b border-apple-divider dark:border-apple-dividerDark">
+        <div class="flex items-center gap-2">
+          <i data-lucide="file-text" class="w-4 h-4 text-apple-blue"></i>
+          <span class="font-bold text-xs text-apple-text-primary dark:text-apple-text-primaryDark">발표자 노트 (Slide <span id="notesSlideNum">1</span>)</span>
+        </div>
+        <button onclick="toggleNotes()" class="text-apple-text-tertiary hover:text-apple-text-primary">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div id="notesContent" class="text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark leading-relaxed overflow-y-auto max-h-48 font-normal">
+        발표자 노트가 표시됩니다.
+      </div>
+      <div class="text-[10px] text-apple-text-tertiary pt-1 border-t border-apple-divider dark:border-apple-dividerDark">
+        단축키 <kbd class="px-1 py-0.5 rounded bg-black/5 dark:bg-white/10 font-mono">P</kbd> 로 언제든 여닫을 수 있습니다.
+      </div>
+    </div>
+
+    <!-- Shortcuts Help Modal (? key) -->
+    <div id="helpModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
+      <div class="max-w-md w-full rounded-2xl bg-white dark:bg-apple-surfaceDark p-6 shadow-apple-modal border border-apple-border dark:border-apple-borderDark space-y-4">
+        <div class="flex items-center justify-between">
+          <h4 class="font-bold text-sm text-apple-text-primary dark:text-apple-text-primaryDark">키보드 단축키 안내</h4>
+          <button onclick="toggleHelp()" class="text-apple-text-tertiary hover:text-apple-text-primary">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between py-1 border-b border-apple-divider dark:border-apple-dividerDark">
+            <span class="text-apple-text-secondary">다음 슬라이드</span>
+            <span class="font-mono font-bold"><kbd>→</kbd>, <kbd>Space</kbd>, <kbd>Enter</kbd></span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-apple-divider dark:border-apple-dividerDark">
+            <span class="text-apple-text-secondary">이전 슬라이드</span>
+            <span class="font-mono font-bold"><kbd>←</kbd>, <kbd>Backspace</kbd></span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-apple-divider dark:border-apple-dividerDark">
+            <span class="text-apple-text-secondary">전체화면 토글</span>
+            <span class="font-mono font-bold"><kbd>F</kbd></span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-apple-divider dark:border-apple-dividerDark">
+            <span class="text-apple-text-secondary">슬라이드 전체 목록 (Overview)</span>
+            <span class="font-mono font-bold"><kbd>O</kbd></span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-apple-divider dark:border-apple-dividerDark">
+            <span class="text-apple-text-secondary">발표자 메모 창</span>
+            <span class="font-mono font-bold"><kbd>P</kbd></span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-apple-divider dark:border-apple-dividerDark">
+            <span class="text-apple-text-secondary">다크 / 라이트 모드 전환</span>
+            <span class="font-mono font-bold"><kbd>T</kbd></span>
+          </div>
+          <div class="flex justify-between py-1">
+            <span class="text-apple-text-secondary">단축키 도움말</span>
+            <span class="font-mono font-bold"><kbd>?</kbd></span>
+          </div>
+        </div>
+        <button onclick="toggleHelp()" class="w-full py-2 rounded-xl bg-apple-blue text-white font-semibold text-xs transition hover:bg-apple-blue-hover">
+          확인
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Bottom Navigation Dot Indicators -->
+  <footer class="no-print h-12 flex items-center justify-center gap-1.5 shrink-0 select-none">
+    <div id="dotIndicators" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-apple-subtle dark:bg-apple-subtleDark border border-apple-border dark:border-apple-borderDark">
+      <!-- Dots injected dynamically -->
+    </div>
+  </footer>
+
+  <!-- Slide Logic & Interactions Script -->
+  <script>
+    let currentSlide = 1;
+    const slides = document.querySelectorAll('.slide-page');
+    const totalSlides = slides.length;
+
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // Slide Titles for Overview
+    const slideTitles = [
+      "01. Keynote Cover",
+      "02. Design Philosophy",
+      "03. Color System & Tokens",
+      "04. Screener & Bento Hero",
+      "05. 6 Buffett Rules & $1 Test",
+      "06. Deep-Dive Drawer & 10Y",
+      "07. Value Community",
+      "08. UI Kit & Components",
+      "09. Tech Stack & Roadmap",
+      "10. Closing & Q&A"
+    ];
+
+    function updateSlide() {
+      slides.forEach((slide, index) => {
+        const slideNum = index + 1;
+        if (slideNum === currentSlide) {
+          slide.classList.remove('opacity-0', 'pointer-events-none');
+          slide.classList.add('opacity-100', 'z-10');
+          slide.style.transform = 'scale(1) translateY(0)';
+          
+          // Update Presenter Notes
+          const notes = slide.getAttribute('data-notes') || '작성된 발표자 노트가 없습니다.';
+          document.getElementById('notesContent').innerText = notes;
+          document.getElementById('notesSlideNum').innerText = currentSlide;
+        } else {
+          slide.classList.add('opacity-0', 'pointer-events-none');
+          slide.classList.remove('opacity-100', 'z-10');
+          slide.style.transform = slideNum < currentSlide ? 'scale(0.96) translateY(-10px)' : 'scale(0.96) translateY(10px)';
+        }
+      });
+
+      // Update counters & UI
+      document.getElementById('currentSlideNum').innerText = currentSlide;
+      document.getElementById('totalSlideNum').innerText = totalSlides;
+      document.getElementById('prevBtn').disabled = currentSlide === 1;
+      document.getElementById('nextBtn').disabled = currentSlide === totalSlides;
+
+      // Update Progress Bar
+      const progressPercent = (currentSlide / totalSlides) * 100;
+      document.getElementById('progressBar').style.width = `${progressPercent}%`;
+
+      // Update Dots
+      renderDots();
+      lucide.createIcons();
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) {
+        currentSlide++;
+        updateSlide();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        currentSlide--;
+        updateSlide();
+      }
+    }
+
+    function goToSlide(num) {
+      if (num >= 1 && num <= totalSlides) {
+        currentSlide = num;
+        updateSlide();
+        closeOverview();
+      }
+    }
+
+    function renderDots() {
+      const container = document.getElementById('dotIndicators');
+      container.innerHTML = '';
+      for (let i = 1; i <= totalSlides; i++) {
+        const dot = document.createElement('button');
+        dot.title = `Slide ${i}: ${slideTitles[i-1]}`;
+        dot.className = `w-2 h-2 rounded-full transition-all duration-300 ${
+          i === currentSlide 
+            ? 'w-6 bg-apple-blue' 
+            : 'bg-apple-text-tertiary hover:bg-apple-text-secondary opacity-50 hover:opacity-100'
+        }`;
+        dot.onclick = () => goToSlide(i);
+        container.appendChild(dot);
+      }
+    }
+
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.log(err));
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    function toggleNotes() {
+      const drawer = document.getElementById('notesDrawer');
+      drawer.classList.toggle('hidden');
+    }
+
+    function toggleHelp() {
+      const modal = document.getElementById('helpModal');
+      if (modal.classList.contains('hidden')) {
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.classList.remove('opacity-0'), 10);
+      } else {
+        modal.classList.add('opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+      }
+    }
+
+    function toggleOverview() {
+      const modal = document.getElementById('overviewModal');
+      if (modal.classList.contains('hidden')) {
+        renderOverviewGrid();
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.classList.remove('opacity-0'), 10);
+      } else {
+        closeOverview();
+      }
+    }
+
+    function closeOverview() {
+      const modal = document.getElementById('overviewModal');
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    function renderOverviewGrid() {
+      const grid = document.querySelector('#overviewModal .grid');
+      grid.innerHTML = '';
+      for (let i = 1; i <= totalSlides; i++) {
+        const item = document.createElement('div');
+        item.className = `p-4 rounded-2xl cursor-pointer transition-all border flex flex-col justify-between aspect-video ${
+          i === currentSlide 
+            ? 'bg-apple-blue/20 border-apple-blue ring-2 ring-apple-blue' 
+            : 'bg-white/10 hover:bg-white/20 border-white/10'
+        }`;
+        item.innerHTML = `
+          <div class="flex justify-between items-start">
+            <span class="font-mono text-xs font-bold text-white/80">#${i}</span>
+            ${i === currentSlide ? '<span class="text-[10px] bg-apple-blue text-white px-1.5 py-0.5 rounded-full font-bold">Current</span>' : ''}
+          </div>
+          <div class="text-xs font-bold text-white truncate mt-auto">${slideTitles[i-1]}</div>
+        `;
+        item.onclick = () => goToSlide(i);
+        grid.appendChild(item);
+      }
+    }
+
+    // Keyboard Navigation Listener
+    window.addEventListener('keydown', (e) => {
+      // Don't trigger if typing in an input
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+      switch (e.key) {
+        case 'ArrowRight':
+        case 'PageDown':
+        case ' ':
+        case 'Enter':
+          e.preventDefault();
+          nextSlide();
+          break;
+        case 'ArrowLeft':
+        case 'PageUp':
+        case 'Backspace':
+          e.preventDefault();
+          prevSlide();
+          break;
+        case 'Home':
+          e.preventDefault();
+          goToSlide(1);
+          break;
+        case 'End':
+          e.preventDefault();
+          goToSlide(totalSlides);
+          break;
+        case 'f':
+        case 'F':
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        case 'o':
+        case 'O':
+          e.preventDefault();
+          toggleOverview();
+          break;
+        case 'p':
+        case 'P':
+          e.preventDefault();
+          toggleNotes();
+          break;
+        case 't':
+        case 'T':
+          e.preventDefault();
+          toggleTheme();
+          break;
+        case '?':
+          e.preventDefault();
+          toggleHelp();
+          break;
+        case 'Escape':
+          closeOverview();
+          const helpModal = document.getElementById('helpModal');
+          if (!helpModal.classList.contains('hidden')) toggleHelp();
+          break;
+      }
+    });
+
+    // Touch Swipe Support for Mobile / iPad presentation
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    window.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, false);
+
+    window.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    }, false);
+
+    function handleSwipe() {
+      if (touchEndX < touchStartX - 50) {
+        nextSlide();
+      }
+      if (touchEndX > touchStartX + 50) {
+        prevSlide();
+      }
+    }
+
+    // Initialize View
+    updateSlide();
+  </script>
+</body>
+</html>

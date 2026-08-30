@@ -72,12 +72,14 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
         return `${valNum.toFixed(2)}x`;
       case 'CURRENCY':
         if (currency === 'USD') {
-          return `$${valNum.toLocaleString(undefined, {
-            minimumFractionDigits: 1,
-            maximumFractionDigits: 2,
-          })}M`;
+          if (Math.abs(valNum) >= 1_000_000_000_000) return `$${(valNum / 1_000_000_000_000).toFixed(1)}T`;
+          if (Math.abs(valNum) >= 1_000_000_000) return `$${(valNum / 1_000_000_000).toFixed(1)}B`;
+          if (Math.abs(valNum) >= 1_000_000) return `$${(valNum / 1_000_000).toFixed(1)}M`;
+          return `$${valNum.toLocaleString()}`;
         }
-        return `${valNum.toLocaleString()}억`;
+        if (Math.abs(valNum) >= 1_000_000_000_000) return `${(valNum / 1_000_000_000_000).toFixed(1)}조원`;
+        if (Math.abs(valNum) >= 100_000_000) return `${(valNum / 100_000_000).toFixed(1)}억원`;
+        return `${valNum.toLocaleString()}원`;
       case 'COUNT':
         return `${valNum.toLocaleString()}`;
       default:

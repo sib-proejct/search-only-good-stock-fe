@@ -42,17 +42,26 @@ export const MarketBenchmarkCard: React.FC<MarketBenchmarkCardProps> = ({
     const num = typeof val === 'string' ? parseFloat(val) : val;
     if (isNaN(num)) return '—';
     if (currency === 'USD') {
-      return `$${num.toLocaleString(undefined, {
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 2,
-      })}M`;
+      if (num >= 1_000_000_000_000) return `$${(num / 1_000_000_000_000).toFixed(1)}T`;
+      if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(1)}B`;
+      if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(1)}M`;
+      return `$${num.toLocaleString()}`;
     }
-    return `${num.toLocaleString()}억원`;
+    if (num >= 1_000_000_000_000) return `${(num / 1_000_000_000_000).toFixed(1)}조원`;
+    if (num >= 100_000_000) return `${(num / 100_000_000).toFixed(1)}억원`;
+    return `${num.toLocaleString()}원`;
   };
 
   const dilutedSharesNum = currentMarket.dilutedShares !== null && currentMarket.dilutedShares !== undefined
     ? Number(currentMarket.dilutedShares)
     : null;
+  const formattedDilutedShares = dilutedSharesNum === null || isNaN(dilutedSharesNum)
+    ? '—'
+    : dilutedSharesNum >= 1_000_000_000
+    ? `${(dilutedSharesNum / 1_000_000_000).toFixed(2)}B`
+    : dilutedSharesNum >= 1_000_000
+    ? `${(dilutedSharesNum / 1_000_000).toFixed(2)}M`
+    : dilutedSharesNum.toLocaleString();
   const riskFreeRateNum = currentMarket.riskFreeRate !== null && currentMarket.riskFreeRate !== undefined
     ? Number(currentMarket.riskFreeRate)
     : null;
@@ -102,7 +111,7 @@ export const MarketBenchmarkCard: React.FC<MarketBenchmarkCardProps> = ({
         <div className="p-3.5 rounded-2xl bg-[#FBFBFD] dark:bg-[#252528]/50 border border-black/[0.04] dark:border-white/[0.06]">
           <span className="text-[10px] text-[#86868B] uppercase font-semibold block">희석주식수 (Diluted Shares)</span>
           <span className="font-mono text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums mt-1 block">
-            {dilutedSharesNum !== null && !isNaN(dilutedSharesNum) ? `${dilutedSharesNum.toLocaleString()}M` : '—'}
+            {formattedDilutedShares}
           </span>
         </div>
 
@@ -190,4 +199,3 @@ export const MarketBenchmarkCard: React.FC<MarketBenchmarkCardProps> = ({
     </div>
   );
 };
-

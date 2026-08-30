@@ -1,6 +1,6 @@
 # 최신 주식 분석 API 기반 FE-BE 연동 설계서
 
-> 문서 상태: 1차 구현 설계
+> 문서 상태: Fixture 1차 연동 및 실데이터 R4 전환 완료
 >
 > 대상 저장소: `search-only-good-stock-fe`(FE), `search-only-good-stock`(BE)
 >
@@ -54,7 +54,7 @@ Fixture 기반 주식 분석 API를 FE 스크리너와 상세 화면에 연결�
 - 시장지수·국채금리 실시간 카드
 - 커뮤니티 API, 인증·인가와 사용자별 규칙 저장
 - 임계값을 FE에서 바꾸어 재계산하는 커스텀 규칙 엔진
-- OpenAPI 코드 생성기나 범용 상태관리 라이브러리 도입
+- 범용 상태관리 라이브러리 도입
 
 제외 데이터가 필요한 컴포넌트는 1차 연동 화면에서 숨기거나 지원 예정 상태로
 대체합니다. Fixture 종목에 실존 기업용 Mock 데이터를 섞어 표시하지 않습니다.
@@ -189,9 +189,11 @@ FE 데이터 계층은 다음 세 책임만 분리합니다.
 
 ### 3.2 공통 타입
 
-`src/types/api.ts`에 BE 열거형과 공개 응답을 수동으로 동일하게 정의합니다. 1차
-연동 규모에서는 코드 생성 도구를 추가하지 않고, OpenAPI 계약 테스트와 TypeScript
-빌드로 동기화를 확인합니다.
+F1에서는 `src/types/api.ts`에 공개 DTO를 수동으로 맞췄습니다. 실데이터 R4부터는
+`npm run generate:api`가 실행 중인 BE `/openapi.json`을
+`src/types/openapi.generated.ts`로 생성하고, `src/types/api.ts`는 화면에서 쓰는
+schema alias만 제공합니다. TypeScript build로 생성 계약과 화면 사용처를 함께
+검증합니다.
 
 ```typescript
 export type Market = 'NASDAQ' | 'NYSE' | 'KOSPI' | 'KOSDAQ';
@@ -204,7 +206,7 @@ export type ValuationStatus =
   | 'NO_MARGIN'
   | 'N/A';
 export type Confidence = 'HIGH' | 'MEDIUM' | 'LOW';
-export type SourceType = 'FIXTURE';
+export type SourceType = 'FIXTURE' | 'LIVE';
 
 export interface StockSummaryDTO {
   id: string;
@@ -225,6 +227,8 @@ export interface StockSummaryDTO {
   confidence: Confidence;
   dataAsOf: string;
   sourceType: SourceType;
+  lastSuccessfulAt: string;
+  isStale: boolean;
 }
 
 export interface StockListResponse {
@@ -355,7 +359,7 @@ success + 다음 페이지 요청 -> 기존 items 유지 + loadingMore
 | 가치평가 | `valuationStatus` | 네 상태를 구분 |
 | 안전마진 | `conservativeMarginOfSafety` | 100을 곱해 %, null은 `—` |
 | 신뢰도 | `confidence` | HIGH/MEDIUM/LOW |
-| 기준 정보 | `dataAsOf`, `sourceType` | 기준일과 Fixture 표시 |
+| 기준 정보 | `dataAsOf`, `sourceType`, `isStale` | 기준일, Fixture/LIVE와 stale 표시 |
 
 `buffettScore`, 동적 점수 정렬, 6/6 마스터 판정, ROE·ROIC 평균 열,
 1달러 테스트 열과 sparkline은 제거합니다. 하드코딩된 시장지수와 국채금리 카드는
@@ -564,6 +568,10 @@ npm run build
 
 이 체크리스트의 완료는 Fixture 기반 분석 화면의 기술적 연동 완료를 의미합니다.
 실데이터 수집 완료나 종목 매수·매도 추천을 의미하지 않습니다.
+
+실데이터 R4에서는 동일 화면을 생성된 OpenAPI 타입으로 전환하고 `LIVE`,
+`lastSuccessfulAt`, `isStale`을 추가했습니다. 공개 설정이 비활성화되면 Fixture로
+대체하지 않고 정상 빈 목록을 유지합니다.
 
 ### 💡구현 규칙 후보
 

@@ -81,6 +81,8 @@ export const translations = {
     goodStockExample: '우량 종목 예시 (SYN-PASS)',
     badStockExample: '탈락 종목 예시 (SYN-FAIL)',
     asOfDateLabel: '분석 기준일',
+    loadedAsOfDateLabel: '불러온 종목 기준일',
+    loadedSnapshotStatus: '불러온 {loaded}개 중 stale {stale}개',
 
     // Analysis Page
     backToScreener: '스크리너로 돌아가기',
@@ -349,6 +351,8 @@ export const translations = {
     goodStockExample: 'Good Stock: SYN-PASS',
     badStockExample: 'Failing Stock: SYN-FAIL',
     asOfDateLabel: 'Analysis As Of',
+    loadedAsOfDateLabel: 'Loaded Stocks As Of',
+    loadedSnapshotStatus: '{stale} stale among {loaded} loaded',
 
     // Analysis Page
     backToScreener: 'Back to Screener',

@@ -128,11 +128,14 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
   const formatMarketCap = (val: number | null, curr: string) => {
     if (val === null || val === undefined) return '—';
     if (curr === 'USD') {
-      if (val >= 1000) return `$${(val / 1000).toFixed(1)}B`;
-      return `$${val.toFixed(1)}M`;
+      if (val >= 1_000_000_000_000) return `$${(val / 1_000_000_000_000).toFixed(1)}T`;
+      if (val >= 1_000_000_000) return `$${(val / 1_000_000_000).toFixed(1)}B`;
+      if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(1)}M`;
+      return `$${val.toLocaleString()}`;
     }
-    if (val >= 10000) return `${(val / 10000).toFixed(1)}조원`;
-    return `${val.toLocaleString()}억원`;
+    if (val >= 1_000_000_000_000) return `${(val / 1_000_000_000_000).toFixed(1)}조원`;
+    if (val >= 100_000_000) return `${(val / 100_000_000).toFixed(1)}억원`;
+    return `${val.toLocaleString()}원`;
   };
 
   const formatPercent = (val: number | null) => {
@@ -143,6 +146,14 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
 
   const selectedDrawerStock: StockSummaryDTO | null =
     stocks.find((s) => s.ticker === drawerStockTicker || s.id === drawerStockTicker) || null;
+  const latestLoadedDataAsOf = stocks.reduce<string | null>(
+    (latest, stock) => (!latest || stock.dataAsOf > latest ? stock.dataAsOf : latest),
+    null
+  );
+  const loadedStaleCount = stocks.filter((stock) => stock.isStale).length;
+  const sourceLabel = stocks.length > 0
+    ? [...new Set(stocks.map((stock) => stock.sourceType))].join(' + ')
+    : 'LIVE';
 
   return (
     <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-5 sm:space-y-6 animate-fade-in">
@@ -157,7 +168,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
               </span>
               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF] font-mono">
                 <Database className="w-3 h-3" />
-                <span>FIXTURE</span>
+                <span>{sourceLabel}</span>
               </span>
             </div>
             <div className="flex items-baseline gap-2 mt-2 whitespace-nowrap">
@@ -207,18 +218,21 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
         <div className="md:col-span-3 bg-white dark:bg-[#1C1C1E] rounded-3xl p-5 sm:p-6 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between transition-colors duration-300">
           <div>
             <span className="text-xs font-medium text-[#86868B] block truncate">
-              {t('asOfDateLabel')}
+              {t('loadedAsOfDateLabel')}
             </span>
             <div className="flex items-baseline gap-1.5 mt-2 whitespace-nowrap">
               <span className="text-lg sm:text-xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
-                2026-08-27
+                {latestLoadedDataAsOf?.slice(0, 10) ?? '—'}
               </span>
             </div>
           </div>
 
           <div className="pt-3 mt-3 border-t border-black/[0.06] dark:border-white/[0.08]">
             <span className="text-xs font-medium text-[#86868B] truncate block font-mono">
-              FastAPI Verified Fixtures
+              {t('loadedSnapshotStatus', {
+                loaded: stocks.length,
+                stale: loadedStaleCount,
+              })}
             </span>
           </div>
         </div>
@@ -447,6 +461,11 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                         <span className="font-bold text-sm text-[#1D1D1F] dark:text-[#F5F5F7] font-mono">
                           {stock.ticker}
                         </span>
+                        {stock.isStale && (
+                          <span className="text-[9px] font-bold text-[#FF9500] bg-[#FF9500]/10 px-1.5 py-0.5 rounded-full">
+                            STALE
+                          </span>
+                        )}
                         <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold">
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
@@ -541,6 +560,14 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                             <span className="text-[10px] font-mono text-[#86868B] px-1.5 py-0.5 bg-black/[0.04] dark:bg-white/[0.06] rounded">
                               {stock.market}
                             </span>
+                            {stock.isStale && (
+                              <span
+                                className="text-[9px] font-bold text-[#FF9500] bg-[#FF9500]/10 px-1.5 py-0.5 rounded"
+                                title={`Last successful: ${stock.lastSuccessfulAt}`}
+                              >
+                                STALE
+                              </span>
+                            )}
                           </div>
                         </td>
 

@@ -193,11 +193,14 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
   const formatMarketCap = (val: number | null, curr: string) => {
     if (val === null || val === undefined) return '—';
     if (curr === 'USD') {
-      if (val >= 1000) return `$${(val / 1000).toFixed(1)}B`;
-      return `$${val.toFixed(1)}M`;
+      if (val >= 1_000_000_000_000) return `$${(val / 1_000_000_000_000).toFixed(1)}T`;
+      if (val >= 1_000_000_000) return `$${(val / 1_000_000_000).toFixed(1)}B`;
+      if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(1)}M`;
+      return `$${val.toLocaleString()}`;
     }
-    if (val >= 10000) return `${(val / 10000).toFixed(1)}조원`;
-    return `${val.toLocaleString()}억원`;
+    if (val >= 1_000_000_000_000) return `${(val / 1_000_000_000_000).toFixed(1)}조원`;
+    if (val >= 100_000_000) return `${(val / 100_000_000).toFixed(1)}억원`;
+    return `${val.toLocaleString()}원`;
   };
 
   const formatPercent = (val: number | null) => {
@@ -342,6 +345,14 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                     <Calendar className="w-3 h-3 text-[#86868B]" />
                     <span>{stock.dataAsOf.slice(0, 10)}</span>
                   </span>
+                  {stock.isStale && (
+                    <span
+                      className="text-[10px] font-bold text-[#FF9500] bg-[#FF9500]/10 px-2 py-0.5 rounded-full"
+                      title={`Last successful: ${stock.lastSuccessfulAt}`}
+                    >
+                      STALE
+                    </span>
+                  )}
                 </div>
 
                 <div className="text-xs text-[#86868B] flex items-center gap-2">

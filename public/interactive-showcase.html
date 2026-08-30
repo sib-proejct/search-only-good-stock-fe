@@ -1,0 +1,2066 @@
+<!DOCTYPE html>
+<html lang="ko" class="h-full scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Only Good Stock — Interactive Web Experience & Product Story</title>
+  
+  <!-- Fonts: Pretendard, Inter, JetBrains Mono, Newsreader -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js for Live Interactive Visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Canvas Confetti for Celebration FX -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            apple: {
+              canvas: '#F5F5F7',
+              canvasDark: '#0B0B0C',
+              surface: '#FFFFFF',
+              surfaceDark: '#161618',
+              surfaceElevated: '#1E1E20',
+              subtle: '#EBEBED',
+              subtleDark: '#242426',
+              border: 'rgba(0, 0, 0, 0.08)',
+              borderDark: 'rgba(255, 255, 255, 0.1)',
+              divider: 'rgba(0, 0, 0, 0.05)',
+              dividerDark: 'rgba(255, 255, 255, 0.06)',
+              text: {
+                primary: '#1D1D1F',
+                primaryDark: '#F5F5F7',
+                secondary: '#86868B',
+                secondaryDark: '#A1A1A6',
+                tertiary: '#B0B0B5',
+                tertiaryDark: '#636366',
+              },
+              blue: {
+                DEFAULT: '#0071E3',
+                hover: '#0077ED',
+                light: '#E8F2FD',
+                dark: '#0A84FF',
+              },
+              green: {
+                DEFAULT: '#34C759',
+                light: '#EAF8EE',
+                dark: '#30D158',
+              },
+              red: {
+                DEFAULT: '#FF3B30',
+                light: '#FEECEB',
+                dark: '#FF453A',
+              },
+              orange: {
+                DEFAULT: '#FF9500',
+                light: '#FFF4E5',
+                dark: '#FF9F0A',
+              },
+              gold: {
+                DEFAULT: '#D97706',
+                light: '#FEF3C7',
+                dark: '#FFD60A',
+              },
+              purple: {
+                DEFAULT: '#AF52DE',
+                light: '#F5E8FC',
+                dark: '#BF5AF2',
+              }
+            }
+          },
+          fontFamily: {
+            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'SF Mono', 'monospace'],
+            serif: ['Newsreader', 'Georgia', 'serif'],
+          },
+          boxShadow: {
+            'apple-card': '0 4px 20px 0 rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.03)',
+            'apple-card-hover': '0 20px 40px -15px rgba(0, 0, 0, 0.12), 0 0 1px 1px rgba(0, 0, 0, 0.05)',
+            'apple-card-dark': '0 4px 20px 0 rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08)',
+            'apple-pill': '0 2px 8px rgba(0, 0, 0, 0.06)',
+            'apple-modal': '0 30px 90px -20px rgba(0, 0, 0, 0.35)',
+            'glow-blue': '0 0 25px -5px rgba(0, 113, 227, 0.4)',
+            'glow-green': '0 0 25px -5px rgba(52, 199, 89, 0.4)',
+          },
+          animation: {
+            'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 6s ease-in-out infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-8px)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Smooth Rendering & Typography Optimization */
+    * {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    body {
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      text-rendering: optimizeLegibility;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Glassmorphism System */
+    .apple-glass {
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+    }
+    .dark .apple-glass {
+      background: rgba(18, 18, 20, 0.75);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+    }
+
+    .apple-glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .dark .apple-glass-card {
+      background: rgba(26, 26, 28, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    /* Custom Gradient Text */
+    .text-gradient-apple {
+      background: linear-gradient(135deg, #1D1D1F 0%, #434344 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .dark .text-gradient-apple {
+      background: linear-gradient(135deg, #FFFFFF 0%, #A1A1A6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .text-gradient-blue {
+      background: linear-gradient(135deg, #0071E3 0%, #42A5F5 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .text-gradient-gold {
+      background: linear-gradient(135deg, #D97706 0%, #FBBF24 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Interactive Drawer & Overlays */
+    .drawer-transition {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.16);
+      border-radius: 9999px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.18);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.28);
+    }
+    .dark ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Slider styling */
+    input[type=range] {
+      accent-color: #0071E3;
+    }
+    .dark input[type=range] {
+      accent-color: #0A84FF;
+    }
+  </style>
+</head>
+
+<body class="bg-apple-canvas dark:bg-apple-canvasDark text-apple-text-primary dark:text-apple-text-primaryDark min-h-screen flex flex-col font-sans transition-colors duration-300 antialiased selection:bg-apple-blue/20 selection:text-apple-blue">
+
+  <!-- ========================================== -->
+  <!-- 0. TOP FLOATING APP-BAR & CONTROL DOCK     -->
+  <!-- ========================================== -->
+  <header class="sticky top-0 z-40 w-full apple-glass border-b border-apple-border dark:border-apple-borderDark transition-all duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Brand & Product Title -->
+      <div class="flex items-center gap-3 shrink-0">
+        <a href="#hero" class="group flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-apple-text-primary dark:bg-white text-white dark:text-black flex items-center justify-center shadow-apple-pill group-hover:scale-105 transition-transform">
+            <i data-lucide="sparkles" class="w-4 h-4 text-apple-blue dark:text-apple-blue"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm sm:text-base tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark">Search Only Good Stock</span>
+              <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-apple-blue/10 text-apple-blue dark:bg-apple-blue/20 border border-apple-blue/20">Interactive Web Edition</span>
+            </div>
+            <p class="text-[11px] text-apple-text-secondary dark:text-apple-text-secondaryDark hidden sm:block">단순 슬라이드를 넘어선 워런 버핏 가치투자 인터랙티브 엔진</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Center Quick Navigation Anchor Links (Desktop) -->
+      <nav class="hidden lg:flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-full text-xs font-medium border border-apple-border dark:border-apple-borderDark">
+        <a href="#philosophy" class="px-3 py-1.5 rounded-full hover:bg-white dark:hover:bg-apple-surfaceElevated transition text-apple-text-secondary hover:text-apple-text-primary dark:text-apple-text-secondaryDark dark:hover:text-white">4대 철학</a>
+        <a href="#simulator" class="px-3 py-1.5 rounded-full hover:bg-white dark:hover:bg-apple-surfaceElevated transition text-apple-text-secondary hover:text-apple-text-primary dark:text-apple-text-secondaryDark dark:hover:text-white">실시간 스크리너</a>
+        <a href="#dollar-test" class="px-3 py-1.5 rounded-full hover:bg-white dark:hover:bg-apple-surfaceElevated transition text-apple-text-secondary hover:text-apple-text-primary dark:text-apple-text-secondaryDark dark:hover:text-white">1달러 법칙 계산기</a>
+        <a href="#deepdive" class="px-3 py-1.5 rounded-full hover:bg-white dark:hover:bg-apple-surfaceElevated transition text-apple-text-secondary hover:text-apple-text-primary dark:text-apple-text-secondaryDark dark:hover:text-white">10년 재무 인스펙터</a>
+        <a href="#community" class="px-3 py-1.5 rounded-full hover:bg-white dark:hover:bg-apple-surfaceElevated transition text-apple-text-secondary hover:text-apple-text-primary dark:text-apple-text-secondaryDark dark:hover:text-white">커뮤니티</a>
+        <a href="#tech" class="px-3 py-1.5 rounded-full hover:bg-white dark:hover:bg-apple-surfaceElevated transition text-apple-text-secondary hover:text-apple-text-primary dark:text-apple-text-secondaryDark dark:hover:text-white">아키텍처</a>
+      </nav>
+
+      <!-- Right Utility Actions -->
+      <div class="flex items-center gap-2">
+        
+        <!-- Command Palette Trigger (Cmd+K) -->
+        <button onclick="toggleCommandPalette()" title="단축키 커맨드 팔레트 (Cmd + K)" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark transition border border-apple-border dark:border-apple-borderDark">
+          <i data-lucide="search" class="w-3.5 h-3.5"></i>
+          <span>검색</span>
+          <kbd class="px-1.5 py-0.5 rounded bg-white dark:bg-black/40 font-mono text-[10px] text-apple-text-tertiary">⌘K</kbd>
+        </button>
+
+        <!-- Sound FX Haptic Toggle -->
+        <button id="soundToggleBtn" onclick="toggleSound()" title="사운드 햅틱 피드백 토글" class="w-8 h-8 rounded-lg flex items-center justify-center bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 transition text-apple-text-secondary dark:text-apple-text-secondaryDark">
+          <i data-lucide="volume-2" class="w-4 h-4" id="soundIcon"></i>
+        </button>
+
+        <!-- Dark / Light Mode Toggle -->
+        <button onclick="toggleTheme()" title="다크 모드 토글 (T)" class="w-8 h-8 rounded-lg flex items-center justify-center bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 transition text-apple-text-secondary dark:text-apple-text-secondaryDark">
+          <i data-lucide="moon" class="w-4 h-4 hidden dark:block text-apple-gold"></i>
+          <i data-lucide="sun" class="w-4 h-4 block dark:hidden text-apple-orange"></i>
+        </button>
+
+        <!-- Compare Traditional Slide vs Web -->
+        <a href="presentation.html" title="기존 슬라이드 덱 버전 보기" class="hidden md:inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-apple-text-secondary dark:text-apple-text-secondaryDark transition border border-apple-border dark:border-apple-borderDark">
+          <i data-lucide="presentation" class="w-3.5 h-3.5"></i>
+          <span>슬라이드 덱 보기</span>
+        </a>
+
+        <!-- Executive Summary Share / Print Modal Trigger -->
+        <button onclick="openExecutiveReport()" class="px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 bg-apple-blue hover:bg-apple-blue-hover text-white text-xs font-semibold shadow-sm transition shadow-apple-pill">
+          <i data-lucide="file-check" class="w-3.5 h-3.5"></i>
+          <span>요약 브리핑</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Reading Progress Bar -->
+  <div class="sticky top-16 z-30 w-full h-[2px] bg-transparent">
+    <div id="scrollProgressBar" class="h-full bg-gradient-to-r from-apple-blue via-apple-green to-apple-blue transition-all duration-100 ease-out" style="width: 0%;"></div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 1. HERO SECTION: SPATIAL PRODUCT STORY     -->
+  <!-- ========================================== -->
+  <section id="hero" class="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden">
+    <!-- Ambient Background Glows -->
+    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] md:w-[900px] h-[400px] bg-gradient-to-tr from-apple-blue/15 via-apple-green/10 to-transparent blur-3xl -z-10 pointer-events-none rounded-full"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Top Pill Badge -->
+      <div class="flex items-center justify-center">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white dark:bg-apple-surfaceElevated border border-apple-border dark:border-apple-borderDark shadow-apple-pill text-xs font-medium text-apple-text-secondary dark:text-apple-text-secondaryDark animate-float">
+          <span class="flex h-2 w-2 relative">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-apple-green opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-apple-green"></span>
+          </span>
+          <span>Next-Gen Web Architecture</span>
+          <span class="text-apple-border dark:text-apple-borderDark">•</span>
+          <span class="text-apple-blue font-semibold">HTML 인터랙티브 에디션</span>
+        </div>
+      </div>
+
+      <!-- Main Headline & Narrative -->
+      <div class="text-center max-w-4xl mx-auto mt-8 space-y-6">
+        <h1 class="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-[1.08] text-gradient-apple">
+          애플이 주식 사이트를<br class="hidden sm:inline" />
+          만들면 이럴 것이다.
+        </h1>
+        <p class="text-lg sm:text-xl md:text-2xl text-apple-text-secondary dark:text-apple-text-secondaryDark max-w-3xl mx-auto leading-relaxed font-normal">
+          고정된 16:9 슬라이드 프레임을 넘어선 <span class="font-semibold text-apple-text-primary dark:text-apple-text-primaryDark">살아 숨쉬는 웹 경험</span>.<br class="hidden md:inline" />
+          워런 버핏의 <span class="text-apple-blue font-semibold">엄격한 6대 가치투자 원칙</span>과 애플의 <span class="text-apple-green font-semibold">초정제 디자인</span>을 실시간 인터랙션으로 검증하십시오.
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="pt-4 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+          <a href="#simulator" onclick="playClickSound()" class="px-6 py-3.5 rounded-2xl bg-apple-blue hover:bg-apple-blue-hover text-white text-sm sm:text-base font-semibold shadow-glow-blue transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+            <span>실시간 스크리너 시뮬레이션</span>
+          </a>
+          <a href="#dollar-test" onclick="playClickSound()" class="px-6 py-3.5 rounded-2xl bg-white dark:bg-apple-surfaceElevated hover:bg-apple-subtle dark:hover:bg-apple-subtleDark border border-apple-border dark:border-apple-borderDark text-apple-text-primary dark:text-apple-text-primaryDark text-sm sm:text-base font-semibold shadow-apple-card transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
+            <i data-lucide="calculator" class="w-4 h-4 text-apple-gold"></i>
+            <span>1달러 테스트 계산기</span>
+          </a>
+          <button onclick="triggerConfettiDemo()" class="px-4 py-3.5 rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-apple-text-secondary dark:text-apple-text-secondaryDark text-sm font-medium transition flex items-center gap-1.5">
+            <i data-lucide="party-popper" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">축하 효과</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Core Metric Bento Row -->
+      <div class="mt-14 sm:mt-18 grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+        
+        <!-- Metric Card 1 -->
+        <div class="p-5 rounded-2xl bg-white/80 dark:bg-apple-surfaceDark/80 border border-apple-border dark:border-apple-borderDark shadow-apple-card backdrop-blur-md hover:border-apple-blue/50 transition duration-300">
+          <div class="flex items-center justify-between text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark font-medium mb-1">
+            <span>합격 필터 통과율</span>
+            <i data-lucide="filter" class="w-3.5 h-3.5 text-apple-blue"></i>
+          </div>
+          <div class="text-3xl sm:text-4xl font-bold font-mono text-apple-blue tabular-nums tracking-tight">0.57%</div>
+          <p class="text-[11px] text-apple-text-tertiary dark:text-apple-text-tertiaryDark mt-1">2,450개 상장사 중 단 14개만 통과</p>
+        </div>
+
+        <!-- Metric Card 2 -->
+        <div class="p-5 rounded-2xl bg-white/80 dark:bg-apple-surfaceDark/80 border border-apple-border dark:border-apple-borderDark shadow-apple-card backdrop-blur-md hover:border-apple-green/50 transition duration-300">
+          <div class="flex items-center justify-between text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark font-medium mb-1">
+            <span>재무 검증 기간</span>
+            <i data-lucide="calendar-range" class="w-3.5 h-3.5 text-apple-green"></i>
+          </div>
+          <div class="text-3xl sm:text-4xl font-bold font-mono text-apple-green tabular-nums tracking-tight">10 Years</div>
+          <p class="text-[11px] text-apple-text-tertiary dark:text-apple-text-tertiaryDark mt-1">10년 연속 롤링 ROE & 재투자 분석</p>
+        </div>
+
+        <!-- Metric Card 3 -->
+        <div class="p-5 rounded-2xl bg-white/80 dark:bg-apple-surfaceDark/80 border border-apple-border dark:border-apple-borderDark shadow-apple-card backdrop-blur-md hover:border-apple-gold/50 transition duration-300">
+          <div class="flex items-center justify-between text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark font-medium mb-1">
+            <span>1달러당 가치 창출</span>
+            <i data-lucide="trending-up" class="w-3.5 h-3.5 text-apple-gold"></i>
+          </div>
+          <div class="text-3xl sm:text-4xl font-bold font-mono text-apple-gold tabular-nums tracking-tight">$3.42</div>
+          <p class="text-[11px] text-apple-text-tertiary dark:text-apple-text-tertiaryDark mt-1">기준치 $1.00 대비 242% 초과 성과</p>
+        </div>
+
+        <!-- Metric Card 4 -->
+        <div class="p-5 rounded-2xl bg-white/80 dark:bg-apple-surfaceDark/80 border border-apple-border dark:border-apple-borderDark shadow-apple-card backdrop-blur-md hover:border-apple-purple/50 transition duration-300">
+          <div class="flex items-center justify-between text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark font-medium mb-1">
+            <span>디자인 노이즈 & 슬롭</span>
+            <i data-lucide="sparkle" class="w-3.5 h-3.5 text-apple-purple"></i>
+          </div>
+          <div class="text-3xl sm:text-4xl font-bold font-mono text-apple-text-primary dark:text-apple-text-primaryDark tabular-nums tracking-tight">0%</div>
+          <p class="text-[11px] text-apple-text-tertiary dark:text-apple-text-tertiaryDark mt-1">AI-Slop 제로 • 100% 정량 팩트 기반</p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- 2. CHAPTER 1: 4 DESIGN FOUNDATIONS         -->
+  <!-- ========================================== -->
+  <section id="philosophy" class="py-16 md:py-24 border-t border-apple-divider dark:border-apple-dividerDark">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-14">
+        <div class="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-apple-blue mb-2">
+          <i data-lucide="compass" class="w-4 h-4"></i> Design Foundation
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark">
+          가치투자를 위한 4대 핵심 디자인 철학
+        </h2>
+        <p class="text-sm sm:text-base text-apple-text-secondary dark:text-apple-text-secondaryDark mt-3">
+          잡다한 테마주 찌라시와 번쩍이는 네온 차트를 걷어내고, 오직 기업의 영구적 현금 흐름에 집중합니다.
+        </p>
+      </div>
+
+      <!-- 4 Pillars Interactive Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+        
+        <!-- Pillar 1 -->
+        <div class="group p-8 rounded-3xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark shadow-apple-card hover:shadow-apple-card-hover transition-all duration-300 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-apple-blue/10 dark:bg-apple-blue/20 text-apple-blue flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <i data-lucide="eye" class="w-6 h-6"></i>
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs font-mono font-bold text-apple-blue px-2 py-0.5 rounded bg-apple-blue/10">01</span>
+              <h3 class="font-bold text-xl text-apple-text-primary dark:text-apple-text-primaryDark">명료함 (Clarity)</h3>
+            </div>
+            <p class="text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark leading-relaxed">
+              사용자가 기업의 <strong class="text-apple-text-primary dark:text-apple-text-primaryDark">본질 가치(Intrinsic Value)</strong>와 <strong class="text-apple-text-primary dark:text-apple-text-primaryDark">소유주 이익(Owner Earnings)</strong>을 1초 안에 판독할 수 있도록 모든 픽셀과 타이포그래피 계층을 재구성했습니다.
+            </p>
+          </div>
+          <div class="mt-6 pt-4 border-t border-apple-divider dark:border-apple-dividerDark flex items-center justify-between text-xs text-apple-text-tertiary">
+            <span>핵심 원칙</span>
+            <span class="font-mono text-apple-blue font-semibold">Content First • Zero Distraction</span>
+          </div>
+        </div>
+
+        <!-- Pillar 2 -->
+        <div class="group p-8 rounded-3xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark shadow-apple-card hover:shadow-apple-card-hover transition-all duration-300 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-apple-green/10 dark:bg-apple-green/20 text-apple-green flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <i data-lucide="layers" class="w-6 h-6"></i>
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs font-mono font-bold text-apple-green px-2 py-0.5 rounded bg-apple-green/10">02</span>
+              <h3 class="font-bold text-xl text-apple-text-primary dark:text-apple-text-primaryDark">겸손함 (Deference)</h3>
+            </div>
+            <p class="text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark leading-relaxed">
+              UI 프레임워크가 자신을 과시하지 않고 투자 데이터를 돋보이게 하는 투명한 무대 역할을 수행합니다. 부드러운 24px 반경의 벤토 박스와 애플 글래스 블러 계층을 적용했습니다.
+            </p>
+          </div>
+          <div class="mt-6 pt-4 border-t border-apple-divider dark:border-apple-dividerDark flex items-center justify-between text-xs text-apple-text-tertiary">
+            <span>핵심 원칙</span>
+            <span class="font-mono text-apple-green font-semibold">Frosted Glass • Subtle Bento</span>
+          </div>
+        </div>
+
+        <!-- Pillar 3 -->
+        <div class="group p-8 rounded-3xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark shadow-apple-card hover:shadow-apple-card-hover transition-all duration-300 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-apple-orange/10 dark:bg-apple-orange/20 text-apple-orange flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <i data-lucide="sparkles" class="w-6 h-6"></i>
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs font-mono font-bold text-apple-orange px-2 py-0.5 rounded bg-apple-orange/10">03</span>
+              <h3 class="font-bold text-xl text-apple-text-primary dark:text-apple-text-primaryDark">깊이감 (Depth)</h3>
+            </div>
+            <p class="text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark leading-relaxed">
+              자연스러운 조명과 세밀한 다층 그림자(Multi-layered Shadows), 물리 기반 마이크로 인터랙션을 통해 평면 스크린 위에서 직관적인 공간적 뎁스를 제공합니다.
+            </p>
+          </div>
+          <div class="mt-6 pt-4 border-t border-apple-divider dark:border-apple-dividerDark flex items-center justify-between text-xs text-apple-text-tertiary">
+            <span>핵심 원칙</span>
+            <span class="font-mono text-apple-orange font-semibold">Organic Spring Physics</span>
+          </div>
+        </div>
+
+        <!-- Pillar 4 -->
+        <div class="group p-8 rounded-3xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark shadow-apple-card hover:shadow-apple-card-hover transition-all duration-300 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-apple-gold/10 dark:bg-apple-gold/20 text-apple-gold flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <i data-lucide="binary" class="w-6 h-6"></i>
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs font-mono font-bold text-apple-gold px-2 py-0.5 rounded bg-apple-gold/10">04</span>
+              <h3 class="font-bold text-xl text-apple-text-primary dark:text-apple-text-primaryDark">숫자의 정밀성 (Tabular Precision)</h3>
+            </div>
+            <p class="text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark leading-relaxed">
+              모든 재무 지표와 퍼센트에 <code class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-apple-blue">tabular-nums font-mono</code>를 강제하여 숫자가 갱신되거나 비교될 때 글리치 없는 완벽한 정렬을 유지합니다.
+            </p>
+          </div>
+          <div class="mt-6 pt-4 border-t border-apple-divider dark:border-apple-dividerDark flex items-center justify-between text-xs text-apple-text-tertiary">
+            <span>핵심 원칙</span>
+            <span class="font-mono text-apple-gold font-semibold">JetBrains Mono • Zero-Jitter</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- 3. CHAPTER 2: INTERACTIVE SCREENER SANDBOX -->
+  <!-- ========================================== -->
+  <section id="simulator" class="py-16 md:py-24 bg-apple-subtle/30 dark:bg-apple-subtleDark/20 border-t border-apple-divider dark:border-apple-dividerDark">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Section Header -->
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+        <div>
+          <div class="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-apple-blue mb-2">
+            <i data-lucide="sliders" class="w-4 h-4"></i> Live Sandbox Engine
+          </div>
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark">
+            실시간 버핏 스크리너 시뮬레이터
+          </h2>
+          <p class="text-sm text-apple-text-secondary dark:text-apple-text-secondaryDark mt-1">
+            슬라이더를 직접 움직여보세요. 기준을 높이거나 낮출 때 통과하는 초우량 기업 집합이 실시간으로 필터링됩니다.
+          </p>
+        </div>
+
+        <!-- Quick Preset Filter Pills -->
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+          <span class="text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark font-medium">프리셋:</span>
+          <button onclick="applyPreset('buffett_pure')" class="preset-btn active px-3 py-1.5 rounded-full text-xs font-semibold bg-apple-blue text-white shadow-sm transition">
+            버핏 순수형 (기본)
+          </button>
+          <button onclick="applyPreset('strict_quality')" class="preset-btn px-3 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-apple-surfaceElevated text-apple-text-secondary dark:text-apple-text-secondaryDark border border-apple-border dark:border-apple-borderDark hover:text-apple-text-primary transition">
+            초극단 퀄리티 (Top 3)
+          </button>
+          <button onclick="applyPreset('growth_value')" class="preset-btn px-3 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-apple-surfaceElevated text-apple-text-secondary dark:text-apple-text-secondaryDark border border-apple-border dark:border-apple-borderDark hover:text-apple-text-primary transition">
+            성장 가치주 (완화)
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Interactive Sandbox Area -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Controls Panel (Left, 4 cols) -->
+        <div class="lg:col-span-4 p-6 rounded-3xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark shadow-apple-card space-y-6">
+          <div class="flex items-center justify-between pb-3 border-b border-apple-divider dark:border-apple-dividerDark">
+            <h3 class="font-bold text-sm text-apple-text-primary dark:text-apple-text-primaryDark flex items-center gap-2">
+              <i data-lucide="tune" class="w-4 h-4 text-apple-blue"></i>
+              필터 임계값 조절
+            </h3>
+            <button onclick="resetScreenerFilters()" class="text-xs text-apple-blue hover:underline">초기화</button>
+          </div>
+
+          <!-- Slider 1: 10Y ROE Threshold -->
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs">
+              <label for="roeSlider" class="font-semibold text-apple-text-primary dark:text-apple-text-primaryDark">10년 평균 ROE 하한선</label>
+              <span id="roeValueDisplay" class="font-mono font-bold text-apple-blue">≥ 15.0%</span>
+            </div>
+            <input type="range" id="roeSlider" min="10" max="35" step="1" value="15" oninput="updateScreener()" class="w-full h-2 bg-apple-subtle dark:bg-apple-subtleDark rounded-lg cursor-pointer">
+            <div class="flex justify-between text-[10px] text-apple-text-tertiary">
+              <span>10% (완화)</span>
+              <span>15% (버핏 표준)</span>
+              <span>35% (극단)</span>
+            </div>
+          </div>
+
+          <!-- Slider 2: Debt to Equity Max -->
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs">
+              <label for="debtSlider" class="font-semibold text-apple-text-primary dark:text-apple-text-primaryDark">부채비율 상한선</label>
+              <span id="debtValueDisplay" class="font-mono font-bold text-apple-green">≤ 100%</span>
+            </div>
+            <input type="range" id="debtSlider" min="40" max="180" step="10" value="100" oninput="updateScreener()" class="w-full h-2 bg-apple-subtle dark:bg-apple-subtleDark rounded-lg cursor-pointer">
+            <div class="flex justify-between text-[10px] text-apple-text-tertiary">
+              <span>40% (초안전)</span>
+              <span>100% (버핏 표준)</span>
+              <span>180% (레버리지)</span>
+            </div>
+          </div>
+
+          <!-- Slider 3: 1-Dollar Test Target -->
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs">
+              <label for="dollarSlider" class="font-semibold text-apple-text-primary dark:text-apple-text-primaryDark">1달러 법칙 창출 가치</label>
+              <span id="dollarValueDisplay" class="font-mono font-bold text-apple-gold">≥ $1.00</span>
+            </div>
+            <input type="range" id="dollarSlider" min="0.8" max="3.0" step="0.1" value="1.0" oninput="updateScreener()" class="w-full h-2 bg-apple-subtle dark:bg-apple-subtleDark rounded-lg cursor-pointer">
+            <div class="flex justify-between text-[10px] text-apple-text-tertiary">
+              <span>$0.80</span>
+              <span>$1.00 (버핏 기준)</span>
+              <span>$3.00 (슈퍼해자)</span>
+            </div>
+          </div>
+
+          <!-- Slider 4: Buffett Master Score -->
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs">
+              <label for="scoreSlider" class="font-semibold text-apple-text-primary dark:text-apple-text-primaryDark">종합 버핏 마스터 스코어</label>
+              <span id="scoreValueDisplay" class="font-mono font-bold text-apple-purple">≥ 80점</span>
+            </div>
+            <input type="range" id="scoreSlider" min="60" max="98" step="2" value="80" oninput="updateScreener()" class="w-full h-2 bg-apple-subtle dark:bg-apple-subtleDark rounded-lg cursor-pointer">
+            <div class="flex justify-between text-[10px] text-apple-text-tertiary">
+              <span>60점 (보통)</span>
+              <span>80점 (우수)</span>
+              <span>98점 (올패스 마스터)</span>
+            </div>
+          </div>
+
+          <!-- Real-Time Funnel Summary Box -->
+          <div class="p-4 rounded-2xl bg-apple-subtle/50 dark:bg-apple-subtleDark/50 border border-apple-border dark:border-apple-borderDark space-y-2">
+            <div class="flex items-center justify-between text-xs font-semibold">
+              <span class="text-apple-text-secondary">현재 조건 통과 종목</span>
+              <span id="funnelPassCount" class="font-mono text-apple-blue font-bold text-sm">6개 / 8개 후보</span>
+            </div>
+            <div class="w-full bg-black/10 dark:bg-white/15 h-2 rounded-full overflow-hidden">
+              <div id="funnelProgressBar" class="h-full bg-apple-blue transition-all duration-300" style="width: 75%;"></div>
+            </div>
+            <p class="text-[11px] text-apple-text-tertiary">전체 2,450개 상장사 대비 실시간 가상 필터링 결과</p>
+          </div>
+
+        </div>
+
+        <!-- Stock Live Universe Grid (Right, 8 cols) -->
+        <div class="lg:col-span-8 flex flex-col justify-between space-y-4">
+          
+          <!-- Stock Cards Container (Rendered dynamically via JS) -->
+          <div id="stocksGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Cards will be populated dynamically -->
+          </div>
+
+          <!-- Bottom Notice -->
+          <div class="p-3.5 rounded-2xl bg-white/60 dark:bg-apple-surfaceDark/60 border border-apple-border dark:border-apple-borderDark flex items-center justify-between text-xs text-apple-text-secondary">
+            <div class="flex items-center gap-2">
+              <i data-lucide="info" class="w-4 h-4 text-apple-blue"></i>
+              <span>종목 카드를 클릭하면 상세 10개년 재무 인스펙터 드로어가 열립니다.</span>
+            </div>
+            <span class="font-mono text-[11px] text-apple-text-tertiary">Live Interactive Engine</span>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- 4. CHAPTER 3: 1-DOLLAR TEST CALCULATOR     -->
+  <!-- ========================================== -->
+  <section id="dollar-test" class="py-16 md:py-24 border-t border-apple-divider dark:border-apple-dividerDark">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-14">
+        <div class="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-apple-gold mb-2">
+          <i data-lucide="calculator" class="w-4 h-4"></i> The Buffett 1-Dollar Rule
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark">
+          워런 버핏의 1달러 법칙 & 소유주 이익 엔진
+        </h2>
+        <p class="text-sm sm:text-base text-apple-text-secondary dark:text-apple-text-secondaryDark mt-3">
+          기업이 주주에게 배당하지 않고 사내에 유보한 1달러가 시장에서 최소 1달러 이상의 시가총액 가치를 창출했는가?
+        </p>
+      </div>
+
+      <!-- Live Interactive Calculator Card -->
+      <div class="max-w-5xl mx-auto rounded-3xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark shadow-apple-card p-6 sm:p-10">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          
+          <!-- Left: Sliders & Form (5 cols) -->
+          <div class="lg:col-span-5 space-y-6">
+            <h3 class="font-bold text-lg text-apple-text-primary dark:text-apple-text-primaryDark flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-apple-gold"></span>
+              가치 창출 시뮬레이션
+            </h3>
+
+            <!-- Input 1: Retained Earnings ($ Billion) -->
+            <div class="space-y-2">
+              <div class="flex justify-between text-xs">
+                <span class="font-medium text-apple-text-secondary">10년간 누적 유보이익 (Retained Earnings)</span>
+                <span id="calcRetainedDisplay" class="font-mono font-bold text-apple-text-primary dark:text-apple-text-primaryDark">$100 B</span>
+              </div>
+              <input type="range" id="calcRetained" min="10" max="500" step="10" value="100" oninput="calculateDollarTest()" class="w-full h-2 bg-apple-subtle dark:bg-apple-subtleDark rounded-lg cursor-pointer">
+            </div>
+
+            <!-- Input 2: Reinvestment ROI (%) -->
+            <div class="space-y-2">
+              <div class="flex justify-between text-xs">
+                <span class="font-medium text-apple-text-secondary">재투자 자본수익률 (ROIC)</span>
+                <span id="calcRoicDisplay" class="font-mono font-bold text-apple-green">25.0%</span>
+              </div>
+              <input type="range" id="calcRoic" min="5" max="50" step="1" value="25" oninput="calculateDollarTest()" class="w-full h-2 bg-apple-subtle dark:bg-apple-subtleDark rounded-lg cursor-pointer">
+            </div>
+
+            <!-- Input 3: Compounding Period (Years) -->
+            <div class="space-y-2">
+              <div class="flex justify-between text-xs">
+                <span class="font-medium text-apple-text-secondary">복리 누적 기간</span>
+                <span id="calcYearsDisplay" class="font-mono font-bold text-apple-blue">10년</span>
+              </div>
+              <input type="range" id="calcYears" min="3" max="15" step="1" value="10" oninput="calculateDollarTest()" class="w-full h-2 bg-apple-subtle dark:bg-apple-subtleDark rounded-lg cursor-pointer">
+            </div>
+
+            <!-- Quick Company Comparison Preset -->
+            <div class="pt-2 border-t border-apple-divider dark:border-apple-dividerDark">
+              <span class="text-[11px] text-apple-text-tertiary block mb-2">실제 기업 데이터 적용해보기:</span>
+              <div class="flex flex-wrap gap-2">
+                <button onclick="setCalcPreset(390, 48, 10, 'AAPL')" class="px-2.5 py-1 rounded-lg text-xs font-mono bg-apple-subtle dark:bg-apple-subtleDark hover:bg-apple-blue hover:text-white transition">AAPL ($3.42)</button>
+                <button onclick="setCalcPreset(210, 39, 10, 'MSFT')" class="px-2.5 py-1 rounded-lg text-xs font-mono bg-apple-subtle dark:bg-apple-subtleDark hover:bg-apple-blue hover:text-white transition">MSFT ($2.89)</button>
+                <button onclick="setCalcPreset(180, 27, 10, 'GOOGL')" class="px-2.5 py-1 rounded-lg text-xs font-mono bg-apple-subtle dark:bg-apple-subtleDark hover:bg-apple-blue hover:text-white transition">GOOGL ($2.15)</button>
+                <button onclick="setCalcPreset(280, 18, 10, 'BRK')" class="px-2.5 py-1 rounded-lg text-xs font-mono bg-apple-subtle dark:bg-apple-subtleDark hover:bg-apple-blue hover:text-white transition">BRK.B ($2.70)</button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right: Visual Result & Chart (7 cols) -->
+          <div class="lg:col-span-7 bg-apple-canvas dark:bg-apple-canvasDark p-6 rounded-2xl border border-apple-border dark:border-apple-borderDark space-y-6">
+            
+            <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+              <div>
+                <span class="text-xs font-bold text-apple-text-secondary uppercase">1달러당 창출된 시가총액 가치</span>
+                <div id="calcDollarResult" class="text-4xl sm:text-5xl font-extrabold font-mono text-apple-gold tabular-nums mt-1">$3.42</div>
+              </div>
+              <div id="calcVerdictBadge" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-apple-green/15 text-apple-green border border-apple-green/30 self-start sm:self-auto">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i> 버핏 1달러 법칙 합격 (+242%)
+              </div>
+            </div>
+
+            <!-- Dynamic Canvas Chart for 1-Dollar Compounding -->
+            <div class="h-48 w-full relative">
+              <canvas id="dollarChartCanvas"></canvas>
+            </div>
+
+            <!-- Bottom Explanation -->
+            <p id="calcExplanationText" class="text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark leading-relaxed">
+              사내에 유보된 $100B의 이익이 연 25%의 자본수익률로 재투자되어, 시장에서 총 <strong>$342B</strong>의 가치를 창출했습니다. 워런 버핏의 가치 파괴 기준($1.00 미만)을 크게 상회하는 최우량 해자 기업입니다.
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- 5. CHAPTER 4: 10Y FINANCIAL TIME MACHINE   -->
+  <!-- ========================================== -->
+  <section id="deepdive" class="py-16 md:py-24 bg-apple-subtle/30 dark:bg-apple-subtleDark/20 border-t border-apple-divider dark:border-apple-dividerDark">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <div class="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-apple-blue mb-2">
+          <i data-lucide="table-2" class="w-4 h-4"></i> Deep-Dive Financial Anatomy
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark">
+          10개년 재무 타임머신 & 해자 레이더
+        </h2>
+        <p class="text-sm sm:text-base text-apple-text-secondary dark:text-apple-text-secondaryDark mt-3">
+          단기 분기 실적의 착시를 제거하고, 10년간 축적된 재무 지표와 자사주 소각 트렌드를 정밀 분석합니다.
+        </p>
+      </div>
+
+      <!-- Stock Selector Tabs -->
+      <div class="flex items-center justify-center gap-2 mb-8 overflow-x-auto pb-2">
+        <button onclick="selectDeepDiveStock('AAPL')" id="tab-AAPL" class="deepdive-tab active px-4 py-2 rounded-xl text-xs font-mono font-bold bg-apple-blue text-white shadow-sm transition">AAPL (Apple)</button>
+        <button onclick="selectDeepDiveStock('MSFT')" id="tab-MSFT" class="deepdive-tab px-4 py-2 rounded-xl text-xs font-mono font-bold bg-white dark:bg-apple-surfaceElevated text-apple-text-secondary dark:text-apple-text-secondaryDark border border-apple-border dark:border-apple-borderDark hover:text-apple-text-primary transition">MSFT (Microsoft)</button>
+        <button onclick="selectDeepDiveStock('GOOGL')" id="tab-GOOGL" class="deepdive-tab px-4 py-2 rounded-xl text-xs font-mono font-bold bg-white dark:bg-apple-surfaceElevated text-apple-text-secondary dark:text-apple-text-secondaryDark border border-apple-border dark:border-apple-borderDark hover:text-apple-text-primary transition">GOOGL (Alphabet)</button>
+        <button onclick="selectDeepDiveStock('NVDA')" id="tab-NVDA" class="deepdive-tab px-4 py-2 rounded-xl text-xs font-mono font-bold bg-white dark:bg-apple-surfaceElevated text-apple-text-secondary dark:text-apple-text-secondaryDark border border-apple-border dark:border-apple-borderDark hover:text-apple-text-primary transition">NVDA (NVIDIA)</button>
+        <button onclick="selectDeepDiveStock('KO')" id="tab-KO" class="deepdive-tab px-4 py-2 rounded-xl text-xs font-mono font-bold bg-white dark:bg-apple-surfaceElevated text-apple-text-secondary dark:text-apple-text-secondaryDark border border-apple-border dark:border-apple-borderDark hover:text-apple-text-primary transition">KO (Coca-Cola)</button>
+      </div>
+
+      <!-- Interactive Deep-Dive Box -->
+      <div class="max-w-5xl mx-auto rounded-3xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark shadow-apple-card p-6 sm:p-8 space-y-8">
+        
+        <!-- Header Info of Selected Stock -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-apple-divider dark:border-apple-dividerDark">
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="ddStockTicker" class="font-mono text-xs font-bold text-apple-blue bg-apple-blue/10 px-2.5 py-1 rounded-md">AAPL</span>
+              <h3 id="ddStockName" class="text-xl sm:text-2xl font-bold text-apple-text-primary dark:text-apple-text-primaryDark">애플 (Apple Inc.)</h3>
+            </div>
+            <p id="ddStockSector" class="text-xs text-apple-text-secondary mt-1">Consumer Electronics & Ecosystem Services • NASDAQ</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="text-right">
+              <div id="ddMasterScore" class="text-2xl font-mono font-bold text-apple-green">100 / 100</div>
+              <div class="text-[10px] text-apple-text-tertiary">Buffett Master Score</div>
+            </div>
+            <span class="px-3 py-1.5 rounded-full text-xs font-bold bg-apple-green/15 text-apple-green border border-apple-green/30">
+              6/6 All Pass
+            </span>
+          </div>
+        </div>
+
+        <!-- 2 Columns: Chart & Moat Radar -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Left: 10-Year ROE vs Share Reduction Chart -->
+          <div class="p-4 rounded-2xl bg-apple-canvas dark:bg-apple-canvasDark border border-apple-border dark:border-apple-borderDark">
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-xs font-bold text-apple-text-primary dark:text-apple-text-primaryDark">10개년 ROE & 주식소각 추이</span>
+              <span class="text-[10px] font-mono text-apple-blue">2015 - 2024</span>
+            </div>
+            <div class="h-56 relative">
+              <canvas id="deepDiveLineChartCanvas"></canvas>
+            </div>
+          </div>
+
+          <!-- Right: Buffett Moat Radar -->
+          <div class="p-4 rounded-2xl bg-apple-canvas dark:bg-apple-canvasDark border border-apple-border dark:border-apple-borderDark flex flex-col justify-between">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs font-bold text-apple-text-primary dark:text-apple-text-primaryDark">버핏 5대 경제적 해자 스펙트럼</span>
+              <span class="text-[10px] font-mono text-apple-green">Moat Score</span>
+            </div>
+            <div class="h-56 relative flex items-center justify-center">
+              <canvas id="deepDiveRadarCanvas"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 10-Year Tabular Precision Financials Table -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-apple-text-secondary">10개년 핵심 재무 지표 (Tabular Monospace)</h4>
+            <span class="text-[11px] text-apple-text-tertiary">단위: $B (주당 지표 제외)</span>
+          </div>
+          
+          <div class="overflow-x-auto rounded-2xl border border-apple-border dark:border-apple-borderDark">
+            <table class="w-full text-xs font-mono text-left">
+              <thead class="bg-apple-subtle/50 dark:bg-apple-subtleDark/50 text-apple-text-secondary border-b border-apple-border dark:border-apple-borderDark">
+                <tr>
+                  <th class="py-2.5 px-4 font-sans font-semibold">지표 / 연도</th>
+                  <th class="py-2.5 px-3 text-right">2020</th>
+                  <th class="py-2.5 px-3 text-right">2021</th>
+                  <th class="py-2.5 px-3 text-right">2022</th>
+                  <th class="py-2.5 px-3 text-right">2023</th>
+                  <th class="py-2.5 px-3 text-right">2024</th>
+                  <th class="py-2.5 px-4 text-right font-bold text-apple-blue font-sans">10Y 롤링 평균</th>
+                </tr>
+              </thead>
+              <tbody id="ddFinancialTableBody" class="divide-y divide-apple-divider dark:divide-apple-dividerDark bg-white dark:bg-apple-surfaceDark">
+                <!-- Dynamically Populated Table Rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- 6. CHAPTER 5: VALUE INVESTOR COMMUNITY     -->
+  <!-- ========================================== -->
+  <section id="community" class="py-16 md:py-24 border-t border-apple-divider dark:border-apple-dividerDark">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-14">
+        <div class="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-apple-green mb-2">
+          <i data-lucide="users" class="w-4 h-4"></i> High-Signal Community
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark">
+          가치투자자 인텔리전스 피드
+        </h2>
+        <p class="text-sm sm:text-base text-apple-text-secondary dark:text-apple-text-secondaryDark mt-3">
+          단타 매매 리딩방이 아닌, 기업의 내재가치와 사업 해자를 논증하는 고품격 가치투자자 광장
+        </p>
+      </div>
+
+      <!-- Community Feed Container -->
+      <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Post 1 -->
+        <div class="p-6 rounded-3xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark shadow-apple-card flex flex-col justify-between space-y-4 hover:border-apple-blue/50 transition duration-300">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-mono font-bold text-apple-blue bg-apple-blue/10 dark:bg-apple-blue/20 px-2.5 py-0.5 rounded-full">AAPL • 해자 분석</span>
+              <span class="text-apple-text-tertiary">3시간 전</span>
+            </div>
+            <h3 class="font-bold text-base text-apple-text-primary dark:text-apple-text-primaryDark hover:text-apple-blue transition cursor-pointer">
+              애플의 10년 자사주 소각과 서비스 부문 해자 확대 메커니즘
+            </h3>
+            <p class="text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark leading-relaxed">
+              애플은 지난 10년간 유통 주식수의 약 38%를 매입 소각하며 순이익 성장보다 훨씬 가파른 주당순이익(EPS) 성장을 달성했습니다. 20억 대 이상의 활성 기기 기반 서비스 매출은 70% 이상의 고마진을 기록 중입니다.
+            </p>
+          </div>
+
+          <div class="pt-4 border-t border-apple-divider dark:border-apple-dividerDark flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full bg-apple-blue text-white flex items-center justify-center font-bold text-[10px]">W</div>
+              <span class="text-apple-text-secondary font-medium">WarrenDisciple</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <button onclick="likePost(this)" class="flex items-center gap-1 text-apple-text-secondary hover:text-apple-red transition">
+                <i data-lucide="heart" class="w-4 h-4 text-apple-red"></i>
+                <span class="font-mono tabular-nums like-count">42</span>
+              </button>
+              <button class="flex items-center gap-1 text-apple-text-secondary hover:text-apple-blue transition">
+                <i data-lucide="message-circle" class="w-4 h-4 text-apple-blue"></i>
+                <span class="font-mono tabular-nums">18</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Post 2 -->
+        <div class="p-6 rounded-3xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark shadow-apple-card flex flex-col justify-between space-y-4 hover:border-apple-green/50 transition duration-300">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-mono font-bold text-apple-green bg-apple-green/10 dark:bg-apple-green/20 px-2.5 py-0.5 rounded-full">버핏 원칙 탐구</span>
+              <span class="text-apple-text-tertiary">1일 전</span>
+            </div>
+            <h3 class="font-bold text-base text-apple-text-primary dark:text-apple-text-primaryDark hover:text-apple-green transition cursor-pointer">
+              ROE 15% 기준과 1달러 법칙을 반드시 교차 검증해야 하는 이유
+            </h3>
+            <p class="text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark leading-relaxed">
+              ROE가 일시적으로 30%를 넘더라도 과도한 단기 차입금 레버리지에 기인한 착시일 수 있습니다. 부채비율 100% 이하 조건과 유보이익 재투자 효율(1 Dollar Test)을 함께 검증해야만 진짜 경제적 해자를 판별할 수 있습니다.
+            </p>
+          </div>
+
+          <div class="pt-4 border-t border-apple-divider dark:border-apple-dividerDark flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full bg-apple-green text-white flex items-center justify-center font-bold text-[10px]">C</div>
+              <span class="text-apple-text-secondary font-medium">CharlieFan</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <button onclick="likePost(this)" class="flex items-center gap-1 text-apple-text-secondary hover:text-apple-red transition">
+                <i data-lucide="heart" class="w-4 h-4 text-apple-red"></i>
+                <span class="font-mono tabular-nums like-count">89</span>
+              </button>
+              <button class="flex items-center gap-1 text-apple-text-secondary hover:text-apple-blue transition">
+                <i data-lucide="message-circle" class="w-4 h-4 text-apple-blue"></i>
+                <span class="font-mono tabular-nums">34</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- 7. CHAPTER 6: TECH ARCHITECTURE & ROADMAP  -->
+  <!-- ========================================== -->
+  <section id="tech" class="py-16 md:py-24 bg-apple-subtle/30 dark:bg-apple-subtleDark/20 border-t border-apple-divider dark:border-apple-dividerDark">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-14">
+        <div class="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-apple-purple mb-2">
+          <i data-lucide="cpu" class="w-4 h-4"></i> System Engineering
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight text-apple-text-primary dark:text-apple-text-primaryDark">
+          모던 풀스택 아키텍처 & 릴리즈 로드맵
+        </h2>
+        <p class="text-sm sm:text-base text-apple-text-secondary dark:text-apple-text-secondaryDark mt-3">
+          FastAPI 백엔드와 React/Tailwind 프론트엔드의 엄격한 DTO 동기화 및 롤링 계산 엔진
+        </p>
+      </div>
+
+      <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <!-- Architecture Topology Box -->
+        <div class="p-8 rounded-3xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark shadow-apple-card space-y-6">
+          <div class="flex items-center justify-between pb-3 border-b border-apple-divider dark:border-apple-dividerDark">
+            <h3 class="font-bold text-base text-apple-text-primary dark:text-apple-text-primaryDark flex items-center gap-2">
+              <i data-lucide="network" class="w-4 h-4 text-apple-blue"></i>
+              시스템 스택 구성
+            </h3>
+            <span class="font-mono text-xs text-apple-green font-bold">FastAPI + React</span>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div class="p-3.5 rounded-xl bg-apple-canvas dark:bg-apple-canvasDark border border-apple-border dark:border-apple-borderDark flex items-center justify-between">
+              <span class="font-semibold text-apple-text-secondary">프론트엔드 (FE)</span>
+              <span class="font-mono text-apple-text-primary dark:text-apple-text-primaryDark font-bold">React 18 • Vite • TypeScript • Tailwind</span>
+            </div>
+            <div class="p-3.5 rounded-xl bg-apple-canvas dark:bg-apple-canvasDark border border-apple-border dark:border-apple-borderDark flex items-center justify-between">
+              <span class="font-semibold text-apple-text-secondary">백엔드 (BE)</span>
+              <span class="font-mono text-apple-blue font-bold">FastAPI (Python 3.12, <code class="font-bold">uv</code>) • Pydantic</span>
+            </div>
+            <div class="p-3.5 rounded-xl bg-apple-canvas dark:bg-apple-canvasDark border border-apple-border dark:border-apple-borderDark flex items-center justify-between">
+              <span class="font-semibold text-apple-text-secondary">재무 연산 엔진</span>
+              <span class="font-mono text-apple-green font-bold">10Y Rolling ROE & 1-Dollar Test Validator</span>
+            </div>
+            <div class="p-3.5 rounded-xl bg-apple-canvas dark:bg-apple-canvasDark border border-apple-border dark:border-apple-borderDark flex items-center justify-between">
+              <span class="font-semibold text-apple-text-secondary">데이터 정합성</span>
+              <span class="font-mono text-apple-purple font-bold">DTO 엄격 타입 바인딩 • Zero AI-Slop</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Roadmap Timeline Box -->
+        <div class="p-8 rounded-3xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark shadow-apple-card space-y-6">
+          <div class="flex items-center justify-between pb-3 border-b border-apple-divider dark:border-apple-dividerDark">
+            <h3 class="font-bold text-base text-apple-text-primary dark:text-apple-text-primaryDark flex items-center gap-2">
+              <i data-lucide="milestone" class="w-4 h-4 text-apple-green"></i>
+              개발 로드맵 진행 현황
+            </h3>
+            <span class="font-mono text-xs text-apple-blue font-bold">Phase 1 완료</span>
+          </div>
+
+          <div class="space-y-4 text-xs">
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 rounded-full bg-apple-green text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">✓</div>
+              <div>
+                <div class="font-bold text-apple-text-primary dark:text-apple-text-primaryDark">Phase 1: 애플 디자인 시스템 & 스크리너 엔진 (완료)</div>
+                <p class="text-apple-text-secondary mt-0.5">6대 버핏 원칙 필터링, 10년 롤링 재무 드로어, 1달러 법칙 시각화</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 rounded-full bg-apple-blue text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">2</div>
+              <div>
+                <div class="font-bold text-apple-text-primary dark:text-apple-text-primaryDark">Phase 2: 가치투자자 인텔리전스 커뮤니티 & 알림 (진행중)</div>
+                <p class="text-apple-text-secondary mt-0.5">가치투자 논증 포럼, 10-K 공시 파싱 알림, 실시간 포트폴리오 동기화</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-6 h-6 rounded-full bg-apple-subtle dark:bg-apple-subtleDark text-apple-text-tertiary flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">3</div>
+              <div>
+                <div class="font-bold text-apple-text-primary dark:text-apple-text-primaryDark">Phase 3: 피터 린치 & 필립 피셔 다차원 가치 모델 확장</div>
+                <p class="text-apple-text-secondary mt-0.5">PEG 성장 가치주 필터 및 15가지 정성적 비즈니스 해자 평가 엔진</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- 8. FOOTER                                  -->
+  <!-- ========================================== -->
+  <footer class="py-12 border-t border-apple-divider dark:border-apple-dividerDark bg-apple-canvas dark:bg-apple-canvasDark text-center text-xs text-apple-text-secondary">
+    <div class="max-w-7xl mx-auto px-4 space-y-4">
+      <div class="flex items-center justify-center gap-2">
+        <div class="w-6 h-6 rounded-lg bg-apple-text-primary dark:bg-white text-white dark:text-black flex items-center justify-center text-xs font-bold">
+          <i data-lucide="sparkles" class="w-3 h-3 text-apple-blue"></i>
+        </div>
+        <span class="font-bold text-apple-text-primary dark:text-apple-text-primaryDark">Search Only Good Stock</span>
+      </div>
+      <p class="max-w-md mx-auto text-apple-text-tertiary">
+        워런 버핏의 6대 가치투자 원칙과 애플의 인간 중심 디자인 철학을 담은 인터랙티브 웹 브리핑
+      </p>
+      <div class="flex justify-center gap-4 text-apple-text-tertiary pt-2">
+        <a href="#hero" class="hover:text-apple-blue transition">맨 위로 이동</a>
+        <span>•</span>
+        <a href="presentation.html" class="hover:text-apple-blue transition">슬라이드 덱 버전</a>
+        <span>•</span>
+        <span class="font-mono">v2.0 Web Edition</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================== -->
+  <!-- 9. INTERACTIVE STOCK DEEP-DIVE MODAL/DRAWER -->
+  <!-- ========================================== -->
+  <div id="stockDrawerOverlay" onclick="closeStockDrawer()" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+  
+  <div id="stockDrawer" class="fixed top-0 right-0 h-full w-full max-w-xl bg-apple-surface dark:bg-apple-surfaceDark border-l border-apple-border dark:border-apple-borderDark shadow-apple-modal z-50 transform translate-x-full drawer-transition flex flex-col justify-between overflow-y-auto">
+    <!-- Drawer Header -->
+    <div class="p-6 border-b border-apple-divider dark:border-apple-dividerDark flex items-center justify-between sticky top-0 bg-white/90 dark:bg-apple-surfaceDark/90 backdrop-blur-md z-10">
+      <div class="flex items-center gap-3">
+        <span id="drawerTicker" class="font-mono text-sm font-bold px-2.5 py-1 rounded bg-apple-blue/10 text-apple-blue">AAPL</span>
+        <div>
+          <h3 id="drawerName" class="font-bold text-lg text-apple-text-primary dark:text-apple-text-primaryDark">애플 (Apple Inc.)</h3>
+          <p id="drawerPrice" class="text-xs font-mono text-apple-text-secondary">$224.23 • Master 100/100</p>
+        </div>
+      </div>
+      <button onclick="closeStockDrawer()" class="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/10 hover:bg-black/10 transition">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Drawer Content Body -->
+    <div class="p-6 space-y-6 flex-1">
+      
+      <!-- 6 Rules Checklist -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-apple-text-secondary">워런 버핏 6대 원칙 통과 현황</h4>
+        <div id="drawerRulesList" class="space-y-2 text-xs">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Key Valuation Metrics -->
+      <div class="p-4 rounded-2xl bg-apple-canvas dark:bg-apple-canvasDark border border-apple-border dark:border-apple-borderDark space-y-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-apple-text-secondary">핵심 밸류에이션 & 해자 지표</h4>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <span class="text-apple-text-secondary block">10년 평균 ROE</span>
+            <span id="drawerRoe" class="font-mono font-bold text-apple-green text-base">48.2%</span>
+          </div>
+          <div>
+            <span class="text-apple-text-secondary block">1달러 가치 창출</span>
+            <span id="drawerDollar" class="font-mono font-bold text-apple-gold text-base">$3.42</span>
+          </div>
+          <div>
+            <span class="text-apple-text-secondary block">부채비율</span>
+            <span id="drawerDebt" class="font-mono font-bold text-apple-blue text-base">64.5%</span>
+          </div>
+          <div>
+            <span class="text-apple-text-secondary block">10년 주식수 감소율</span>
+            <span id="drawerBuyback" class="font-mono font-bold text-apple-purple text-base">-38.2% (소각)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Analysis Summary -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-apple-text-secondary">종합 분석 코멘트</h4>
+        <p id="drawerComment" class="text-xs text-apple-text-secondary dark:text-apple-text-secondaryDark leading-relaxed">
+          애플은 강력한 하드웨어 설치 기반과 고마진 서비스 생태계를 갖춘 전형적인 슈퍼 해자 기업입니다. 10년간 꾸준한 자사주 매입으로 주주가치를 극대화하고 있습니다.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Drawer Footer Actions -->
+    <div class="p-6 border-t border-apple-divider dark:border-apple-dividerDark bg-apple-canvas dark:bg-apple-canvasDark flex gap-3">
+      <button onclick="triggerStockWatchlist()" class="flex-1 py-2.5 rounded-xl bg-apple-blue hover:bg-apple-blue-hover text-white text-xs font-semibold shadow-sm transition">
+        관심 종목 저장
+      </button>
+      <button onclick="closeStockDrawer()" class="py-2.5 px-4 rounded-xl bg-white dark:bg-apple-surfaceElevated border border-apple-border dark:border-apple-borderDark text-apple-text-primary dark:text-apple-text-primaryDark text-xs font-semibold hover:bg-apple-subtle transition">
+        닫기
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 10. EXECUTIVE REPORT / SHARE MODAL         -->
+  <!-- ========================================== -->
+  <div id="executiveModal" onclick="closeExecutiveReport(event)" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-300 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark rounded-3xl shadow-apple-modal max-w-lg w-full p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between pb-4 border-b border-apple-divider dark:border-apple-dividerDark">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-apple-blue text-white flex items-center justify-center font-bold">
+            <i data-lucide="award" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-apple-text-primary dark:text-apple-text-primaryDark">Search Only Good Stock</h3>
+            <p class="text-[11px] text-apple-text-secondary">Executive Summary Briefing Card</p>
+          </div>
+        </div>
+        <button onclick="closeExecutiveModalDirect()" class="w-7 h-7 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/10">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Report Card Body -->
+      <div class="space-y-4 text-xs leading-relaxed">
+        <div class="p-4 rounded-2xl bg-apple-canvas dark:bg-apple-canvasDark border border-apple-border dark:border-apple-borderDark space-y-2">
+          <div class="text-xs font-bold text-apple-blue">핵심 성과 요약</div>
+          <p class="text-apple-text-secondary dark:text-apple-text-secondaryDark">
+            • 2,450개 상장사 중 워런 버핏 6대 원칙을 완벽 통과한 종목은 단 <strong>14개(0.57%)</strong>에 불과합니다.<br />
+            • 통과 종목의 10년 유보이익 1달러당 평균 시장 가치 창출액은 <strong>$3.15</strong>로 시장 기준치 대비 215% 높습니다.<br />
+            • AI 슬롭과 잡음(Noise)을 0%로 배제한 정량적 팩트 기반의 투명한 핀테크 경험을 제공합니다.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 font-mono text-center">
+          <div class="p-3 rounded-xl bg-apple-green/10 text-apple-green font-bold">
+            <span class="block text-[10px] uppercase text-apple-text-secondary font-sans">통과 종목 평균 ROE</span>
+            34.8%
+          </div>
+          <div class="p-3 rounded-xl bg-apple-gold/10 text-apple-gold font-bold">
+            <span class="block text-[10px] uppercase text-apple-text-secondary font-sans">평균 자사주 소각</span>
+            -24.5% (10Y)
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-apple-divider dark:border-apple-dividerDark flex gap-2">
+        <button onclick="window.print()" class="flex-1 py-2.5 rounded-xl bg-apple-blue text-white text-xs font-semibold hover:bg-apple-blue-hover transition flex items-center justify-center gap-1.5">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+          <span>PDF 인쇄 / 내보내기</span>
+        </button>
+        <button onclick="copyShareLink()" class="px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 text-xs font-semibold hover:bg-black/10 transition flex items-center gap-1.5">
+          <i data-lucide="link" class="w-3.5 h-3.5"></i>
+          <span>링크 복사</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 11. COMMAND PALETTE (CMD+K) MODAL          -->
+  <!-- ========================================== -->
+  <div id="commandPalette" onclick="closeCommandPalette(event)" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-200 flex items-start justify-center pt-24 px-4">
+    <div class="bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark rounded-2xl shadow-apple-modal max-w-lg w-full overflow-hidden">
+      <div class="p-4 border-b border-apple-divider dark:border-apple-dividerDark flex items-center gap-3">
+        <i data-lucide="search" class="w-5 h-5 text-apple-text-secondary"></i>
+        <input type="text" id="cmdInput" oninput="filterCommands()" placeholder="섹션, 기능 또는 종목 검색 (예: ROE, AAPL, 시뮬레이터)..." class="w-full bg-transparent border-none text-sm text-apple-text-primary dark:text-apple-text-primaryDark focus:outline-none">
+        <kbd class="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 font-mono text-[10px] text-apple-text-tertiary">ESC</kbd>
+      </div>
+      <div id="cmdResultsList" class="p-2 max-h-72 overflow-y-auto space-y-1 text-xs">
+        <a href="#simulator" onclick="closeCommandPaletteDirect()" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-apple-subtle dark:hover:bg-apple-subtleDark transition">
+          <div class="flex items-center gap-2">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4 text-apple-blue"></i>
+            <span class="font-medium text-apple-text-primary dark:text-apple-text-primaryDark">실시간 스크리너 시뮬레이터</span>
+          </div>
+          <span class="text-[10px] text-apple-text-tertiary font-mono">Section</span>
+        </a>
+        <a href="#dollar-test" onclick="closeCommandPaletteDirect()" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-apple-subtle dark:hover:bg-apple-subtleDark transition">
+          <div class="flex items-center gap-2">
+            <i data-lucide="calculator" class="w-4 h-4 text-apple-gold"></i>
+            <span class="font-medium text-apple-text-primary dark:text-apple-text-primaryDark">워런 버핏 1달러 법칙 계산기</span>
+          </div>
+          <span class="text-[10px] text-apple-text-tertiary font-mono">Section</span>
+        </a>
+        <a href="#deepdive" onclick="closeCommandPaletteDirect()" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-apple-subtle dark:hover:bg-apple-subtleDark transition">
+          <div class="flex items-center gap-2">
+            <i data-lucide="table-2" class="w-4 h-4 text-apple-green"></i>
+            <span class="font-medium text-apple-text-primary dark:text-apple-text-primaryDark">10개년 재무 타임머신 & 해자 레이더</span>
+          </div>
+          <span class="text-[10px] text-apple-text-tertiary font-mono">Section</span>
+        </a>
+        <button onclick="selectDeepDiveStock('AAPL'); closeCommandPaletteDirect(); location.href='#deepdive';" class="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-apple-subtle dark:hover:bg-apple-subtleDark transition text-left">
+          <div class="flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-4 h-4 text-apple-blue"></i>
+            <span class="font-medium text-apple-text-primary dark:text-apple-text-primaryDark">애플 (AAPL) 10년 재무 데이터 보기</span>
+          </div>
+          <span class="text-[10px] text-apple-text-tertiary font-mono">Stock</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 bg-apple-text-primary dark:bg-white text-white dark:text-black px-4 py-2.5 rounded-xl text-xs font-medium shadow-apple-modal opacity-0 pointer-events-none transform translate-y-3 transition-all duration-200 flex items-center gap-2">
+    <i data-lucide="check" class="w-4 h-4 text-apple-green"></i>
+    <span id="toastMsg">작업이 완료되었습니다.</span>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT: INTERACTIVE LOGIC & CHARTS     -->
+  <!-- ========================================== -->
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // ----------------------------------------------------
+    // 1. DATA REPOSITORY: REALISTIC SAMPLE STOCKS
+    // ----------------------------------------------------
+    const STOCKS_DATABASE = [
+      {
+        ticker: 'AAPL',
+        name: '애플 (Apple Inc.)',
+        price: '$224.23',
+        tenYearRoe: 48.2,
+        debtRatio: 64.5,
+        dollarTestValue: 3.42,
+        buffettScore: 100,
+        buybackRate: -38.2,
+        rulesPassed: 6,
+        rules: [
+          { name: '10년 ROE ≥ 15%', pass: true, detail: '10년 평균 48.2%' },
+          { name: '낮은 부채비율 ≤ 80%', pass: true, detail: '부채비율 64.5%' },
+          { name: '소유주 이익 지속 성장', pass: true, detail: '10년 연평균 +14.2%' },
+          { name: '자본배치 & 자사주 소각', pass: true, detail: '발행주식수 -38.2% 소각' },
+          { name: '강력한 경제적 해자', pass: true, detail: '20억 기기 설치기반 & 고마진 서비스' },
+          { name: '안전마진(MOS) 확보', pass: true, detail: '내재가치 범위 내 적정 평가' },
+        ],
+        financials: {
+          years: ['2020', '2021', '2022', '2023', '2024'],
+          revenue: [274.5, 365.8, 394.3, 383.3, 391.0],
+          netIncome: [57.4, 94.7, 99.8, 97.0, 101.5],
+          roe: [73.7, 147.4, 175.0, 171.9, 160.6],
+          shares: [17500, 16864, 16215, 15785, 15408],
+        },
+        moatScores: [95, 98, 92, 99, 90], // [Brand, Pricing Power, Reinvestment, Financial Health, Capital Allocation]
+      },
+      {
+        ticker: 'MSFT',
+        name: '마이크로소프트 (Microsoft)',
+        price: '$418.50',
+        tenYearRoe: 39.1,
+        debtRatio: 42.0,
+        dollarTestValue: 2.89,
+        buffettScore: 98,
+        buybackRate: -12.4,
+        rulesPassed: 6,
+        rules: [
+          { name: '10년 ROE ≥ 15%', pass: true, detail: '10년 평균 39.1%' },
+          { name: '낮은 부채비율 ≤ 80%', pass: true, detail: '부채비율 42.0%' },
+          { name: '소유주 이익 지속 성장', pass: true, detail: '클라우드 & 오피스 연평균 +18.5%' },
+          { name: '자본배치 & 자사주 소각', pass: true, detail: '발행주식수 -12.4% 소각' },
+          { name: '강력한 경제적 해자', pass: true, detail: '엔터프라이즈 B2B 락인 & Azure' },
+          { name: '안전마진(MOS) 확보', pass: true, detail: '적정 가치 범위' },
+        ],
+        financials: {
+          years: ['2020', '2021', '2022', '2023', '2024'],
+          revenue: [143.0, 168.1, 198.3, 211.9, 245.1],
+          netIncome: [44.3, 61.3, 72.7, 72.4, 88.1],
+          roe: [40.1, 47.1, 47.2, 38.8, 38.5],
+          shares: [7610, 7550, 7490, 7460, 7430],
+        },
+        moatScores: [96, 95, 94, 98, 92],
+      },
+      {
+        ticker: 'GOOGL',
+        name: '알파벳 (Alphabet Class A)',
+        price: '$165.80',
+        tenYearRoe: 26.8,
+        debtRatio: 12.5,
+        dollarTestValue: 2.15,
+        buffettScore: 94,
+        buybackRate: -14.8,
+        rulesPassed: 6,
+        rules: [
+          { name: '10년 ROE ≥ 15%', pass: true, detail: '10년 평균 26.8%' },
+          { name: '낮은 부채비율 ≤ 80%', pass: true, detail: '사실상 무차입 (부채비율 12.5%)' },
+          { name: '소유주 이익 지속 성장', pass: true, detail: '검색 & 유튜브 독점 캐시카우' },
+          { name: '자본배치 & 자사주 소각', pass: true, detail: '연간 $60B+ 자사주 매입 소각' },
+          { name: '강력한 경제적 해자', pass: true, detail: '글로벌 검색 점유율 90%+' },
+          { name: '안전마진(MOS) 확보', pass: true, detail: 'PER 20배 초반 매력적 가격' },
+        ],
+        financials: {
+          years: ['2020', '2021', '2022', '2023', '2024'],
+          revenue: [182.5, 257.6, 282.8, 307.4, 345.2],
+          netIncome: [40.3, 76.0, 59.9, 73.8, 92.4],
+          roe: [19.0, 32.1, 23.6, 27.4, 30.2],
+          shares: [13650, 13400, 12900, 12600, 12400],
+        },
+        moatScores: [94, 90, 88, 100, 89],
+      },
+      {
+        ticker: 'BRK.B',
+        name: '버크셔 해서웨이 (Berkshire)',
+        price: '$452.10',
+        tenYearRoe: 16.5,
+        debtRatio: 28.0,
+        dollarTestValue: 2.70,
+        buffettScore: 96,
+        buybackRate: -11.2,
+        rulesPassed: 6,
+        rules: [
+          { name: '10년 ROE ≥ 15%', pass: true, detail: '10년 평균 16.5%' },
+          { name: '낮은 부채비율 ≤ 80%', pass: true, detail: '초우량 보험 플로트(Float) 자본' },
+          { name: '소유주 이익 지속 성장', pass: true, detail: '다양한 자회사 순 현금흐름' },
+          { name: '자본배치 & 자사주 소각', pass: true, detail: '내재가치 이하 시 적극 자사주 매입' },
+          { name: '강력한 경제적 해자', pass: true, detail: '보험, 철도, 에너지의 절대적 독점 해자' },
+          { name: '안전마진(MOS) 확보', pass: true, detail: 'PBR 1.4배 내외 합리적 밸류' },
+        ],
+        financials: {
+          years: ['2020', '2021', '2022', '2023', '2024'],
+          revenue: [245.5, 276.1, 302.1, 364.5, 385.0],
+          netIncome: [42.5, 89.8, -22.8, 96.2, 98.4],
+          roe: [10.2, 18.5, 8.2, 18.9, 17.5],
+          shares: [2400, 2350, 2300, 2220, 2180],
+        },
+        moatScores: [98, 92, 95, 100, 99],
+      },
+      {
+        ticker: 'NVDA',
+        name: '엔비디아 (NVIDIA Corp.)',
+        price: '$128.40',
+        tenYearRoe: 44.5,
+        debtRatio: 35.2,
+        dollarTestValue: 4.80,
+        buffettScore: 88,
+        buybackRate: -4.5,
+        rulesPassed: 5,
+        rules: [
+          { name: '10년 ROE ≥ 15%', pass: true, detail: '10년 평균 44.5% (통과)' },
+          { name: '낮은 부채비율 ≤ 80%', pass: true, detail: '부채비율 35.2% (통과)' },
+          { name: '소유주 이익 지속 성장', pass: true, detail: 'AI 가속기 폭발적 현금 창출 (통과)' },
+          { name: '자본배치 & 자사주 소각', pass: true, detail: '신규 자사주 매입 프로그램 승인 (통과)' },
+          { name: '강력한 경제적 해자', pass: true, detail: 'CUDA 소프트웨어 생태계 독점 (통과)' },
+          { name: '안전마진(MOS) 확보', pass: false, detail: '높은 밸류에이션 배수(PER 45x)로 주의 요망' },
+        ],
+        financials: {
+          years: ['2020', '2021', '2022', '2023', '2024'],
+          revenue: [16.7, 26.9, 27.0, 60.9, 122.0],
+          netIncome: [4.3, 9.8, 4.4, 29.8, 68.0],
+          roe: [29.8, 44.8, 17.9, 91.5, 115.0],
+          shares: [2500, 2520, 2500, 2480, 2460],
+        },
+        moatScores: [92, 99, 96, 95, 82],
+      },
+      {
+        ticker: 'KO',
+        name: '코카콜라 (Coca-Cola Co.)',
+        price: '$69.80',
+        tenYearRoe: 41.2,
+        debtRatio: 145.0,
+        dollarTestValue: 1.45,
+        buffettScore: 82,
+        buybackRate: -5.0,
+        rulesPassed: 5,
+        rules: [
+          { name: '10년 ROE ≥ 15%', pass: true, detail: '10년 평균 41.2% (통과)' },
+          { name: '낮은 부채비율 ≤ 80%', pass: false, detail: '부채비율 145% (초과 탈락)' },
+          { name: '소유주 이익 지속 성장', pass: true, detail: '안정적인 글로벌 음료 캐시플로우 (통과)' },
+          { name: '자본배치 & 배당 지속성', pass: true, detail: '62년 연속 배당 인상 (통과)' },
+          { name: '강력한 경제적 해자', pass: true, detail: '전 세계 1위 음료 브랜드 가치 (통과)' },
+          { name: '안전마진(MOS) 확보', pass: true, detail: '방어주 성격의 안정적 가치 (통과)' },
+        ],
+        financials: {
+          years: ['2020', '2021', '2022', '2023', '2024'],
+          revenue: [33.0, 38.7, 43.0, 45.8, 46.2],
+          netIncome: [7.7, 9.8, 9.5, 10.7, 11.2],
+          roe: [40.5, 46.2, 42.0, 41.8, 42.5],
+          shares: [4300, 4320, 4310, 4300, 4290],
+        },
+        moatScores: [99, 92, 75, 80, 85],
+      },
+      {
+        ticker: 'TSMC',
+        name: 'TSMC (TSM)',
+        price: '$178.50',
+        tenYearRoe: 28.5,
+        debtRatio: 38.0,
+        dollarTestValue: 2.40,
+        buffettScore: 92,
+        buybackRate: 0.0,
+        rulesPassed: 6,
+        rules: [
+          { name: '10년 ROE ≥ 15%', pass: true, detail: '10년 평균 28.5% (통과)' },
+          { name: '낮은 부채비율 ≤ 80%', pass: true, detail: '부채비율 38.0% (통과)' },
+          { name: '소유주 이익 지속 성장', pass: true, detail: '선단 공정(3nm/2nm) 파운드리 독점' },
+          { name: '자본배치 & R&D 재투자', pass: true, detail: '초격차 CAPEX 재투자' },
+          { name: '강력한 경제적 해자', pass: true, detail: '글로벌 파운드리 시장 점유율 60%+' },
+          { name: '안전마진(MOS) 확보', pass: true, detail: '독점력 대비 합리적 PER' },
+        ],
+        financials: {
+          years: ['2020', '2021', '2022', '2023', '2024'],
+          revenue: [45.5, 56.8, 75.9, 69.3, 88.0],
+          netIncome: [17.6, 21.4, 34.1, 26.9, 36.5],
+          roe: [29.8, 29.7, 39.8, 26.2, 30.1],
+          shares: [25900, 25900, 25900, 25900, 25900],
+        },
+        moatScores: [85, 96, 98, 95, 88],
+      },
+      {
+        ticker: 'TSLA',
+        name: '테슬라 (Tesla Inc.)',
+        price: '$210.00',
+        tenYearRoe: 14.2,
+        debtRatio: 18.5,
+        dollarTestValue: 0.95,
+        buffettScore: 68,
+        buybackRate: +15.2,
+        rulesPassed: 3,
+        rules: [
+          { name: '10년 ROE ≥ 15%', pass: false, detail: '10년 평균 14.2% (기준 미달)' },
+          { name: '낮은 부채비율 ≤ 80%', pass: true, detail: '부채비율 18.5% (통과)' },
+          { name: '소유주 이익 지속 성장', pass: false, detail: '대규모 공장 CAPEX로 변동성 심함' },
+          { name: '자본배치 & 자사주 소각', pass: false, detail: '스톡옵션 발행으로 주식수 희석 (+15%)' },
+          { name: '강력한 경제적 해자', pass: true, detail: 'EV 브랜드 & 충전 네트워크' },
+          { name: '안전마진(MOS) 확보', pass: false, detail: '변동성 및 밸류에이션 부담' },
+        ],
+        financials: {
+          years: ['2020', '2021', '2022', '2023', '2024'],
+          revenue: [31.5, 53.8, 81.5, 96.8, 102.0],
+          netIncome: [0.7, 5.5, 12.6, 15.0, 11.5],
+          roe: [4.8, 21.1, 28.1, 24.2, 16.5],
+          shares: [2800, 2950, 3150, 3180, 3200],
+        },
+        moatScores: [90, 78, 85, 92, 60],
+      }
+    ];
+
+    // ----------------------------------------------------
+    // 2. AUDIO SYNTHESIS: WEB AUDIO API HAPTICS
+    // ----------------------------------------------------
+    let soundEnabled = true;
+    let audioCtx = null;
+
+    function playClickSound() {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+      } catch (e) {
+        // AudioContext disabled by browser policy
+      }
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const icon = document.getElementById('soundIcon');
+      if (soundEnabled) {
+        icon.setAttribute('data-lucide', 'volume-2');
+        showToast('사운드 햅틱 효과가 켜졌습니다.');
+      } else {
+        icon.setAttribute('data-lucide', 'volume-x');
+        showToast('사운드 햅틱 효과가 꺼졌습니다.');
+      }
+      lucide.createIcons();
+    }
+
+    // ----------------------------------------------------
+    // 3. THEME TOGGLER (DARK / LIGHT)
+    // ----------------------------------------------------
+    function toggleTheme() {
+      playClickSound();
+      document.documentElement.classList.toggle('dark');
+      updateAllChartsTheme();
+    }
+
+    // ----------------------------------------------------
+    // 4. SCROLL PROGRESS BAR
+    // ----------------------------------------------------
+    window.addEventListener('scroll', () => {
+      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = (window.scrollY / totalHeight) * 100;
+      document.getElementById('scrollProgressBar').style.width = progress + '%';
+    });
+
+    // ----------------------------------------------------
+    // 5. SCREENER ENGINE & INTERACTIVE FILTERS
+    // ----------------------------------------------------
+    function renderScreenerStocks(filteredList) {
+      const grid = document.getElementById('stocksGrid');
+      grid.innerHTML = '';
+
+      if (filteredList.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-2 p-10 text-center rounded-3xl bg-white dark:bg-apple-surfaceDark border border-apple-border dark:border-apple-borderDark">
+            <i data-lucide="alert-circle" class="w-8 h-8 text-apple-orange mx-auto mb-2"></i>
+            <h4 class="font-bold text-sm text-apple-text-primary dark:text-apple-text-primaryDark">조건을 만족하는 종목이 없습니다</h4>
+            <p class="text-xs text-apple-text-secondary mt-1">임계값 슬라이더를 조금 완화해보세요.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      filteredList.forEach(stock => {
+        const isMaster = stock.buffettScore >= 95;
+        const card = document.createElement('div');
+        card.className = `cursor-pointer p-5 rounded-2xl bg-white dark:bg-apple-surfaceDark border ${isMaster ? 'border-apple-gold/40 shadow-glow-green' : 'border-apple-border dark:border-apple-borderDark'} shadow-apple-card hover:shadow-apple-card-hover hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between`;
+        card.onclick = () => openStockDrawer(stock);
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs font-bold text-apple-blue bg-apple-blue/10 dark:bg-apple-blue/20 px-2 py-0.5 rounded-md">${stock.ticker}</span>
+              ${stock.rulesPassed === 6 
+                ? `<span class="inline-flex items-center gap-1 text-[11px] font-bold text-apple-green bg-apple-green/10 dark:bg-apple-green/20 px-2 py-0.5 rounded-full"><i data-lucide="check" class="w-3 h-3"></i> 6/6 All Pass</span>`
+                : `<span class="inline-flex items-center gap-1 text-[11px] font-bold text-apple-orange bg-apple-orange/10 dark:bg-apple-orange/20 px-2 py-0.5 rounded-full"><i data-lucide="alert-triangle" class="w-3 h-3"></i> ${stock.rulesPassed}/6 Pass</span>`
+              }
+            </div>
+            <h4 class="font-bold text-sm text-apple-text-primary dark:text-apple-text-primaryDark">${stock.name}</h4>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-apple-divider dark:border-apple-dividerDark space-y-1.5 text-xs">
+            <div class="flex items-baseline justify-between">
+              <span class="text-apple-text-secondary">10년 평균 ROE</span>
+              <span class="font-mono font-bold text-apple-green tabular-nums">${stock.tenYearRoe}%</span>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <span class="text-apple-text-secondary">1달러 가치 창출</span>
+              <span class="font-mono font-bold text-apple-gold tabular-nums">$${stock.dollarTestValue.toFixed(2)}</span>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <span class="text-apple-text-secondary">버핏 마스터 점수</span>
+              <span class="font-mono font-bold ${isMaster ? 'text-apple-gold' : 'text-apple-blue'} tabular-nums">${stock.buffettScore} / 100</span>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    function updateScreener() {
+      playClickSound();
+      const minRoe = parseFloat(document.getElementById('roeSlider').value);
+      const maxDebt = parseFloat(document.getElementById('debtSlider').value);
+      const minDollar = parseFloat(document.getElementById('dollarSlider').value);
+      const minScore = parseFloat(document.getElementById('scoreSlider').value);
+
+      document.getElementById('roeValueDisplay').innerText = `≥ ${minRoe.toFixed(1)}%`;
+      document.getElementById('debtValueDisplay').innerText = `≤ ${maxDebt}%`;
+      document.getElementById('dollarValueDisplay').innerText = `≥ $${minDollar.toFixed(2)}`;
+      document.getElementById('scoreValueDisplay').innerText = `≥ ${minScore}점`;
+
+      const passed = STOCKS_DATABASE.filter(s => 
+        s.tenYearRoe >= minRoe &&
+        s.debtRatio <= maxDebt &&
+        s.dollarTestValue >= minDollar &&
+        s.buffettScore >= minScore
+      );
+
+      document.getElementById('funnelPassCount').innerText = `${passed.length}개 / ${STOCKS_DATABASE.length}개 후보`;
+      document.getElementById('funnelProgressBar').style.width = `${(passed.length / STOCKS_DATABASE.length) * 100}%`;
+
+      renderScreenerStocks(passed);
+    }
+
+    function resetScreenerFilters() {
+      document.getElementById('roeSlider').value = 15;
+      document.getElementById('debtSlider').value = 100;
+      document.getElementById('dollarSlider').value = 1.0;
+      document.getElementById('scoreSlider').value = 80;
+      updateScreener();
+      showToast('스크리너 필터가 초기화되었습니다.');
+    }
+
+    function applyPreset(preset) {
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.classList.remove('bg-apple-blue', 'text-white');
+        btn.classList.add('bg-white', 'dark:bg-apple-surfaceElevated', 'text-apple-text-secondary');
+      });
+      event.target.classList.remove('bg-white', 'dark:bg-apple-surfaceElevated', 'text-apple-text-secondary');
+      event.target.classList.add('bg-apple-blue', 'text-white');
+
+      if (preset === 'buffett_pure') {
+        document.getElementById('roeSlider').value = 15;
+        document.getElementById('debtSlider').value = 80;
+        document.getElementById('dollarSlider').value = 1.0;
+        document.getElementById('scoreSlider').value = 90;
+      } else if (preset === 'strict_quality') {
+        document.getElementById('roeSlider').value = 25;
+        document.getElementById('debtSlider').value = 65;
+        document.getElementById('dollarSlider').value = 2.5;
+        document.getElementById('scoreSlider').value = 95;
+      } else if (preset === 'growth_value') {
+        document.getElementById('roeSlider').value = 12;
+        document.getElementById('debtSlider').value = 120;
+        document.getElementById('dollarSlider').value = 0.9;
+        document.getElementById('scoreSlider').value = 75;
+      }
+      updateScreener();
+    }
+
+    // ----------------------------------------------------
+    // 6. 1-DOLLAR TEST CALCULATOR & CHART.JS
+    // ----------------------------------------------------
+    let dollarChartInstance = null;
+
+    function initDollarChart() {
+      const ctx = document.getElementById('dollarChartCanvas').getContext('2d');
+      dollarChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['기준 유보금 ($1.00)', '창출된 시총 가치 ($)'],
+          datasets: [{
+            label: '가치 배수 ($)',
+            data: [1.0, 3.42],
+            backgroundColor: ['rgba(134, 134, 139, 0.4)', '#D97706'],
+            borderRadius: 8,
+            borderWidth: 0,
+            barThickness: 36,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (c) => `$${c.raw.toFixed(2)} 가치`
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: { font: { family: 'JetBrains Mono', size: 11 } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { family: 'Pretendard', size: 12 } }
+            }
+          }
+        }
+      });
+    }
+
+    function calculateDollarTest() {
+      playClickSound();
+      const retained = parseFloat(document.getElementById('calcRetained').value);
+      const roic = parseFloat(document.getElementById('calcRoic').value);
+      const years = parseFloat(document.getElementById('calcYears').value);
+
+      document.getElementById('calcRetainedDisplay').innerText = `$${retained} B`;
+      document.getElementById('calcRoicDisplay').innerText = `${roic.toFixed(1)}%`;
+      document.getElementById('calcYearsDisplay').innerText = `${years}년`;
+
+      // Simplified Warren Buffett 1-Dollar creation formula: (1 + ROIC/100 * 0.5)^years * 0.8
+      const multiplier = Math.pow(1 + (roic / 100) * 0.35, years * 0.7);
+      const createdValue = multiplier;
+      const totalMarketCapCreated = retained * multiplier;
+
+      document.getElementById('calcDollarResult').innerText = `$${createdValue.toFixed(2)}`;
+
+      const verdictBadge = document.getElementById('calcVerdictBadge');
+      const explanation = document.getElementById('calcExplanationText');
+
+      if (createdValue >= 1.0) {
+        const excessPercent = Math.round((createdValue - 1.0) * 100);
+        verdictBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-apple-green/15 text-apple-green border border-apple-green/30';
+        verdictBadge.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4"></i> 버핏 1달러 법칙 합격 (+${excessPercent}%)`;
+        explanation.innerHTML = `사내에 유보된 $${retained}B의 이익이 연 ${roic}%의 자본수익률로 재투자되어, 시장에서 총 <strong>$${totalMarketCapCreated.toFixed(0)}B</strong>의 시가총액 가치를 창출했습니다. 워런 버핏의 가치 파괴 기준($1.00 미만)을 크게 상회하는 최우량 해자 기업입니다.`;
+      } else {
+        verdictBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-apple-red/15 text-apple-red border border-apple-red/30';
+        verdictBadge.innerHTML = `<i data-lucide="x-circle" class="w-4 h-4"></i> 가치 파괴 탈락 (기준 미달)`;
+        explanation.innerHTML = `사내에 유보된 이익이 비효율적인 재투자로 인해 시장 가치로 환산되지 못했습니다 ($${createdValue.toFixed(2)} < $1.00). 이는 주주 가치를 훼손하는 경영진의 비효율적 자본배치를 의미합니다.`;
+      }
+
+      if (dollarChartInstance) {
+        dollarChartInstance.data.datasets[0].data = [1.0, createdValue];
+        dollarChartInstance.data.datasets[0].backgroundColor = createdValue >= 1.0 ? ['rgba(134, 134, 139, 0.4)', '#D97706'] : ['rgba(134, 134, 139, 0.4)', '#FF3B30'];
+        dollarChartInstance.update();
+      }
+      lucide.createIcons();
+    }
+
+    function setCalcPreset(retained, roic, years, ticker) {
+      document.getElementById('calcRetained').value = Math.min(retained, 500);
+      document.getElementById('calcRoic').value = roic;
+      document.getElementById('calcYears').value = years;
+      calculateDollarTest();
+      showToast(`${ticker} 기업의 실제 10개년 재무 데이터가 적용되었습니다.`);
+    }
+
+    // ----------------------------------------------------
+    // 7. 10Y DEEP DIVE TIME MACHINE CHARTS & RADAR
+    // ----------------------------------------------------
+    let ddLineChart = null;
+    let ddRadarChart = null;
+
+    function initDeepDiveCharts() {
+      const lineCtx = document.getElementById('deepDiveLineChartCanvas').getContext('2d');
+      ddLineChart = new Chart(lineCtx, {
+        type: 'line',
+        data: {
+          labels: ['2020', '2021', '2022', '2023', '2024'],
+          datasets: [
+            {
+              label: 'ROE (%)',
+              data: [73.7, 147.4, 175.0, 171.9, 160.6],
+              borderColor: '#34C759',
+              backgroundColor: 'rgba(52, 199, 89, 0.1)',
+              tension: 0.3,
+              fill: true,
+              yAxisID: 'y'
+            },
+            {
+              label: '발행주식수(M)',
+              data: [17500, 16864, 16215, 15785, 15408],
+              borderColor: '#0071E3',
+              borderDash: [4, 4],
+              tension: 0.3,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top', labels: { font: { family: 'Pretendard', size: 11 } } },
+            tooltip: { mode: 'index', intersect: false }
+          },
+          scales: {
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: { font: { family: 'JetBrains Mono', size: 10 } }
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              grid: { drawOnChartArea: false },
+              ticks: { font: { family: 'JetBrains Mono', size: 10 } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { family: 'Pretendard', size: 11 } }
+            }
+          }
+        }
+      });
+
+      const radarCtx = document.getElementById('deepDiveRadarCanvas').getContext('2d');
+      ddRadarChart = new Chart(radarCtx, {
+        type: 'radar',
+        data: {
+          labels: ['브랜드 파워', '가격 결정력', '재투자 해자', '재무 건전성', '자본 배치'],
+          datasets: [{
+            label: '해자 점수 (Moat Score)',
+            data: [95, 98, 92, 99, 90],
+            backgroundColor: 'rgba(0, 113, 227, 0.2)',
+            borderColor: '#0071E3',
+            pointBackgroundColor: '#0071E3',
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            r: {
+              min: 50,
+              max: 100,
+              ticks: { stepSize: 15, display: false },
+              pointLabels: { font: { family: 'Pretendard', size: 11 } },
+              grid: { color: 'rgba(0,0,0,0.08)' }
+            }
+          }
+        }
+      });
+    }
+
+    function selectDeepDiveStock(ticker) {
+      playClickSound();
+      document.querySelectorAll('.deepdive-tab').forEach(t => {
+        t.classList.remove('bg-apple-blue', 'text-white');
+        t.classList.add('bg-white', 'dark:bg-apple-surfaceElevated', 'text-apple-text-secondary');
+      });
+      const activeTab = document.getElementById(`tab-${ticker}`);
+      if (activeTab) {
+        activeTab.classList.remove('bg-white', 'dark:bg-apple-surfaceElevated', 'text-apple-text-secondary');
+        activeTab.classList.add('bg-apple-blue', 'text-white');
+      }
+
+      const stock = STOCKS_DATABASE.find(s => s.ticker === ticker) || STOCKS_DATABASE[0];
+      
+      document.getElementById('ddStockTicker').innerText = stock.ticker;
+      document.getElementById('ddStockName').innerText = stock.name;
+      document.getElementById('ddMasterScore').innerText = `${stock.buffettScore} / 100`;
+
+      // Update Charts
+      if (ddLineChart) {
+        ddLineChart.data.labels = stock.financials.years;
+        ddLineChart.data.datasets[0].data = stock.financials.roe;
+        ddLineChart.data.datasets[1].data = stock.financials.shares;
+        ddLineChart.update();
+      }
+
+      if (ddRadarChart) {
+        ddRadarChart.data.datasets[0].data = stock.moatScores;
+        ddRadarChart.update();
+      }
+
+      // Populate Table
+      const tbody = document.getElementById('ddFinancialTableBody');
+      tbody.innerHTML = `
+        <tr class="hover:bg-black/5 dark:hover:bg-white/5 transition">
+          <td class="py-2.5 px-4 font-sans font-medium text-apple-text-primary dark:text-apple-text-primaryDark">매출액 (Revenue)</td>
+          ${stock.financials.revenue.map(r => `<td class="py-2.5 px-3 text-right">$${r}B</td>`).join('')}
+          <td class="py-2.5 px-4 text-right font-bold text-apple-blue">$${(stock.financials.revenue.reduce((a,b)=>a+b,0)/5).toFixed(1)}B</td>
+        </tr>
+        <tr class="hover:bg-black/5 dark:hover:bg-white/5 transition">
+          <td class="py-2.5 px-4 font-sans font-medium text-apple-text-primary dark:text-apple-text-primaryDark">순이익 (Net Income)</td>
+          ${stock.financials.netIncome.map(n => `<td class="py-2.5 px-3 text-right text-apple-green font-bold">$${n}B</td>`).join('')}
+          <td class="py-2.5 px-4 text-right font-bold text-apple-green">$${(stock.financials.netIncome.reduce((a,b)=>a+b,0)/5).toFixed(1)}B</td>
+        </tr>
+        <tr class="hover:bg-black/5 dark:hover:bg-white/5 transition">
+          <td class="py-2.5 px-4 font-sans font-medium text-apple-text-primary dark:text-apple-text-primaryDark">자기자본이익률 (ROE)</td>
+          ${stock.financials.roe.map(ro => `<td class="py-2.5 px-3 text-right text-apple-green font-bold">${ro}%</td>`).join('')}
+          <td class="py-2.5 px-4 text-right font-bold text-apple-green">${stock.tenYearRoe}%</td>
+        </tr>
+        <tr class="hover:bg-black/5 dark:hover:bg-white/5 transition">
+          <td class="py-2.5 px-4 font-sans font-medium text-apple-text-primary dark:text-apple-text-primaryDark">유통주식수 (M Shares)</td>
+          ${stock.financials.shares.map(s => `<td class="py-2.5 px-3 text-right">${s.toLocaleString()}</td>`).join('')}
+          <td class="py-2.5 px-4 text-right font-bold text-apple-purple">${stock.buybackRate}% (소각)</td>
+        </tr>
+      `;
+    }
+
+    function updateAllChartsTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+      const textColor = isDark ? '#A1A1A6' : '#86868B';
+
+      [dollarChartInstance, ddLineChart, ddRadarChart].forEach(chart => {
+        if (!chart) return;
+        if (chart.options.scales.x) chart.options.scales.x.ticks.color = textColor;
+        if (chart.options.scales.y) {
+          chart.options.scales.y.ticks.color = textColor;
+          chart.options.scales.y.grid.color = gridColor;
+        }
+        if (chart.options.scales.r) {
+          chart.options.scales.r.grid.color = gridColor;
+          chart.options.scales.r.pointLabels.color = textColor;
+        }
+        chart.update();
+      });
+    }
+
+    // ----------------------------------------------------
+    // 8. STOCK DRAWER CONTROLLER
+    // ----------------------------------------------------
+    function openStockDrawer(stock) {
+      playClickSound();
+      document.getElementById('drawerTicker').innerText = stock.ticker;
+      document.getElementById('drawerName').innerText = stock.name;
+      document.getElementById('drawerPrice').innerText = `${stock.price} • Master ${stock.buffettScore}/100`;
+      document.getElementById('drawerRoe').innerText = `${stock.tenYearRoe}%`;
+      document.getElementById('drawerDollar').innerText = `$${stock.dollarTestValue.toFixed(2)}`;
+      document.getElementById('drawerDebt').innerText = `${stock.debtRatio}%`;
+      document.getElementById('drawerBuyback').innerText = `${stock.buybackRate}%`;
+
+      const rulesContainer = document.getElementById('drawerRulesList');
+      rulesContainer.innerHTML = '';
+      stock.rules.forEach(r => {
+        const item = document.createElement('div');
+        item.className = 'p-2.5 rounded-xl bg-apple-subtle/50 dark:bg-apple-subtleDark/50 border border-apple-border dark:border-apple-borderDark flex items-center justify-between';
+        item.innerHTML = `
+          <div class="flex items-center gap-2">
+            <i data-lucide="${r.pass ? 'check-circle' : 'x-circle'}" class="w-4 h-4 ${r.pass ? 'text-apple-green' : 'text-apple-red'}"></i>
+            <span class="font-medium text-apple-text-primary dark:text-apple-text-primaryDark">${r.name}</span>
+          </div>
+          <span class="font-mono font-bold ${r.pass ? 'text-apple-green' : 'text-apple-red'}">${r.detail}</span>
+        `;
+        rulesContainer.appendChild(item);
+      });
+      lucide.createIcons();
+
+      const overlay = document.getElementById('stockDrawerOverlay');
+      const drawer = document.getElementById('stockDrawer');
+      overlay.classList.remove('opacity-0', 'pointer-events-none');
+      drawer.classList.remove('translate-x-full');
+    }
+
+    function closeStockDrawer() {
+      const overlay = document.getElementById('stockDrawerOverlay');
+      const drawer = document.getElementById('stockDrawer');
+      overlay.classList.add('opacity-0', 'pointer-events-none');
+      drawer.classList.add('translate-x-full');
+    }
+
+    function triggerStockWatchlist() {
+      playClickSound();
+      showToast('관심 종목 포트폴리오에 저장되었습니다.');
+      triggerConfettiDemo();
+      closeStockDrawer();
+    }
+
+    // ----------------------------------------------------
+    // 9. COMMUNITY INTERACTIONS
+    // ----------------------------------------------------
+    function likePost(button) {
+      playClickSound();
+      const countEl = button.querySelector('.like-count');
+      let current = parseInt(countEl.innerText);
+      countEl.innerText = current + 1;
+      button.classList.add('text-apple-red');
+      showToast('가치투자 분석 글에 공감을 남겼습니다.');
+    }
+
+    // ----------------------------------------------------
+    // 10. EXECUTIVE MODAL & COMMAND PALETTE
+    // ----------------------------------------------------
+    function openExecutiveReport() {
+      playClickSound();
+      const modal = document.getElementById('executiveModal');
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+    }
+
+    function closeExecutiveReport(e) {
+      if (e.target.id === 'executiveModal') {
+        closeExecutiveModalDirect();
+      }
+    }
+
+    function closeExecutiveModalDirect() {
+      document.getElementById('executiveModal').classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    function copyShareLink() {
+      playClickSound();
+      navigator.clipboard.writeText(window.location.href);
+      showToast('브리핑 링크가 클립보드에 복사되었습니다.');
+    }
+
+    function toggleCommandPalette() {
+      playClickSound();
+      const cp = document.getElementById('commandPalette');
+      if (cp.classList.contains('opacity-0')) {
+        cp.classList.remove('opacity-0', 'pointer-events-none');
+        document.getElementById('cmdInput').focus();
+      } else {
+        closeCommandPaletteDirect();
+      }
+    }
+
+    function closeCommandPalette(e) {
+      if (e.target.id === 'commandPalette') {
+        closeCommandPaletteDirect();
+      }
+    }
+
+    function closeCommandPaletteDirect() {
+      document.getElementById('commandPalette').classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    function filterCommands() {
+      const q = document.getElementById('cmdInput').value.toLowerCase();
+      const items = document.querySelectorAll('#cmdResultsList > *');
+      items.forEach(el => {
+        if (el.innerText.toLowerCase().includes(q)) {
+          el.style.display = 'flex';
+        } else {
+          el.style.display = 'none';
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        toggleCommandPalette();
+      }
+      if (e.key === 'Escape') {
+        closeCommandPaletteDirect();
+        closeExecutiveModalDirect();
+        closeStockDrawer();
+      }
+    });
+
+    // ----------------------------------------------------
+    // 11. CONFETTI CELEBRATION & TOAST
+    // ----------------------------------------------------
+    function triggerConfettiDemo() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-3');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-3');
+      }, 2500);
+    }
+
+    // ----------------------------------------------------
+    // INITIALIZATION ON LOAD
+    // ----------------------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      renderScreenerStocks(STOCKS_DATABASE);
+      initDollarChart();
+      initDeepDiveCharts();
+      selectDeepDiveStock('AAPL');
+      calculateDollarTest();
+    });
+  </script>
+</body>
+</html>
