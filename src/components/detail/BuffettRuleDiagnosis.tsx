@@ -9,6 +9,12 @@ import {
 } from '../../types/api';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
 import {
+  getCategoryBadgeLabel,
+  formatCriteria,
+  getMetricLabel,
+  getRuleInfo,
+} from '../../utils/ruleFormatters';
+import {
   ShieldCheck,
   CheckCircle2,
   XCircle,
@@ -56,7 +62,7 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
 
   const formatMetricValue = (metric: MetricValueDTO): string => {
     if (metric.specialValue === 'INFINITY') {
-      return '∞';
+      return '∞ (무차입/이자0)';
     }
     if (metric.value === null || metric.value === undefined) {
       return '—';
@@ -87,41 +93,18 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
     }
   };
 
-  const formatCriteria = (def?: RuleDefinitionDTO): string => {
-    if (!def || !def.defaultThresholds || def.defaultThresholds.length === 0) {
-      return '';
-    }
-    return def.defaultThresholds
-      .map((th) => {
-        const op = th.operator === 'GTE' ? '≥' : th.operator === 'LTE' ? '≤' : th.operator === 'GT' ? '>' : '<';
-        const numVal = typeof th.value === 'string' ? parseFloat(th.value) : th.value;
-        let valStr = `${th.value}`;
-        if (!isNaN(numVal)) {
-          if (th.unit === 'RATIO') {
-            valStr = `${(numVal * 100).toFixed(0)}%`;
-          } else if (th.unit === 'MULTIPLE') {
-            valStr = `${numVal.toFixed(1)}x`;
-          } else if (th.unit === 'CURRENCY') {
-            valStr = currency === 'USD' ? `$${numVal}` : `${numVal}원`;
-          }
-        }
-        return `${th.metricId} ${op} ${valStr}`;
-      })
-      .join(' · ');
-  };
-
   const getStatusBadge = (status: RuleStatus) => {
     switch (status) {
       case 'PASS':
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#34C759] bg-[#34C759]/10 dark:bg-[#34C759]/20 px-2.5 py-0.5 rounded-full border border-[#34C759]/20 font-mono">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#34C759] font-mono">
             <CheckCircle2 className="w-3.5 h-3.5" />
             PASS
           </span>
         );
       case 'FAIL':
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF3B30] bg-[#FF3B30]/10 dark:bg-[#FF3B30]/20 px-2.5 py-0.5 rounded-full border border-[#FF3B30]/20 font-mono">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF3B30] font-mono">
             <XCircle className="w-3.5 h-3.5" />
             FAIL
           </span>
@@ -129,7 +112,7 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
       case 'N/A':
       default:
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#86868B] bg-black/[0.04] dark:bg-white/[0.06] px-2.5 py-0.5 rounded-full border border-black/[0.06] dark:border-white/[0.08] font-mono">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#86868B] font-mono">
             <HelpCircle className="w-3.5 h-3.5" />
             N/A
           </span>
@@ -154,102 +137,112 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
           </div>
           <p className="text-xs text-[#86868B] mt-1 font-normal">
             {language === 'ko'
-              ? 'BE 공식 주식 분석 규칙 평가 결과 (최근 5개년 완료 데이터 기준)'
-              : 'Official Backend Rule Evaluation Results (Based on 5-Year History)'}
+              ? '워런 버핏의 경제적 해자 및 재무 안전성 11대 원칙 정밀 진단 결과'
+              : 'Warren Buffett 11-Pillar Economic Moat & Safety Diagnosis Results'}
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <span className="inline-flex items-center gap-1.5 text-xs font-mono font-bold px-3 py-1 rounded-full bg-[#F5F5F7] dark:bg-[#252528] border border-black/[0.04] dark:border-white/[0.06]">
+          <span className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#86868B]">
             <span className="text-[#34C759]">{passCount} PASS</span>
-            <span className="text-[#86868B]">·</span>
+            <span>·</span>
             <span className="text-[#FF3B30]">{failCount} FAIL</span>
-            <span className="text-[#86868B]">·</span>
-            <span className="text-[#86868B]">{naCount} N/A</span>
+            <span>·</span>
+            <span>{naCount} N/A</span>
           </span>
         </div>
       </div>
 
-      {/* 9 Rules Cards Grid */}
+      {/* Rules Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {evaluations.map((evalItem, idx) => {
           const ruleDef = rulesMap.get(evalItem.ruleId);
-          const ruleTitle = ruleDef?.name || evalItem.ruleId.replace(/_/g, ' ').toUpperCase();
-          const criteriaText = formatCriteria(ruleDef);
+          const ruleInfo = getRuleInfo(evalItem.ruleId, language, ruleDef?.name);
+          const criteriaText = formatCriteria(ruleDef, currency, language);
+          const categoryLabel = getCategoryBadgeLabel(evalItem.category, language);
 
           return (
             <div
               key={evalItem.ruleId}
-              className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${
-                evalItem.status === 'PASS'
+              className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${evalItem.status === 'PASS'
                   ? 'bg-[#FBFBFD] dark:bg-[#252528]/40 border-black/[0.04] dark:border-white/[0.06]'
                   : evalItem.status === 'FAIL'
-                  ? 'bg-[#FF3B30]/[0.02] dark:bg-[#FF3B30]/[0.05] border-[#FF3B30]/20'
-                  : 'bg-black/[0.01] dark:bg-white/[0.02] border-black/[0.04] dark:border-white/[0.04]'
-              }`}
+                    ? 'bg-[#FF3B30]/[0.02] dark:bg-[#FF3B30]/[0.05] border-[#FF3B30]/20'
+                    : 'bg-black/[0.01] dark:bg-white/[0.02] border-black/[0.04] dark:border-white/[0.04]'
+                }`}
             >
-              {/* Card Header: Number & Title & Status */}
+              {/* Card Header: Number & Category Badge & Status */}
               <div>
-                <div className="flex items-start justify-between gap-2 mb-1.5">
+                <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="font-mono text-[11px] font-bold text-[#86868B] shrink-0">
                       {String(idx + 1).padStart(2, '0')}
                     </span>
                     <span
-                      className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded tracking-wider shrink-0 font-mono ${
-                        evalItem.category === 'CORE'
-                          ? 'bg-[#0071E3]/10 text-[#0071E3] dark:bg-[#2997FF]/15 dark:text-[#2997FF]'
-                          : 'bg-[#AF52DE]/10 text-[#AF52DE] dark:bg-[#BF5AF2]/15 dark:text-[#BF5AF2]'
-                      }`}
+                      className={`text-[10px] font-bold uppercase tracking-wider shrink-0 font-mono ${evalItem.category === 'CORE'
+                          ? 'text-[#0071E3] dark:text-[#2997FF]'
+                          : 'text-[#AF52DE] dark:text-[#BF5AF2]'
+                        }`}
                     >
-                      {evalItem.category}
+                      {categoryLabel}
                     </span>
                   </div>
                   {getStatusBadge(evalItem.status)}
                 </div>
 
+                {/* Friendly Title & Subtitle */}
                 <h3 className="text-xs sm:text-[13px] font-bold text-[#1D1D1F] dark:text-[#F5F5F7] leading-snug">
-                  {ruleTitle}
+                  {ruleInfo.title}
                 </h3>
+                <p className="text-[11px] text-[#86868B] mt-0.5 leading-normal">
+                  {ruleInfo.subtitle}
+                </p>
 
+                {/* Criteria */}
                 {criteriaText && (
-                  <p className="text-[10px] text-[#86868B] font-mono mt-0.5 truncate" title={criteriaText}>
-                    기준: {criteriaText}
-                  </p>
+                  <div className="mt-2 text-[10px] text-[#6E6E73] dark:text-[#86868B] font-mono truncate" title={criteriaText}>
+                    <span className="font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
+                      {language === 'ko' ? '판정 기준' : 'Criteria'}:
+                    </span>{' '}
+                    {criteriaText}
+                  </div>
                 )}
               </div>
 
               {/* Metrics Values */}
               <div className="space-y-1.5 pt-2 border-t border-black/[0.04] dark:border-white/[0.06]">
                 {evalItem.metrics && evalItem.metrics.length > 0 ? (
-                  <div className="space-y-1">
-                    {evalItem.metrics.slice(0, 4).map((m, mIdx) => (
-                      <div key={mIdx} className="flex items-center justify-between text-[11px] gap-2">
-                        <span className="font-mono text-[#86868B] truncate text-[10px]">
-                          {m.metricId}
-                        </span>
-                        <span className="font-mono font-bold text-[#1D1D1F] dark:text-[#F5F5F7] shrink-0 tabular-nums">
-                          {formatMetricValue(m)}
-                        </span>
-                      </div>
-                    ))}
-                    {evalItem.metrics.length > 4 && (
-                      <div className="text-[10px] text-[#86868B] text-right font-mono">
-                        +{evalItem.metrics.length - 4} more metric(s)
-                      </div>
-                    )}
+                  <div className="space-y-1 max-h-48 overflow-y-auto pr-0.5">
+                    {evalItem.metrics.map((m, mIdx) => {
+                      const metricLabel = getMetricLabel(m.metricId, language);
+                      return (
+                        <div
+                          key={mIdx}
+                          className="flex items-center justify-between text-[11px] gap-2 py-0.5"
+                        >
+                          <span className="text-[#6E6E73] dark:text-[#86868B] truncate text-[11px] font-medium">
+                            {metricLabel}
+                          </span>
+                          <span className="font-mono font-bold text-[#1D1D1F] dark:text-[#F5F5F7] shrink-0 tabular-nums">
+                            {formatMetricValue(m)}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
-                  <div className="text-[11px] text-[#86868B] italic">No metric values</div>
+                  <div className="text-[11px] text-[#86868B] italic py-1">
+                    {language === 'ko' ? '평가 세부 지표 없음' : 'No metric values'}
+                  </div>
                 )}
 
                 {/* Reason Codes for N/A */}
                 {evalItem.reasonCodes && evalItem.reasonCodes.length > 0 && (
-                  <div className="pt-1.5 space-y-1">
+                  <div className="pt-1.5 flex flex-wrap gap-2">
                     {evalItem.reasonCodes.map((code, cIdx) => (
                       <div
                         key={cIdx}
-                        className="inline-flex items-center gap-1 text-[10px] font-medium text-[#FF9500] bg-[#FF9500]/10 px-2 py-0.5 rounded-md"
+                        className="inline-flex items-center gap-1 text-[10px] font-medium text-[#FF9500]"
                       >
                         <Info className="w-3 h-3 shrink-0" />
                         <span>{getReasonLabel(code)}</span>
@@ -276,12 +269,16 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
 
               {/* Footer: Evaluation Period */}
               {evalItem.periodStart && evalItem.periodEnd && (
-                <div className="text-[10px] text-[#86868B] font-mono flex items-center gap-1 pt-1">
-                  <Calendar className="w-2.5 h-2.5" />
-                  <span>
-                    {evalItem.historyYears ? `${evalItem.historyYears}Y: ` : ''}
-                    {evalItem.periodStart.slice(0, 4)} ~ {evalItem.periodEnd.slice(0, 4)}
-                  </span>
+                <div className="text-[10px] text-[#86868B] font-mono flex items-center justify-between pt-1 border-t border-black/[0.03] dark:border-white/[0.03]">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-2.5 h-2.5" />
+                    <span>
+                      {language === 'ko'
+                        ? `${evalItem.historyYears ? `${evalItem.historyYears}개년: ` : ''}${evalItem.periodStart.slice(0, 4)}년 ~ ${evalItem.periodEnd.slice(0, 4)}년`
+                        : `${evalItem.historyYears ? `${evalItem.historyYears}Y: ` : ''}${evalItem.periodStart.slice(0, 4)} ~ ${evalItem.periodEnd.slice(0, 4)}`}
+                    </span>
+                  </div>
+                  <span className="text-[9px] text-[#86868B] font-mono">{evalItem.ruleId}</span>
                 </div>
               )}
             </div>

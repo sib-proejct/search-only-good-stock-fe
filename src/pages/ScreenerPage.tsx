@@ -111,7 +111,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
   // Sort Options
   const sortOptions: { id: StockSort; label: string }[] = [
     { id: 'conservativeMarginOfSafety', label: t('sortMargin') },
-    { id: 'currentPrice', label: t('sortPrice') },
+    { id: 'marketCap', label: t('sortMarketCap') },
     { id: 'ticker', label: t('sortTicker') },
   ];
 

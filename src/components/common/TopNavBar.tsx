@@ -60,7 +60,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
         /^\/(?:stock|detail)\/([^/]+)/
       )?.[1];
       const targetTicker = currentTicker || routeTicker;
-      navigate(targetTicker ? `/stock/${targetTicker}` : '/');
+      navigate(targetTicker ? `/stock/${targetTicker}` : '/stock');
     } else if (tab === 'guide') {
       const targetGuide = guideType || (activeGuide === 'lynch' ? 'lynch' : 'buffett');
       navigate(`/guide/${targetGuide}`);

@@ -40,7 +40,7 @@ function AppContent() {
           />
           <Route
             path="/stock"
-            element={<Navigate to="/" replace />}
+            element={<StockDetailPage />}
           />
           <Route
             path="/detail/:ticker"
@@ -48,7 +48,7 @@ function AppContent() {
           />
           <Route
             path="/detail"
-            element={<Navigate to="/" replace />}
+            element={<StockDetailPage />}
           />
 
           {/* Investment Principle Guides */}

@@ -494,7 +494,7 @@ export interface components {
          * StockSort
          * @enum {string}
          */
-        StockSort: "ticker" | "currentPrice" | "conservativeMarginOfSafety";
+        StockSort: "ticker" | "currentPrice" | "marketCap" | "conservativeMarginOfSafety";
         /** StockSummaryDTO */
         StockSummaryDTO: {
             /** Id */

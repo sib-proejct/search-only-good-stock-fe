@@ -1,6 +1,7 @@
 import React from 'react';
 import { AnnualFinancialDTO, Currency, IndustryType } from '../../types/api';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
+import { getIndustryTypeLabel } from '../../utils/ruleFormatters';
 import { FileSpreadsheet } from 'lucide-react';
 
 interface YearlyFinancialsTableProps {
@@ -15,12 +16,13 @@ export const YearlyFinancialsTable: React.FC<YearlyFinancialsTableProps> = ({
   industryType,
 }) => {
   const { t, language } = useAppConfig();
+  const isKo = language === 'ko';
 
   if (!financials || financials.length === 0) {
     return null;
   }
 
-  // Sort chronological ascending (or latest first)
+  // Sort chronological ascending
   const sortedFinancials = [...financials].sort((a, b) => a.fiscalYear - b.fiscalYear);
 
   const formatNumber = (val: number | string | null, isEps: boolean = false): string => {
@@ -64,23 +66,23 @@ export const YearlyFinancialsTable: React.FC<YearlyFinancialsTableProps> = ({
           <div className="flex items-center gap-2">
             <FileSpreadsheet className="w-5 h-5 text-[#0071E3] dark:text-[#2997FF]" />
             <h2 className="text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
-              {t('fiveYearFinancialTrends')}
+              {isKo ? '5개년 연차 재무제표 원자료 (5-Year Financial Statements)' : t('fiveYearFinancialTrends')}
             </h2>
           </div>
           <p className="text-xs text-[#86868B] mt-0.5 font-normal">
-            {language === 'ko'
-              ? 'API가 제공하는 연차 재무제표 원자료 (가공/추정 없는 실제 수신값)'
+            {isKo
+              ? '백엔드 API가 제공하는 확정 연차 재무제표 원본 데이터 (가공/추정 없음)'
               : 'Raw annual financial statements received directly from the backend API'}
           </p>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-mono text-[#86868B]">
           {industryType && (
-            <span className="px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] font-semibold text-[10px]">
-              {industryType}
+            <span className="px-2.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] font-semibold text-[10px]">
+              {getIndustryTypeLabel(industryType, language)}
             </span>
           )}
-          <span>{currency} 원단위 · 화면 축약 표기</span>
+          <span>{currency} 단위 · 축약 표기</span>
         </div>
       </div>
 
@@ -89,17 +91,23 @@ export const YearlyFinancialsTable: React.FC<YearlyFinancialsTableProps> = ({
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-black/[0.06] dark:border-white/[0.08] text-[#86868B] font-medium whitespace-nowrap bg-black/[0.01] dark:bg-white/[0.01]">
-              <th className="py-3 px-3.5 text-left font-semibold">회계연도 (Period)</th>
-              <th className="py-3 px-3.5 text-right font-semibold">순이익 (Net Income)</th>
-              <th className="py-3 px-3.5 text-right font-semibold">EBIT</th>
-              <th className="py-3 px-3.5 text-right font-semibold">자기자본 (Equity)</th>
-              <th className="py-3 px-3.5 text-right font-semibold">차입부채 (Debt)</th>
-              <th className="py-3 px-3.5 text-right font-semibold">현금성자산 (Cash)</th>
-              <th className="py-3 px-3.5 text-right font-semibold text-[#0071E3] dark:text-[#2997FF]">영업현금흐름 (CFO)</th>
-              <th className="py-3 px-3.5 text-right font-semibold">자본지출 (CapEx)</th>
-              <th className="py-3 px-3.5 text-right font-semibold">지급이자 (Interest)</th>
-              <th className="py-3 px-3.5 text-right font-semibold font-mono text-[#34C759]">희석 EPS</th>
-              <th className="py-3 px-3.5 text-right font-semibold font-mono">희석주식수</th>
+              <th className="py-3 px-3.5 text-left font-semibold">{isKo ? '회계연도' : 'Fiscal Year'}</th>
+              <th className="py-3 px-3.5 text-right font-semibold">{isKo ? '보통주 순이익' : 'Net Income'}</th>
+              <th className="py-3 px-3.5 text-right font-semibold">{isKo ? '영업이익 (EBIT)' : 'EBIT'}</th>
+              <th className="py-3 px-3.5 text-right font-semibold">{isKo ? '자기자본 (Equity)' : 'Common Equity'}</th>
+              <th className="py-3 px-3.5 text-right font-semibold">{isKo ? '이자발생 부채' : 'Interest Debt'}</th>
+              <th className="py-3 px-3.5 text-right font-semibold">{isKo ? '현금및현금성자산' : 'Cash & Equiv'}</th>
+              <th className="py-3 px-3.5 text-right font-semibold text-[#0071E3] dark:text-[#2997FF]">
+                {isKo ? '영업현금흐름 (CFO)' : 'CFO'}
+              </th>
+              <th className="py-3 px-3.5 text-right font-semibold">{isKo ? '설비투자 (CapEx)' : 'CapEx'}</th>
+              <th className="py-3 px-3.5 text-right font-semibold">{isKo ? '지급이자' : 'Interest Paid'}</th>
+              <th className="py-3 px-3.5 text-right font-semibold font-mono text-[#34C759]">
+                {isKo ? '희석 EPS' : 'Diluted EPS'}
+              </th>
+              <th className="py-3 px-3.5 text-right font-semibold font-mono">
+                {isKo ? '희석주식수' : 'Diluted Shares'}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-black/[0.03] dark:divide-white/[0.04] font-mono tabular-nums">
@@ -141,7 +149,10 @@ export const YearlyFinancialsTable: React.FC<YearlyFinancialsTableProps> = ({
                 <td className="py-3.5 px-3.5 text-right text-[#86868B]">
                   {formatNumber(f.capex)}
                 </td>
-                <td className="py-3.5 px-3.5 text-right text-[#86868B]" title={`분류: ${f.interestPaidClassification}`}>
+                <td
+                  className="py-3.5 px-3.5 text-right text-[#86868B]"
+                  title={f.interestPaidClassification ? `분류: ${f.interestPaidClassification}` : undefined}
+                >
                   <span>{formatNumber(f.interestPaid)}</span>
                   {f.interestPaidClassification && (
                     <span className="text-[9px] text-[#86868B] ml-1">

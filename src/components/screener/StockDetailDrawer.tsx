@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StockSummaryDTO, StockDetailDTO } from '../../types/api';
+import { StockSummaryDTO, StockDetailDTO, ReasonCode } from '../../types/api';
 import { stockApi } from '../../services/api';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
+import { getMetricLabel, getRuleInfo } from '../../utils/ruleFormatters';
 import {
   X,
   ChevronLeft,
@@ -14,6 +15,7 @@ import {
   ShieldCheck,
   TrendingUp,
   AlertTriangle,
+  Info,
 } from 'lucide-react';
 
 interface StockDetailDrawerProps {
@@ -33,9 +35,32 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
   stockList,
   onSelectStock,
 }) => {
-  const { t } = useAppConfig();
+  const { t, language } = useAppConfig();
   const [detail, setDetail] = useState<StockDetailDTO | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  const getReasonLabel = (code: ReasonCode): string => {
+    switch (code) {
+      case 'FINANCIAL_SECTOR':
+        return t('reasonFinancialSector');
+      case 'MISSING_DATA':
+        return t('reasonMissingData');
+      case 'INSUFFICIENT_HISTORY':
+        return t('reasonInsufficientHistory');
+      case 'NON_POSITIVE_DENOMINATOR':
+        return t('reasonNonPositiveDenominator');
+      case 'INVALID_TAX_RATE':
+        return t('reasonInvalidTaxRate');
+      case 'NON_POSITIVE_START_VALUE':
+        return t('reasonNonPositiveStartValue');
+      case 'UNKNOWN_INTEREST_CLASSIFICATION':
+        return t('reasonUnknownInterestClassification');
+      case 'PREREQUISITE_FAILED':
+        return t('reasonPrerequisiteFailed');
+      default:
+        return code;
+    }
+  };
 
   // Drawer resize state
   const DEFAULT_WIDTH = 760;
@@ -221,9 +246,8 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
       {/* 2. Slide Panel Container */}
       <aside
         style={{ width: typeof window !== 'undefined' && window.innerWidth < 640 ? '100%' : `${drawerWidth}px` }}
-        className={`relative z-10 w-full max-w-full bg-[#FBFBFD] dark:bg-black h-[85vh] sm:h-full max-h-[92vh] sm:max-h-full rounded-t-3xl sm:rounded-none flex flex-col shadow-2xl border-t sm:border-t-0 sm:border-l border-black/[0.08] dark:border-white/[0.1] ${
-          isResizing ? 'select-none transition-none' : 'transition-all duration-150 ease-out'
-        }`}
+        className={`relative z-10 w-full max-w-full bg-[#FBFBFD] dark:bg-black h-[85vh] sm:h-full max-h-[92vh] sm:max-h-full rounded-t-3xl sm:rounded-none flex flex-col shadow-2xl border-t sm:border-t-0 sm:border-l border-black/[0.08] dark:border-white/[0.1] ${isResizing ? 'select-none transition-none' : 'transition-all duration-150 ease-out'
+          }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="drawer-stock-title"
@@ -232,18 +256,16 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
         <div
           onMouseDown={handleMouseDown}
           onDoubleClick={() => setDrawerWidth(DEFAULT_WIDTH)}
-          className={`hidden sm:flex absolute left-0 top-0 bottom-0 w-3 -translate-x-1.5 cursor-ew-resize z-30 items-center justify-center group hover:bg-[#0071E3]/15 dark:hover:bg-[#2997FF]/20 transition-colors ${
-            isResizing ? 'bg-[#0071E3]/25 dark:bg-[#2997FF]/30' : ''
-          }`}
+          className={`hidden sm:flex absolute left-0 top-0 bottom-0 w-3 -translate-x-1.5 cursor-ew-resize z-30 items-center justify-center group hover:bg-[#0071E3]/15 dark:hover:bg-[#2997FF]/20 transition-colors ${isResizing ? 'bg-[#0071E3]/25 dark:bg-[#2997FF]/30' : ''
+            }`}
           title="드래그하여 너비 조절 (더블클릭: 기본 너비)"
           aria-label="Resize panel width"
         >
           <div
-            className={`w-1 rounded-full transition-all duration-200 ${
-              isResizing
+            className={`w-1 rounded-full transition-all duration-200 ${isResizing
                 ? 'h-16 bg-[#0071E3] dark:bg-[#2997FF] shadow-sm'
                 : 'h-8 bg-black/20 dark:bg-white/20 group-hover:h-12 group-hover:bg-[#0071E3] dark:group-hover:bg-[#2997FF]'
-            }`}
+              }`}
           />
         </div>
 
@@ -259,11 +281,10 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
               <button
                 onClick={handlePrevStock}
                 disabled={!hasPrev}
-                className={`p-1.5 rounded-full border transition-all cursor-pointer ${
-                  hasPrev
+                className={`p-1.5 rounded-full border transition-all cursor-pointer ${hasPrev
                     ? 'text-[#1D1D1F] dark:text-[#F5F5F7] bg-white dark:bg-[#1C1C1E] hover:bg-[#EBEBED] dark:hover:bg-[#2C2C2E] border-black/[0.08] dark:border-white/[0.08]'
                     : 'text-[#C7C7CC] dark:text-[#48484A] bg-transparent border-transparent cursor-not-allowed'
-                }`}
+                  }`}
                 title={`${t('prevStock')} (←)`}
                 aria-label={t('prevStock')}
               >
@@ -273,11 +294,10 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
               <button
                 onClick={handleNextStock}
                 disabled={!hasNext}
-                className={`p-1.5 rounded-full border transition-all cursor-pointer ${
-                  hasNext
+                className={`p-1.5 rounded-full border transition-all cursor-pointer ${hasNext
                     ? 'text-[#1D1D1F] dark:text-[#F5F5F7] bg-white dark:bg-[#1C1C1E] hover:bg-[#EBEBED] dark:hover:bg-[#2C2C2E] border-black/[0.08] dark:border-white/[0.08]'
                     : 'text-[#C7C7CC] dark:text-[#48484A] bg-transparent border-transparent cursor-not-allowed'
-                }`}
+                  }`}
                 title={`${t('nextStock')} (→)`}
                 aria-label={t('nextStock')}
               >
@@ -323,31 +343,31 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                   </span>
 
                   {stock.coreStatus === 'PASS' && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#34C759] bg-[#34C759]/10 dark:bg-[#34C759]/20 px-2.5 py-0.5 rounded-full border border-[#34C759]/20">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#34C759]">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>{t('pass')}</span>
                     </span>
                   )}
                   {stock.coreStatus === 'FAIL' && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FF3B30] bg-[#FF3B30]/10 dark:bg-[#FF3B30]/20 px-2.5 py-0.5 rounded-full border border-[#FF3B30]/20">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FF3B30]">
                       <XCircle className="w-3.5 h-3.5" />
                       <span>{t('fail')}</span>
                     </span>
                   )}
                   {stock.coreStatus === 'N/A' && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#86868B] bg-black/[0.04] dark:bg-white/[0.06] px-2.5 py-0.5 rounded-full border border-black/[0.06] dark:border-white/[0.08]">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#86868B]">
                       <HelpCircle className="w-3.5 h-3.5" />
                       <span>{t('na')}</span>
                     </span>
                   )}
 
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#86868B] bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 rounded-full">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#86868B]">
                     <Calendar className="w-3 h-3 text-[#86868B]" />
                     <span>{stock.dataAsOf.slice(0, 10)}</span>
                   </span>
                   {stock.isStale && (
                     <span
-                      className="text-[10px] font-bold text-[#FF9500] bg-[#FF9500]/10 px-2 py-0.5 rounded-full"
+                      className="text-[10px] font-bold text-[#FF9500]"
                       title={`Last successful: ${stock.lastSuccessfulAt}`}
                     >
                       STALE
@@ -384,9 +404,8 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
             <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
               <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">{t('coreStatusLabel')}</span>
               <div className="mt-2">
-                <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight block ${
-                  stock.coreStatus === 'PASS' ? 'text-[#34C759]' : stock.coreStatus === 'FAIL' ? 'text-[#FF3B30]' : 'text-[#86868B]'
-                }`}>
+                <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight block ${stock.coreStatus === 'PASS' ? 'text-[#34C759]' : stock.coreStatus === 'FAIL' ? 'text-[#FF3B30]' : 'text-[#86868B]'
+                  }`}>
                   {stock.coreStatus}
                 </span>
                 <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06] font-mono tabular-nums">
@@ -412,13 +431,12 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
             <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
               <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">{t('marginOfSafety')}</span>
               <div className="mt-2">
-                <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight tabular-nums block ${
-                  stock.conservativeMarginOfSafety !== null && stock.conservativeMarginOfSafety >= 0
+                <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight tabular-nums block ${stock.conservativeMarginOfSafety !== null && stock.conservativeMarginOfSafety >= 0
                     ? 'text-[#34C759]'
                     : stock.conservativeMarginOfSafety !== null
-                    ? 'text-[#FF3B30]'
-                    : 'text-[#86868B]'
-                }`}>
+                      ? 'text-[#FF3B30]'
+                      : 'text-[#86868B]'
+                  }`}>
                   {formatPercent(stock.conservativeMarginOfSafety)}
                 </span>
                 <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06]">
@@ -431,9 +449,8 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
             <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
               <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">{t('confidence')}</span>
               <div className="mt-2">
-                <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight block ${
-                  stock.confidence === 'HIGH' ? 'text-[#34C759]' : stock.confidence === 'MEDIUM' ? 'text-[#FF9500]' : 'text-[#86868B]'
-                }`}>
+                <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight block ${stock.confidence === 'HIGH' ? 'text-[#34C759]' : stock.confidence === 'MEDIUM' ? 'text-[#FF9500]' : 'text-[#86868B]'
+                  }`}>
                   {stock.confidence}
                 </span>
                 <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06]">
@@ -467,48 +484,60 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {detail.ruleEvaluations.map((evalItem) => (
-                  <div
-                    key={evalItem.ruleId}
-                    className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs flex flex-col justify-between"
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] font-mono">
-                        {evalItem.ruleId}
-                      </span>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full font-mono ${
-                          evalItem.status === 'PASS'
-                            ? 'bg-[#34C759]/15 text-[#34C759]'
-                            : evalItem.status === 'FAIL'
-                            ? 'bg-[#FF3B30]/15 text-[#FF3B30]'
-                            : 'bg-black/[0.06] dark:bg-white/[0.08] text-[#86868B]'
-                        }`}
-                      >
-                        {evalItem.status}
-                      </span>
-                    </div>
+                {detail.ruleEvaluations.map((evalItem) => {
+                  const ruleInfo = getRuleInfo(evalItem.ruleId, language);
+                  return (
+                    <div
+                      key={evalItem.ruleId}
+                      className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs flex flex-col justify-between space-y-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-[#1D1D1F] dark:text-[#F5F5F7] truncate" title={ruleInfo.title}>
+                          {ruleInfo.title}
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold font-mono shrink-0 ${
+                            evalItem.status === 'PASS'
+                              ? 'text-[#34C759]'
+                              : evalItem.status === 'FAIL'
+                              ? 'text-[#FF3B30]'
+                              : 'text-[#86868B]'
+                          }`}
+                        >
+                          {evalItem.status}
+                        </span>
+                      </div>
 
-                    <div className="space-y-1">
-                      {evalItem.metrics.map((m, idx) => {
-                        const mNum = m.value !== null && m.value !== undefined ? Number(m.value) : null;
-                        return (
-                          <div key={idx} className="flex items-center justify-between text-[11px] text-[#86868B]">
-                            <span className="font-mono">{m.metricId}</span>
-                            <span className="font-mono font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
-                              {mNum !== null && !isNaN(mNum) ? (m.unit === 'RATIO' ? `${(mNum * 100).toFixed(1)}%` : mNum.toFixed(2)) : '—'}
-                            </span>
+                      <div className="space-y-1">
+                        {evalItem.metrics.map((m, idx) => {
+                          const mNum = m.value !== null && m.value !== undefined ? Number(m.value) : null;
+                          const metricLabel = getMetricLabel(m.metricId, language);
+                          return (
+                            <div key={idx} className="flex items-center justify-between text-[11px] text-[#86868B] gap-2">
+                              <span className="truncate font-medium">{metricLabel}</span>
+                              <span className="font-mono font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums shrink-0">
+                                {mNum !== null && !isNaN(mNum) ? (m.unit === 'RATIO' ? `${(mNum * 100).toFixed(1)}%` : mNum.toFixed(2)) : '—'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {evalItem.reasonCodes.length > 0 && (
+                          <div className="pt-1 flex flex-wrap gap-1.5">
+                            {evalItem.reasonCodes.map((code, rIdx) => (
+                              <span
+                                key={rIdx}
+                                className="inline-flex items-center gap-1 text-[10px] font-medium text-[#FF9500]"
+                              >
+                                <Info className="w-3 h-3 shrink-0" />
+                                <span>{getReasonLabel(code)}</span>
+                              </span>
+                            ))}
                           </div>
-                        );
-                      })}
-                      {evalItem.reasonCodes.length > 0 && (
-                        <div className="text-[10px] text-[#FF9500] font-mono pt-1">
-                          Reason: {evalItem.reasonCodes.join(', ')}
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* DCF Valuation Details Card */}

@@ -8,6 +8,11 @@ import {
 } from '../types/api';
 import { stockApi } from '../services/api';
 import { useAppConfig } from '../context/ThemeLanguageContext';
+import {
+  getConfidenceInfo,
+  getIndustryTypeLabel,
+  getValuationStatusInfo,
+} from '../utils/ruleFormatters';
 import { BuffettRuleDiagnosis } from '../components/detail/BuffettRuleDiagnosis';
 import { DcfValuationCard } from '../components/detail/DcfValuationCard';
 import { CapitalActionCard } from '../components/detail/CapitalActionCard';
@@ -42,7 +47,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   const { ticker: urlTicker } = useParams<{ ticker?: string }>();
   const navigate = useNavigate();
   const currentTicker = urlTicker || propTicker || stockId;
-  const { t } = useAppConfig();
+  const { t, language } = useAppConfig();
 
   const [detail, setDetail] = useState<StockDetailDTO | null>(null);
   const [rulesMap, setRulesMap] = useState<Map<string, RuleDefinitionDTO>>(new Map());
@@ -69,12 +74,6 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
 
   // Fetch stock detail & rules & stock list
   useEffect(() => {
-    if (!currentTicker) {
-      setLoading(false);
-      setDetail(null);
-      return;
-    }
-
     const controller = new AbortController();
     const { signal } = controller;
 
@@ -84,8 +83,22 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
       setIs404(false);
 
       try {
+        // If currentTicker is not provided (e.g. accessed via /stock directly), fetch stock list and auto-navigate to the first stock
+        if (!currentTicker) {
+          const listRes = await stockApi.getStocks({ limit: 100 }, signal);
+          if (signal.aborted) return;
+          if (listRes.items.length > 0) {
+            navigate(`/stock/${listRes.items[0].ticker}`, { replace: true });
+            return;
+          } else {
+            setStockList([]);
+            setLoading(false);
+            return;
+          }
+        }
+
         const [detailRes, rulesRes, listRes] = await Promise.allSettled([
-          stockApi.getStockDetail(currentTicker!, signal),
+          stockApi.getStockDetail(currentTicker, signal),
           stockApi.getRules(signal),
           stockApi.getStocks({ limit: 100 }, signal),
         ]);
@@ -137,7 +150,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
     return () => {
       controller.abort();
     };
-  }, [currentTicker]);
+  }, [currentTicker, navigate]);
 
   const handleBack = () => {
     if (onBack) {
@@ -347,9 +360,8 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
                 {detail.name}
               </span>
               <ChevronDown
-                className={`w-3.5 h-3.5 text-[#86868B] transition-transform duration-200 ${
-                  isDropdownOpen ? 'rotate-180' : ''
-                }`}
+                className={`w-3.5 h-3.5 text-[#86868B] transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''
+                  }`}
               />
             </button>
 
@@ -362,11 +374,10 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
                     <button
                       key={m}
                       onClick={() => setMarketFilter(m)}
-                      className={`flex-1 py-1 text-[10px] font-semibold rounded-lg transition-all cursor-pointer select-none text-center ${
-                        marketFilter === m
-                          ? 'bg-white dark:bg-[#1C1C1E] text-[#0071E3] dark:text-[#2997FF] shadow-xs font-bold'
-                          : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
-                      }`}
+                      className={`flex-1 py-1 text-[10px] font-semibold rounded-lg transition-all cursor-pointer select-none text-center ${marketFilter === m
+                        ? 'bg-white dark:bg-[#1C1C1E] text-[#0071E3] dark:text-[#2997FF] shadow-xs font-bold'
+                        : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
+                        }`}
                     >
                       {m}
                     </button>
@@ -381,11 +392,10 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
                       <button
                         key={s.id}
                         onClick={() => handleSelectFromList(s.ticker)}
-                        className={`w-full text-left px-3 py-2.5 rounded-xl flex items-center justify-between transition-colors cursor-pointer select-none ${
-                          isCurrent
-                            ? 'bg-[#F2F4F6] dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] font-bold'
-                            : 'text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F9FAFB] dark:hover:bg-[#252528]'
-                        }`}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl flex items-center justify-between transition-colors cursor-pointer select-none ${isCurrent
+                          ? 'bg-[#F2F4F6] dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] font-bold'
+                          : 'text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F9FAFB] dark:hover:bg-[#252528]'
+                          }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
                           <span className="font-mono text-xs text-[#86868B] w-4 shrink-0 tabular-nums">
@@ -411,13 +421,12 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
 
                         <div className="flex items-center gap-1.5 shrink-0 ml-2">
                           <span
-                            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
-                              s.coreStatus === 'PASS'
-                                ? 'bg-[#34C759]/15 text-[#34C759]'
-                                : s.coreStatus === 'FAIL'
-                                ? 'bg-[#FF3B30]/15 text-[#FF3B30]'
-                                : 'bg-black/[0.06] text-[#86868B]'
-                            }`}
+                            className={`text-[10px] font-mono font-bold ${s.coreStatus === 'PASS'
+                              ? 'text-[#34C759]'
+                              : s.coreStatus === 'FAIL'
+                                ? 'text-[#FF3B30]'
+                                : 'text-[#86868B]'
+                              }`}
                           >
                             {s.coreStatus}
                           </span>
@@ -450,41 +459,41 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
 
               {/* Core Status Badge */}
               {detail.coreStatus === 'PASS' && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#34C759] bg-[#34C759]/10 dark:bg-[#34C759]/20 px-2.5 py-0.5 rounded-full border border-[#34C759]/20">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#34C759]">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span className="font-mono tabular-nums">
-                    {detail.corePassCount}P / {detail.coreFailCount}F / {detail.coreNaCount}NA
+                    {detail.corePassCount} PASS / {detail.coreFailCount} FAIL / {detail.coreNaCount} NA
                   </span>
                   <span>{t('pass')}</span>
                 </span>
               )}
               {detail.coreStatus === 'FAIL' && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FF3B30] bg-[#FF3B30]/10 dark:bg-[#FF3B30]/20 px-2.5 py-0.5 rounded-full border border-[#FF3B30]/20">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FF3B30]">
                   <XCircle className="w-3.5 h-3.5" />
                   <span className="font-mono tabular-nums">
-                    {detail.corePassCount}P / {detail.coreFailCount}F / {detail.coreNaCount}NA
+                    {detail.corePassCount} PASS / {detail.coreFailCount} FAIL / {detail.coreNaCount} NA
                   </span>
                   <span>{t('fail')}</span>
                 </span>
               )}
               {detail.coreStatus === 'N/A' && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#86868B] bg-black/[0.04] dark:bg-white/[0.06] px-2.5 py-0.5 rounded-full border border-black/[0.06] dark:border-white/[0.08]">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#86868B]">
                   <HelpCircle className="w-3.5 h-3.5" />
                   <span className="font-mono tabular-nums">
-                    {detail.corePassCount}P / {detail.coreFailCount}F / {detail.coreNaCount}NA
+                    {detail.corePassCount} PASS / {detail.coreFailCount} FAIL / {detail.coreNaCount} NA
                   </span>
                   <span>{t('na')}</span>
                 </span>
               )}
 
               {/* Data As Of Date */}
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#86868B] bg-black/[0.04] dark:bg-white/[0.06] px-2.5 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#86868B]">
                 <Calendar className="w-3 h-3 text-[#86868B]" />
                 <span>{detail.dataAsOf.slice(0, 10)}</span>
               </span>
               {detail.isStale && (
                 <span
-                  className="inline-flex items-center text-[10px] font-bold text-[#FF9500] bg-[#FF9500]/10 px-2.5 py-0.5 rounded-full"
+                  className="inline-flex items-center text-[10px] font-bold text-[#FF9500]"
                   title={`Last successful: ${detail.lastSuccessfulAt}`}
                 >
                   STALE
@@ -497,12 +506,8 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
               <span>·</span>
               <span>{detail.sector}</span>
               <span>·</span>
-              <span className="font-mono text-[11px] px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
-                {detail.industryType}
-              </span>
-              <span>·</span>
-              <span className="font-mono text-[11px] px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
-                {detail.sourceName} ({detail.sourceType})
+              <span className="font-mono text-[11px]">
+                {getIndustryTypeLabel(detail.industryType, language)}
               </span>
             </div>
           </div>
@@ -526,7 +531,11 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
           <div className="mt-5 p-3.5 rounded-2xl bg-[#FF9500]/10 border border-[#FF9500]/20 space-y-1">
             <div className="flex items-center gap-1.5 text-xs font-bold text-[#C93400] dark:text-[#FF9500]">
               <AlertTriangle className="w-4 h-4" />
-              <span>종목 데이터 분석 경고 ({detail.warnings.length}건)</span>
+              <span>
+                {language === 'ko'
+                  ? `종목 데이터 분석 경고 (${detail.warnings.length}건)`
+                  : `Data Analysis Warnings (${detail.warnings.length})`}
+              </span>
             </div>
             {detail.warnings.map((w, idx) => (
               <p key={idx} className="text-xs text-[#86868B] leading-relaxed">
@@ -546,40 +555,50 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
           </span>
           <div className="mt-2">
             <span
-              className={`text-2xl sm:text-3xl font-bold font-mono tracking-tight tabular-nums block ${
-                detail.coreStatus === 'PASS'
-                  ? 'text-[#34C759]'
-                  : detail.coreStatus === 'FAIL'
+              className={`text-2xl sm:text-3xl font-bold font-mono tracking-tight tabular-nums block ${detail.coreStatus === 'PASS'
+                ? 'text-[#34C759]'
+                : detail.coreStatus === 'FAIL'
                   ? 'text-[#FF3B30]'
                   : 'text-[#86868B]'
-              }`}
+                }`}
             >
-              {detail.coreStatus}
+              {detail.coreStatus === 'PASS'
+                ? (language === 'ko' ? '통과 (PASS)' : 'PASS')
+                : detail.coreStatus === 'FAIL'
+                  ? (language === 'ko' ? '탈락 (FAIL)' : 'FAIL')
+                  : 'N/A'}
             </span>
             <div className="text-[11px] text-[#86868B] mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between font-mono">
-              <span>{detail.corePassCount}P · {detail.coreFailCount}F · {detail.coreNaCount}NA</span>
-              <span className="text-[10px] font-bold">CORE RULES</span>
+              <span>{detail.corePassCount} PASS · {detail.coreFailCount} FAIL · {detail.coreNaCount} NA</span>
+              <span className="text-[10px] font-bold">
+                {language === 'ko' ? '핵심 7원칙' : 'CORE RULES'}
+              </span>
             </div>
           </div>
         </div>
 
         {/* KPI 2: Valuation Status */}
-        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 sm:p-5 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
-          <span className="text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">
-            {t('valuationStatusLabel')}
-          </span>
-          <div className="mt-2">
-            <span className="text-lg sm:text-xl font-bold text-[#0071E3] dark:text-[#2997FF] tracking-tight block truncate">
-              {detail.valuationStatus.replace(/_/g, ' ')}
-            </span>
-            <div className="text-[11px] text-[#86868B] mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
-              <span>Owner Earnings DCF</span>
-              <span className="text-[10px] font-mono text-[#0071E3] dark:text-[#2997FF] font-semibold">
-                {detail.valuationStatus}
+        {(() => {
+          const valInfo = getValuationStatusInfo(detail.valuationStatus, language);
+          return (
+            <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 sm:p-5 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
+              <span className="text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">
+                {t('valuationStatusLabel')}
               </span>
+              <div className="mt-2">
+                <span className="text-base sm:text-lg font-bold text-[#0071E3] dark:text-[#2997FF] tracking-tight block truncate" title={valInfo.label}>
+                  {valInfo.label}
+                </span>
+                <div className="text-[11px] text-[#86868B] mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
+                  <span>Owner Earnings DCF</span>
+                  <span className="text-[10px] font-mono text-[#0071E3] dark:text-[#2997FF] font-semibold">
+                    {detail.valuationStatus}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* KPI 3: Conservative Margin of Safety */}
         <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 sm:p-5 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
@@ -588,50 +607,55 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
           </span>
           <div className="mt-2">
             <span
-              className={`text-2xl sm:text-3xl font-bold font-mono tracking-tight tabular-nums block ${
-                detail.conservativeMarginOfSafety !== null && detail.conservativeMarginOfSafety >= 0.2
-                  ? 'text-[#34C759]'
-                  : detail.conservativeMarginOfSafety !== null && detail.conservativeMarginOfSafety >= 0
+              className={`text-2xl sm:text-3xl font-bold font-mono tracking-tight tabular-nums block ${detail.conservativeMarginOfSafety !== null && detail.conservativeMarginOfSafety >= 0.2
+                ? 'text-[#34C759]'
+                : detail.conservativeMarginOfSafety !== null && detail.conservativeMarginOfSafety >= 0
                   ? 'text-[#0071E3] dark:text-[#2997FF]'
                   : detail.conservativeMarginOfSafety !== null
-                  ? 'text-[#FF3B30]'
-                  : 'text-[#86868B]'
-              }`}
+                    ? 'text-[#FF3B30]'
+                    : 'text-[#86868B]'
+                }`}
             >
               {formatPercent(detail.conservativeMarginOfSafety)}
             </span>
             <div className="text-[11px] text-[#86868B] mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between font-mono">
-              <span>
+              <span className="truncate max-w-[140px]" title={`IV: ${formatPrice(detail.conservativeIntrinsicValue, detail.currency)}`}>
                 IV: {formatPrice(detail.conservativeIntrinsicValue, detail.currency)}
               </span>
-              <span className="text-[10px] font-semibold">CONSERVATIVE</span>
+              <span className="text-[10px] font-semibold">
+                {language === 'ko' ? '보수적 DCF' : 'CONSERVATIVE'}
+              </span>
             </div>
           </div>
         </div>
 
         {/* KPI 4: Data Confidence */}
-        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 sm:p-5 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
-          <span className="text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">
-            {t('confidence')}
-          </span>
-          <div className="mt-2">
-            <span
-              className={`text-2xl sm:text-3xl font-bold font-mono tracking-tight block ${
-                detail.confidence === 'HIGH'
-                  ? 'text-[#34C759]'
-                  : detail.confidence === 'MEDIUM'
-                  ? 'text-[#FF9500]'
-                  : 'text-[#86868B]'
-              }`}
-            >
-              {detail.confidence}
-            </span>
-            <div className="text-[11px] text-[#86868B] mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
-              <span>품질 검증 등급</span>
-              <span className="text-[10px] font-mono">GRADE</span>
+        {(() => {
+          const confInfo = getConfidenceInfo(detail.confidence, language);
+          return (
+            <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 sm:p-5 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
+              <span className="text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">
+                {t('confidence')}
+              </span>
+              <div className="mt-2">
+                <span
+                  className={`text-xl sm:text-2xl font-bold tracking-tight block ${detail.confidence === 'HIGH'
+                    ? 'text-[#34C759]'
+                    : detail.confidence === 'MEDIUM'
+                      ? 'text-[#FF9500]'
+                      : 'text-[#86868B]'
+                    }`}
+                >
+                  {confInfo.label}
+                </span>
+                <div className="text-[11px] text-[#86868B] mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
+                  <span className="truncate max-w-[140px]">{confInfo.desc}</span>
+                  <span className="text-[10px] font-mono font-semibold">{detail.confidence}</span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
       </div>
 
       {/* 4. Warren Buffett Rule Diagnosis (9 Rules Grid) */}
