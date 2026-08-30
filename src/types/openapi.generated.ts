@@ -189,7 +189,7 @@ export interface components {
          * CoreStatus
          * @enum {string}
          */
-        CoreStatus: "PASS" | "FAIL" | "N/A";
+        CoreStatus: "PASS" | "HOLD" | "FAIL" | "N/A";
         /**
          * Currency
          * @enum {string}

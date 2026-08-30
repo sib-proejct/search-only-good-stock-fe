@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useStocks, MarketFilter, CoreStatusFilter, ValuationStatusFilter } from '../hooks/useStocks';
+import { useStocks, MarketFilter, CoreStatusFilter } from '../hooks/useStocks';
 import {
   CheckCircle2,
   ChevronDown,
@@ -39,8 +39,6 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
     setMarket,
     coreStatus,
     setCoreStatus,
-    valuationStatus,
-    setValuationStatus,
     sortField,
     setSortField,
     sortOrder,
@@ -95,18 +93,9 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
   // Core Status Options
   const coreStatusOptions: { id: CoreStatusFilter; label: string }[] = [
     { id: 'ALL', label: t('allStatuses') },
-    { id: 'PASS', label: t('pass') },
-    { id: 'FAIL', label: t('fail') },
-    { id: 'N/A', label: t('na') },
-  ];
-
-  // Valuation Status Options
-  const valuationStatusOptions: { id: ValuationStatusFilter; label: string }[] = [
-    { id: 'ALL', label: t('allStatuses') },
-    { id: 'PASS_WITH_MARGIN', label: t('valuationPassWithMargin') },
-    { id: 'WATCH', label: t('valuationWatch') },
-    { id: 'NO_MARGIN', label: t('valuationNoMargin') },
-    { id: 'N/A', label: t('valuationNa') },
+    { id: 'PASS', label: t('coreStatusPass') },
+    { id: 'HOLD', label: t('coreStatusHold') },
+    { id: 'FAIL', label: t('coreStatusFail') },
   ];
 
   // Sort Options
@@ -290,25 +279,6 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                   onClick={() => setCoreStatus(opt.id)}
                   className={`px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-[13px] rounded-xl whitespace-nowrap transition-all duration-200 select-none cursor-pointer focus:outline-none shrink-0 ${isActive
                       ? 'bg-white dark:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-bold shadow-sm border border-black/[0.04] dark:border-white/[0.06]'
-                      : 'text-[#8B95A1] dark:text-[#86868B] hover:text-[#191F28] dark:hover:text-[#F5F5F7] font-medium hover:bg-white/40 dark:hover:bg-white/5'
-                    }`}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Valuation Status Capsule Ribbon */}
-          <div className="hidden lg:inline-flex w-fit bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 rounded-2xl border border-black/[0.04] dark:border-white/[0.06] items-center gap-1 overflow-x-auto scrollbar-none shrink-0">
-            {valuationStatusOptions.map((opt) => {
-              const isActive = valuationStatus === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  onClick={() => setValuationStatus(opt.id)}
-                  className={`px-3 py-1.5 sm:py-2 text-xs rounded-xl whitespace-nowrap transition-all duration-200 select-none cursor-pointer focus:outline-none shrink-0 ${isActive
-                      ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] font-bold shadow-sm border border-black/[0.04] dark:border-white/[0.06]'
                       : 'text-[#8B95A1] dark:text-[#86868B] hover:text-[#191F28] dark:hover:text-[#F5F5F7] font-medium hover:bg-white/40 dark:hover:bg-white/5'
                     }`}
                 >
