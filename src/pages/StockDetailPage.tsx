@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   RuleDefinitionDTO,
   StockDetailDTO,
@@ -44,7 +44,12 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
 }) => {
   const { ticker: urlTicker } = useParams<{ ticker?: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const currentTicker = urlTicker || propTicker || stockId;
+  const marketParam = searchParams.get('market');
+  const currentMarket = (
+    ['NASDAQ', 'NYSE', 'KOSPI', 'KOSDAQ'] as const
+  ).find((market) => market === marketParam);
   const { t, language } = useAppConfig();
 
   const [detail, setDetail] = useState<StockDetailDTO | null>(null);
@@ -86,7 +91,11 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
           const listRes = await stockApi.getStocks({ limit: 100 }, signal);
           if (signal.aborted) return;
           if (listRes.items.length > 0) {
-            navigate(`/stock/${listRes.items[0].ticker}`, { replace: true });
+            const firstStock = listRes.items[0];
+            navigate(
+              `/stock/${firstStock.ticker}?market=${encodeURIComponent(firstStock.market)}`,
+              { replace: true }
+            );
             return;
           } else {
             setStockList([]);
@@ -96,7 +105,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
         }
 
         const [detailRes, rulesRes, listRes] = await Promise.allSettled([
-          stockApi.getStockDetail(currentTicker, signal),
+          stockApi.getStockDetail(currentTicker, signal, currentMarket),
           stockApi.getRules(signal),
           stockApi.getStocks({ limit: 100 }, signal),
         ]);
@@ -148,7 +157,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
     return () => {
       controller.abort();
     };
-  }, [currentTicker, navigate]);
+  }, [currentTicker, currentMarket, navigate]);
 
   const handleBack = () => {
     if (onBack) {
@@ -158,12 +167,14 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
     }
   };
 
-  const handleSelectFromList = (targetTicker: string) => {
+  const handleSelectFromList = (stock: StockSummaryDTO) => {
     setIsDropdownOpen(false);
     if (onSelectStock) {
-      onSelectStock(targetTicker);
+      onSelectStock(stock.ticker);
     }
-    navigate(`/stock/${targetTicker}`);
+    navigate(
+      `/stock/${stock.ticker}?market=${encodeURIComponent(stock.market)}`
+    );
   };
 
   const handleRetry = () => {
@@ -172,7 +183,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
       setError(null);
       setIs404(false);
       stockApi
-        .getStockDetail(currentTicker)
+        .getStockDetail(currentTicker, undefined, currentMarket)
         .then((data) => {
           setDetail(data);
           setLoading(false);
@@ -230,7 +241,9 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   });
 
   const currentIndex = stockList.findIndex(
-    (s) => s.ticker.toUpperCase() === currentTicker?.toUpperCase()
+    (s) =>
+      s.ticker.toUpperCase() === currentTicker?.toUpperCase() &&
+      (!currentMarket || s.market === currentMarket)
   );
 
   // 1. Empty Prompt State (when no ticker selected)
@@ -385,11 +398,13 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
                 {/* Stock List */}
                 <div className="space-y-0.5">
                   {filteredDropdownStocks.map((s, idx) => {
-                    const isCurrent = s.ticker.toUpperCase() === detail.ticker.toUpperCase();
+                    const isCurrent =
+                      s.ticker.toUpperCase() === detail.ticker.toUpperCase() &&
+                      s.market === detail.market;
                     return (
                       <button
                         key={s.id}
-                        onClick={() => handleSelectFromList(s.ticker)}
+                        onClick={() => handleSelectFromList(s)}
                         className={`w-full text-left px-3 py-2.5 rounded-xl flex items-center justify-between transition-colors cursor-pointer select-none ${isCurrent
                           ? 'bg-[#F2F4F6] dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] font-bold'
                           : 'text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F9FAFB] dark:hover:bg-[#252528]'

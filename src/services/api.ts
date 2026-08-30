@@ -1,4 +1,5 @@
 import {
+  Market,
   RuleListResponse,
   StockDetailDTO,
   StockListQuery,
@@ -92,7 +93,8 @@ export const stockApi = {
 
   async getStockDetail(
     ticker: string,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    market?: Market
   ): Promise<StockDetailDTO> {
     const trimmedTicker = ticker?.trim();
     if (!trimmedTicker) {
@@ -100,13 +102,18 @@ export const stockApi = {
     }
 
     const encodedTicker = encodeURIComponent(trimmedTicker);
-    const response = await fetch(
-      `${API_BASE_URL}/api/stocks/${encodedTicker}`,
-      {
-        headers: { 'Content-Type': 'application/json' },
-        signal,
-      }
-    );
+    const params = new URLSearchParams();
+    if (market) {
+      params.set('market', market);
+    }
+    const queryString = params.toString();
+    const url = `${API_BASE_URL}/api/stocks/${encodedTicker}${
+      queryString ? `?${queryString}` : ''
+    }`;
+    const response = await fetch(url, {
+      headers: { 'Content-Type': 'application/json' },
+      signal,
+    });
 
     if (!response.ok) {
       throw new Error(await parseErrorMessage(response));

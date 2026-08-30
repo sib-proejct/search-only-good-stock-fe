@@ -617,12 +617,12 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
         stock={selectedDrawerStock}
         isOpen={Boolean(selectedDrawerStock)}
         onClose={() => setDrawerStockTicker(null)}
-        onNavigateToFullDetail={(ticker) => {
+        onNavigateToFullDetail={(ticker, market) => {
           setDrawerStockTicker(null);
           if (onSelectStock) {
             onSelectStock(ticker);
           }
-          navigate(`/stock/${ticker}`);
+          navigate(`/stock/${ticker}?market=${encodeURIComponent(market)}`);
         }}
         stockList={stocks}
         onSelectStock={(ticker) => setDrawerStockTicker(ticker)}

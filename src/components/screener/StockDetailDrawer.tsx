@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StockSummaryDTO, StockDetailDTO, ReasonCode } from '../../types/api';
+import { StockSummaryDTO, StockDetailDTO, ReasonCode, Market } from '../../types/api';
 import { stockApi } from '../../services/api';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
 import { getMetricLabel, getRuleInfo, getCoreGradeInfo } from '../../utils/ruleFormatters';
@@ -19,7 +19,7 @@ interface StockDetailDrawerProps {
   stock: StockSummaryDTO | null;
   isOpen: boolean;
   onClose: () => void;
-  onNavigateToFullDetail: (ticker: string) => void;
+  onNavigateToFullDetail: (ticker: string, market: Market) => void;
   stockList: StockSummaryDTO[];
   onSelectStock: (ticker: string) => void;
 }
@@ -89,7 +89,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
     setDetailLoading(true);
 
     stockApi
-      .getStockDetail(stock.ticker)
+      .getStockDetail(stock.ticker, undefined, stock.market)
       .then((data) => {
         if (!isCancelled) {
           setDetail(data);
@@ -306,7 +306,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
           {/* Right: Full detail page shortcut & Close button */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => onNavigateToFullDetail(stock.ticker)}
+              onClick={() => onNavigateToFullDetail(stock.ticker, stock.market)}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] bg-[#0071E3]/10 dark:bg-[#2997FF]/15 hover:bg-[#0071E3]/20 rounded-full transition-all cursor-pointer"
               title={t('viewFullAnalysis')}
             >
@@ -585,7 +585,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
           </button>
 
           <button
-            onClick={() => onNavigateToFullDetail(stock.ticker)}
+            onClick={() => onNavigateToFullDetail(stock.ticker, stock.market)}
             className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-bold text-white bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#2997FF] dark:hover:bg-[#0071E3] shadow-sm hover:shadow transition-all cursor-pointer"
           >
             <span>{t('viewFullAnalysis')}</span>

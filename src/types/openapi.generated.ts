@@ -680,7 +680,9 @@ export interface operations {
     };
     get_stock_api_stocks__ticker__get: {
         parameters: {
-            query?: never;
+            query?: {
+                market?: components["schemas"]["Market"] | null;
+            };
             header?: never;
             path: {
                 ticker: string;

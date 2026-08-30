@@ -288,11 +288,16 @@ export interface StockListQuery {
 ```typescript
 getRules(signal?: AbortSignal): Promise<RuleListResponse>
 getStocks(query: StockListQuery, signal?: AbortSignal): Promise<StockListResponse>
-getStockDetail(ticker: string, signal?: AbortSignal): Promise<StockDetailDTO>
+getStockDetail(
+  ticker: string,
+  signal?: AbortSignal,
+  market?: Market
+): Promise<StockDetailDTO>
 ```
 
 - 2xx가 아니면 응답의 `detail`을 읽어 일반 `Error`로 전달합니다.
-- 상세 경로의 ticker는 `encodeURIComponent`로 인코딩합니다.
+- 상세 경로의 ticker는 `encodeURIComponent`로 인코딩하고, 목록에서
+  선택한 종목은 `market`을 쿼리로 함께 전송합니다.
 - 이전 검색·필터 요청은 `AbortController`로 취소하고 취소 오류는 사용자 오류로
   표시하지 않습니다.
 - JSON 모양을 구형 `Stock`으로 변환하거나 필드를 합성하지 않습니다.
