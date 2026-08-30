@@ -3,7 +3,7 @@ import {
   StockSummaryDTO,
   StockListQuery,
   Market,
-  CoreStatus,
+  CoreGradeFilter,
   ValuationStatus,
   StockSort,
   SortOrder,
@@ -11,7 +11,7 @@ import {
 import { stockApi } from '../services/api';
 
 export type MarketFilter = Market | 'ALL';
-export type CoreStatusFilter = CoreStatus | 'ALL';
+export type CoreGradeFilterOption = CoreGradeFilter | 'ALL';
 export type ValuationStatusFilter = ValuationStatus | 'ALL';
 
 export interface UseStocksReturn {
@@ -24,8 +24,8 @@ export interface UseStocksReturn {
   setSearchQuery: (query: string) => void;
   market: MarketFilter;
   setMarket: (market: MarketFilter) => void;
-  coreStatus: CoreStatusFilter;
-  setCoreStatus: (status: CoreStatusFilter) => void;
+  coreGradeFilter: CoreGradeFilterOption;
+  setCoreGradeFilter: (grade: CoreGradeFilterOption) => void;
   valuationStatus: ValuationStatusFilter;
   setValuationStatus: (status: ValuationStatusFilter) => void;
   sortField: StockSort;
@@ -52,7 +52,8 @@ export function useStocks(): UseStocksReturn {
   const [searchQuery, setSearchQueryState] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [market, setMarketState] = useState<MarketFilter>('ALL');
-  const [coreStatus, setCoreStatusState] = useState<CoreStatusFilter>('ALL');
+  const [coreGradeFilter, setCoreGradeFilterState] =
+    useState<CoreGradeFilterOption>('ALL');
   const [valuationStatus, setValuationStatusState] =
     useState<ValuationStatusFilter>('ALL');
   const [sortField, setSortFieldState] =
@@ -83,8 +84,8 @@ export function useStocks(): UseStocksReturn {
     setOffset(0);
   }, []);
 
-  const setCoreStatus = useCallback((nextStatus: CoreStatusFilter) => {
-    setCoreStatusState(nextStatus);
+  const setCoreGradeFilter = useCallback((nextGrade: CoreGradeFilterOption) => {
+    setCoreGradeFilterState(nextGrade);
     setOffset(0);
   }, []);
 
@@ -139,8 +140,8 @@ export function useStocks(): UseStocksReturn {
         if (market !== 'ALL') {
           query.market = market;
         }
-        if (coreStatus !== 'ALL') {
-          query.coreStatus = coreStatus;
+        if (coreGradeFilter !== 'ALL') {
+          query.coreStatus = coreGradeFilter;
         }
         if (valuationStatus !== 'ALL') {
           query.valuationStatus = valuationStatus;
@@ -175,7 +176,15 @@ export function useStocks(): UseStocksReturn {
         }
       }
     },
-    [debouncedSearch, market, coreStatus, valuationStatus, sortField, sortOrder, offset]
+    [
+      debouncedSearch,
+      market,
+      coreGradeFilter,
+      valuationStatus,
+      sortField,
+      sortOrder,
+      offset,
+    ]
   );
 
   // Fetch numerator and denominator from the same market/search population.
@@ -259,7 +268,7 @@ export function useStocks(): UseStocksReturn {
     setSearchQueryState('');
     setDebouncedSearch('');
     setMarketState('ALL');
-    setCoreStatusState('ALL');
+    setCoreGradeFilterState('ALL');
     setValuationStatusState('ALL');
     setSortFieldState('corePassCount');
     setSortOrderState('desc');
@@ -276,8 +285,8 @@ export function useStocks(): UseStocksReturn {
     setSearchQuery,
     market,
     setMarket,
-    coreStatus,
-    setCoreStatus,
+    coreGradeFilter,
+    setCoreGradeFilter,
     valuationStatus,
     setValuationStatus,
     sortField,

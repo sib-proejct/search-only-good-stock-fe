@@ -186,10 +186,15 @@ export interface components {
          */
         Confidence: "HIGH" | "MEDIUM" | "LOW";
         /**
+         * CoreGradeFilter
+         * @enum {string}
+         */
+        CoreGradeFilter: "PASS" | "HOLD" | "FAIL" | "N/A";
+        /**
          * CoreStatus
          * @enum {string}
          */
-        CoreStatus: "PASS" | "HOLD" | "FAIL" | "N/A";
+        CoreStatus: "PASS" | "FAIL" | "N/A";
         /**
          * Currency
          * @enum {string}
@@ -645,7 +650,7 @@ export interface operations {
                 search?: string | null;
                 market?: components["schemas"]["Market"] | null;
                 sector?: string | null;
-                coreStatus?: components["schemas"]["CoreStatus"] | null;
+                coreStatus?: components["schemas"]["CoreGradeFilter"] | null;
                 valuationStatus?: components["schemas"]["ValuationStatus"] | null;
                 sort?: components["schemas"]["StockSort"];
                 order?: components["schemas"]["SortOrder"];

@@ -199,6 +199,7 @@ schema alias만 제공합니다. TypeScript build로 생성 계약과 화면 사
 export type Market = 'NASDAQ' | 'NYSE' | 'KOSPI' | 'KOSDAQ';
 export type Currency = 'USD' | 'KRW';
 export type CoreStatus = 'PASS' | 'FAIL' | 'N/A';
+export type CoreGradeFilter = 'PASS' | 'HOLD' | 'FAIL' | 'N/A';
 export type RuleStatus = 'PASS' | 'FAIL' | 'N/A';
 export type ValuationStatus =
   | 'PASS_WITH_MARGIN'
@@ -263,7 +264,7 @@ export interface StockListQuery {
   search?: string;
   market?: Market;
   sector?: string;
-  coreStatus?: CoreStatus;
+  coreStatus?: CoreGradeFilter;
   valuationStatus?: ValuationStatus;
   sort?: 'ticker' | 'currentPrice' | 'conservativeMarginOfSafety';
   order?: 'asc' | 'desc';
@@ -274,6 +275,8 @@ export interface StockListQuery {
 
 - 쿼리는 `URLSearchParams`로 생성하여 문자열 결합과 누락된 인코딩을 피합니다.
 - `undefined`와 빈 검색어는 전송하지 않습니다.
+- 응답의 `coreStatus`는 실제 규칙 판정인 `CoreStatus`이고, 같은 이름의 목록 쿼리는
+  통과 개수 기반 화면 등급인 `CoreGradeFilter`를 사용합니다.
 - `limit`은 1~200, `offset`은 0 이상으로 FE 컨트롤에서도 제한합니다.
 - 시장 UI는 1차에서 `ALL/NASDAQ/NYSE/KOSPI/KOSDAQ`으로 구성합니다. BE가 단일
   `market`만 받으므로 `US/KR` 그룹을 위해 여러 요청을 합치는 로직은 추가하지
@@ -372,7 +375,9 @@ success + 다음 페이지 요청 -> 기존 items 유지 + loadingMore
 
 전체 건수는 목록 응답의 `total`을 사용합니다. PASS 건수가 꼭 필요한 경우 같은
 검색·시장 조건에 `coreStatus=PASS&limit=1`을 적용한 별도 목록 응답의 `total`을
-사용합니다. 현재 페이지의 항목 수로 전체 PASS 건수를 추정하지 않습니다.
+사용합니다. 이 PASS는 핵심 규칙을 5개 이상 통과한 화면 등급이며, 응답의 실제
+`coreStatus`가 FAIL인 종목도 포함할 수 있습니다. 현재 페이지의 항목 수로 전체
+PASS 건수를 추정하지 않습니다.
 
 ### 4.3 상세 화면
 

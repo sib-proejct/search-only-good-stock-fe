@@ -15,6 +15,7 @@ export type CapitalActionStatus = Schemas['CapitalActionStatus'];
 export type ValuationStatus = Schemas['ValuationStatus'];
 export type Confidence = Schemas['Confidence'];
 export type CoreStatus = Schemas['CoreStatus'];
+export type CoreGradeFilter = Schemas['CoreGradeFilter'];
 export type RuleDefinitionCategory = Schemas['RuleDefinitionCategory'];
 export type Applicability = Schemas['Applicability'];
 export type ReasonCode = Schemas['ReasonCode'];

@@ -1,6 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useStocks, MarketFilter, CoreStatusFilter } from '../hooks/useStocks';
+import {
+  useStocks,
+  MarketFilter,
+  CoreGradeFilterOption,
+} from '../hooks/useStocks';
 import {
   CheckCircle2,
   ChevronDown,
@@ -37,8 +41,8 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
     setSearchQuery,
     market,
     setMarket,
-    coreStatus,
-    setCoreStatus,
+    coreGradeFilter,
+    setCoreGradeFilter,
     sortField,
     setSortField,
     sortOrder,
@@ -90,8 +94,11 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
 
   const currentMarketOption = marketOptions.find((o) => o.id === market) || marketOptions[0];
 
-  // Core Status Options
-  const coreStatusOptions: { id: CoreStatusFilter; label: string }[] = [
+  // Core Grade Filter Options
+  const coreGradeFilterOptions: {
+    id: CoreGradeFilterOption;
+    label: string;
+  }[] = [
     { id: 'ALL', label: t('allStatuses') },
     { id: 'PASS', label: t('coreStatusPass') },
     { id: 'HOLD', label: t('coreStatusHold') },
@@ -271,12 +278,12 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
 
           {/* Core Status Capsule Ribbon */}
           <div className="inline-flex w-fit bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 rounded-2xl border border-black/[0.04] dark:border-white/[0.06] items-center gap-1 overflow-x-auto scrollbar-none shrink-0">
-            {coreStatusOptions.map((opt) => {
-              const isActive = coreStatus === opt.id;
+            {coreGradeFilterOptions.map((opt) => {
+              const isActive = coreGradeFilter === opt.id;
               return (
                 <button
                   key={opt.id}
-                  onClick={() => setCoreStatus(opt.id)}
+                  onClick={() => setCoreGradeFilter(opt.id)}
                   className={`px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-[13px] rounded-xl whitespace-nowrap transition-all duration-200 select-none cursor-pointer focus:outline-none shrink-0 ${isActive
                       ? 'bg-white dark:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-bold shadow-sm border border-black/[0.04] dark:border-white/[0.06]'
                       : 'text-[#8B95A1] dark:text-[#86868B] hover:text-[#191F28] dark:hover:text-[#F5F5F7] font-medium hover:bg-white/40 dark:hover:bg-white/5'
