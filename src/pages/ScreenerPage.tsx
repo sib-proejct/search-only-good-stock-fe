@@ -111,6 +111,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
   // Sort Options
   const sortOptions: { id: StockSort; label: string }[] = [
     { id: 'conservativeMarginOfSafety', label: t('sortMargin') },
+    { id: 'corePassCount', label: t('sortPassCount') },
     { id: 'marketCap', label: t('sortMarketCap') },
     { id: 'ticker', label: t('sortTicker') },
   ];
@@ -485,7 +486,10 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                                 : 'text-[#86868B]'
                             }`}
                           >
-                            {stock.corePassCount}P
+                            {stock.coreStatus}
+                          </span>
+                          <span className="text-[10px] text-[#86868B] font-mono tabular-nums ml-0.5">
+                            (<span className="text-[#34C759] font-medium">{stock.corePassCount}</span>/<span className="text-[#FF3B30] font-medium">{stock.coreFailCount}</span>/<span className="font-medium text-[#86868B] dark:text-[#636366]">{stock.coreNaCount}</span>)
                           </span>
                         </span>
                       </div>
@@ -524,11 +528,13 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                 <thead>
                   <tr className="border-b border-black/[0.05] dark:border-white/[0.06] text-xs font-medium text-[#86868B] whitespace-nowrap">
                     <th className="py-4 pl-6 sm:pl-7 pr-3 w-16 sm:w-20 whitespace-nowrap">{t('rank')}</th>
-                    <th className="py-4 px-4 min-w-[220px] whitespace-nowrap">{t('company')}</th>
+                    <th className="py-4 px-4 min-w-[150px] whitespace-nowrap">{t('company')}</th>
                     <th className="py-4 px-4 text-right whitespace-nowrap">{t('price')}</th>
                     <th className="py-4 px-4 text-right whitespace-nowrap">{t('marketCapLabel')}</th>
                     <th className="py-4 px-4 text-center whitespace-nowrap">{t('coreStatusLabel')}</th>
+                    <th className="py-4 px-4 text-center whitespace-nowrap">{t('coreRulesLabel')}</th>
                     <th className="py-4 px-4 text-center whitespace-nowrap">{t('valuationStatusLabel')}</th>
+                    <th className="py-4 px-4 text-right whitespace-nowrap">{t('intrinsicValue')}</th>
                     <th className="py-4 px-4 text-right whitespace-nowrap">{t('marginOfSafety')}</th>
                     <th className="py-4 pr-6 sm:pr-7 pl-4 text-center whitespace-nowrap">{t('confidence')}</th>
                   </tr>
@@ -554,7 +560,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                             <span className="font-bold text-[#1D1D1F] dark:text-[#F5F5F7] group-hover:text-[#0071E3] dark:group-hover:text-[#2997FF] transition-colors font-mono whitespace-nowrap">
                               {stock.ticker}
                             </span>
-                            <span className="text-[#86868B] font-normal text-xs truncate max-w-[160px] lg:max-w-[240px]">
+                            <span className="text-[#86868B] font-normal text-xs truncate max-w-[100px] lg:max-w-[140px]">
                               {stock.name}
                             </span>
                             <span className="text-[10px] font-mono text-[#86868B] px-1.5 py-0.5 bg-black/[0.04] dark:bg-white/[0.06] rounded">
@@ -604,25 +610,21 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                             >
                               {stock.coreStatus}
                             </span>
-                            <span className="text-[10px] font-mono text-[#86868B] tabular-nums">
-                              ({stock.corePassCount}P/{stock.coreFailCount}F/{stock.coreNaCount}NA)
-                            </span>
                           </div>
+                        </td>
+
+                        {/* Core Rules Breakdown (P / F / NA) */}
+                        <td className="py-4 px-4 text-center whitespace-nowrap font-mono text-xs tabular-nums">
+                          <span className="font-semibold text-[#34C759]">{stock.corePassCount}</span>
+                          <span className="text-[#86868B] dark:text-[#636366]">/</span>
+                          <span className="font-semibold text-[#FF3B30]">{stock.coreFailCount}</span>
+                          <span className="text-[#86868B] dark:text-[#636366]">/</span>
+                          <span className="font-semibold text-[#86868B] dark:text-[#636366]">{stock.coreNaCount}</span>
                         </td>
 
                         {/* Valuation Status */}
                         <td className="py-4 px-4 text-center whitespace-nowrap">
-                          <span
-                            className={`text-[11px] font-semibold ${
-                              stock.valuationStatus === 'PASS_WITH_MARGIN'
-                                ? 'text-[#34C759]'
-                                : stock.valuationStatus === 'WATCH'
-                                ? 'text-[#FF9500]'
-                                : stock.valuationStatus === 'NO_MARGIN'
-                                ? 'text-[#FF3B30]'
-                                : 'text-[#86868B]'
-                            }`}
-                          >
+                          <span className="text-[11px] font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
                             {stock.valuationStatus === 'PASS_WITH_MARGIN'
                               ? t('valuationPassWithMargin')
                               : stock.valuationStatus === 'WATCH'
@@ -633,16 +635,13 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                           </span>
                         </td>
 
+                        {/* Intrinsic Value */}
+                        <td className="py-4 px-4 text-right font-mono font-semibold tabular-nums whitespace-nowrap text-[#1D1D1F] dark:text-[#F5F5F7]">
+                          {formatPrice(stock.conservativeIntrinsicValue, stock.currency)}
+                        </td>
+
                         {/* Margin of Safety */}
-                        <td
-                          className={`py-4 px-4 text-right font-mono font-semibold tabular-nums whitespace-nowrap ${
-                            stock.conservativeMarginOfSafety !== null && stock.conservativeMarginOfSafety >= 0
-                              ? 'text-[#34C759]'
-                              : stock.conservativeMarginOfSafety !== null
-                              ? 'text-[#FF3B30]'
-                              : 'text-[#86868B]'
-                          }`}
-                        >
+                        <td className="py-4 px-4 text-right font-mono font-semibold tabular-nums whitespace-nowrap text-[#1D1D1F] dark:text-[#F5F5F7]">
                           {formatPercent(stock.conservativeMarginOfSafety)}
                         </td>
 

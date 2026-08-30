@@ -409,7 +409,11 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                   {stock.coreStatus}
                 </span>
                 <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06] font-mono tabular-nums">
-                  {stock.corePassCount}P / {stock.coreFailCount}F / {stock.coreNaCount}NA
+                  <span className="font-semibold text-[#34C759]">{stock.corePassCount}P</span>
+                  <span className="text-[#86868B] dark:text-[#636366] mx-1">/</span>
+                  <span className="font-semibold text-[#FF3B30]">{stock.coreFailCount}F</span>
+                  <span className="text-[#86868B] dark:text-[#636366] mx-1">/</span>
+                  <span className="font-semibold text-[#FF9500]">{stock.coreNaCount}NA</span>
                 </div>
               </div>
             </div>
