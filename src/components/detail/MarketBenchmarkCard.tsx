@@ -7,6 +7,8 @@ import {
 } from '../../types/api';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
 import { Landmark, ChevronDown, Calendar } from 'lucide-react';
+import { HelpPopover } from '../common/HelpPopover';
+import { MARKET_BENCHMARK_GLOSSARY } from '../../utils/glossaryData';
 
 interface MarketBenchmarkCardProps {
   currentMarket: CurrentMarketDTO;
@@ -80,6 +82,7 @@ export const MarketBenchmarkCard: React.FC<MarketBenchmarkCardProps> = ({
             <h2 className="text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
               {isKo ? '시장 지표 & 벤치마크 (Market Snapshot)' : 'Market Snapshot & Benchmark'}
             </h2>
+            <HelpPopover content={MARKET_BENCHMARK_GLOSSARY.header(language)} align="left" />
           </div>
           <p className="text-xs text-[#86868B] mt-0.5 font-normal">
             {isKo
@@ -126,9 +129,12 @@ export const MarketBenchmarkCard: React.FC<MarketBenchmarkCardProps> = ({
         </div>
 
         <div className="p-3.5 rounded-2xl bg-[#FBFBFD] dark:bg-[#252528]/50 border border-black/[0.04] dark:border-white/[0.06]">
-          <span className="text-[10px] text-[#86868B] uppercase font-semibold block">
-            {isKo ? '무위험수익률 (10년물 국채)' : 'Risk-Free Rate (10Y)'}
-          </span>
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-[#86868B] uppercase font-semibold truncate">
+              {isKo ? '무위험수익률 (10년물 국채)' : 'Risk-Free Rate (10Y)'}
+            </span>
+            <HelpPopover content={MARKET_BENCHMARK_GLOSSARY.riskFreeRate(language)} align="left" iconSize={12} />
+          </div>
           <span className="font-mono text-base sm:text-lg font-bold text-[#0071E3] dark:text-[#2997FF] tabular-nums mt-1 block">
             {riskFreeRateNum !== null && !isNaN(riskFreeRateNum)
               ? `${(riskFreeRateNum * 100).toFixed(2)}%`
@@ -141,11 +147,14 @@ export const MarketBenchmarkCard: React.FC<MarketBenchmarkCardProps> = ({
       {benchmarkPoints && benchmarkPoints.length > 0 && (
         <div className="p-4 rounded-2xl bg-[#F5F5F7]/80 dark:bg-[#252528]/60 border border-black/[0.04] dark:border-white/[0.06] space-y-2">
           <div className="flex items-center justify-between text-xs font-bold text-[#1D1D1F] dark:text-[#F5F5F7]">
-            <span>
-              {isKo
-                ? '1달러 유보이익 테스트용 벤치마크 지수 (S&P 500 / KOSPI)'
-                : 'Benchmark Index Points (for 1-Dollar Test)'}
-            </span>
+            <div className="flex items-center gap-1">
+              <span>
+                {isKo
+                  ? '1달러 유보이익 테스트용 벤치마크 지수 (S&P 500 / KOSPI)'
+                  : 'Benchmark Index Points (for 1-Dollar Test)'}
+              </span>
+              <HelpPopover content={MARKET_BENCHMARK_GLOSSARY.benchmarkPoints(language)} align="left" />
+            </div>
             <span className="font-mono text-[11px] text-[#86868B]">
               {isKo ? `${benchmarkPoints.length}개 기준 시점` : `${benchmarkPoints.length} Points`}
             </span>
@@ -178,21 +187,31 @@ export const MarketBenchmarkCard: React.FC<MarketBenchmarkCardProps> = ({
       {/* Collapsible Quarterly Book Prices */}
       {quarterlyBookPrices && quarterlyBookPrices.length > 0 && (
         <div className="pt-2">
-          <button
-            onClick={() => setShowQuarterly(!showQuarterly)}
-            className="w-full flex items-center justify-between text-xs font-bold text-[#6E6E73] dark:text-[#86868B] hover:text-[#0071E3] dark:hover:text-[#2997FF] py-2 transition-colors cursor-pointer select-none"
-          >
-            <span>
-              {isKo
-                ? `분기별 주당순자산가치(BVPS) 및 주가 히스토리 (${quarterlyBookPrices.length}개 분기)`
-                : `Quarterly BVPS & Stock Price History (${quarterlyBookPrices.length} Quarters)`}
-            </span>
-            <ChevronDown
-              className={`w-4 h-4 transition-transform duration-200 ${
-                showQuarterly ? 'rotate-180' : ''
-              }`}
-            />
-          </button>
+          <div className="w-full flex items-center justify-between py-2 gap-2">
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <button
+                onClick={() => setShowQuarterly(!showQuarterly)}
+                className="text-xs font-bold text-[#6E6E73] dark:text-[#86868B] hover:text-[#0071E3] dark:hover:text-[#2997FF] transition-colors cursor-pointer select-none text-left"
+              >
+                <span>
+                  {isKo
+                    ? `분기별 주당순자산가치(BVPS) 및 주가 히스토리 (${quarterlyBookPrices.length}개 분기)`
+                    : `Quarterly BVPS & Stock Price History (${quarterlyBookPrices.length} Quarters)`}
+                </span>
+              </button>
+              <HelpPopover content={MARKET_BENCHMARK_GLOSSARY.quarterlyBvps(language)} align="left" iconSize={12} />
+            </div>
+            <button
+              onClick={() => setShowQuarterly(!showQuarterly)}
+              className="p-1 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors cursor-pointer shrink-0"
+            >
+              <ChevronDown
+                className={`w-4 h-4 transition-transform duration-200 ${
+                  showQuarterly ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+          </div>
 
           {showQuarterly && (
             <div className="mt-3 overflow-x-auto max-h-60 overflow-y-auto border border-black/[0.04] dark:border-white/[0.06] rounded-2xl">

@@ -10,11 +10,14 @@ import {
   TrendingDown,
   AlertTriangle,
   CheckCircle2,
-  HelpCircle,
+  AlertCircle,
   ShieldAlert,
   Info,
   Calendar,
+  PieChart,
 } from 'lucide-react';
+import { HelpPopover } from '../common/HelpPopover';
+import { CAPITAL_ACTION_GLOSSARY } from '../../utils/glossaryData';
 
 interface CapitalActionCardProps {
   capitalAction: CapitalActionEvaluationDTO;
@@ -53,8 +56,8 @@ export const CapitalActionCard: React.FC<CapitalActionCardProps> = ({
       case 'N/A':
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#86868B] font-mono">
-            <HelpCircle className="w-3.5 h-3.5" />
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FF9500] font-mono">
+            <AlertCircle className="w-3.5 h-3.5" />
             <span>{isKo ? '평가 불가 (N/A)' : 'N/A'}</span>
           </span>
         );
@@ -111,11 +114,15 @@ export const CapitalActionCard: React.FC<CapitalActionCardProps> = ({
   return (
     <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-6 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between h-full space-y-5 transition-colors duration-300">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-black/[0.04] dark:border-white/[0.06]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-black/[0.04] dark:border-white/[0.06]">
         <div>
-          <h2 className="text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
-            {isKo ? '자본배치 및 주식 희석 검토 (Capital Action Review)' : t('capitalAllocationTitle')}
-          </h2>
+          <div className="flex items-center gap-2">
+            <PieChart className="w-5 h-5 text-[#0071E3] dark:text-[#2997FF]" />
+            <h2 className="text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
+              {isKo ? '자본배치 및 주식 희석 검토' : t('capitalAllocationTitle')}
+            </h2>
+            <HelpPopover content={CAPITAL_ACTION_GLOSSARY.header(language)} align="left" />
+          </div>
           <p className="text-xs text-[#86868B] mt-0.5 font-normal">
             {isKo
               ? '워런 버핏 소유주 원칙 기반 자본배치 효율성 및 주당가치 희석 점검'
@@ -129,9 +136,12 @@ export const CapitalActionCard: React.FC<CapitalActionCardProps> = ({
       <div className="space-y-4">
         <div className="p-4 rounded-2xl bg-[#FBFBFD] dark:bg-[#252528]/50 border border-black/[0.03] dark:border-white/[0.04] space-y-2">
           <div className="flex items-baseline justify-between">
-            <span className="text-xs font-semibold text-[#86868B]">
-              {isKo ? '5개년 희석주식수 연평균 증감률 (5Y CAGR)' : '5-Year Diluted Shares CAGR'}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-semibold text-[#86868B]">
+                {isKo ? '5개년 희석주식수 연평균 증감률 (5Y CAGR)' : '5-Year Diluted Shares CAGR'}
+              </span>
+              <HelpPopover content={CAPITAL_ACTION_GLOSSARY.dilutionMetric(language)} align="left" />
+            </div>
             <span className="font-mono text-xl sm:text-2xl font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
               {dilutionMetric && dilutionMetric.value !== null
                 ? `${(dilutionMetric.value * 100).toFixed(2)}%`

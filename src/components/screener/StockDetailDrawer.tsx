@@ -11,7 +11,7 @@ import {
   Calendar,
   CheckCircle2,
   XCircle,
-  HelpCircle,
+  AlertCircle,
   ShieldCheck,
   TrendingUp,
   AlertTriangle,
@@ -355,8 +355,8 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                     </span>
                   )}
                   {stock.coreStatus === 'N/A' && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#86868B]">
-                      <HelpCircle className="w-3.5 h-3.5" />
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FF9500]">
+                      <AlertCircle className="w-3.5 h-3.5" />
                       <span>{t('na')}</span>
                     </span>
                   )}

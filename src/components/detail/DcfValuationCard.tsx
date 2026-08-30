@@ -11,10 +11,12 @@ import {
   AlertTriangle,
   Info,
   CheckCircle2,
-  HelpCircle,
+  AlertCircle,
   XCircle,
   Eye,
 } from 'lucide-react';
+import { HelpPopover } from '../common/HelpPopover';
+import { DCF_GLOSSARY } from '../../utils/glossaryData';
 
 interface DcfValuationCardProps {
   dcf: DcfResultDTO;
@@ -77,8 +79,8 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
       case 'N/A':
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#86868B] font-mono">
-            <HelpCircle className="w-3.5 h-3.5" />
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FF9500] font-mono">
+            <AlertCircle className="w-3.5 h-3.5" />
             <span>{t('valuationNa')}</span>
           </span>
         );
@@ -122,6 +124,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
             <h2 className="text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
               {isKo ? '10개년 주주이익 DCF 내재가치 평가' : t('dcfIntrinsicValue')}
             </h2>
+            <HelpPopover content={DCF_GLOSSARY.header(language)} align="left" />
           </div>
           <p className="text-xs text-[#86868B] mt-0.5 font-normal">
             {isKo
@@ -137,9 +140,12 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Conservative Intrinsic Value */}
           <div className="p-4 rounded-2xl bg-[#FBFBFD] dark:bg-[#252528]/50 border border-black/[0.04] dark:border-white/[0.06]">
-            <span className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider block">
-              {isKo ? '보수적 추정 내재가치' : t('fairValueEstimate')}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">
+                {isKo ? '보수적 추정 내재가치' : t('fairValueEstimate')}
+              </span>
+              <HelpPopover content={DCF_GLOSSARY.conservativeIV(language)} align="left" iconSize={12} />
+            </div>
             <div className="text-xl sm:text-2xl font-bold font-mono text-[#0071E3] dark:text-[#2997FF] tracking-tight tabular-nums mt-1">
               {formatPrice(conservativeIV)}
             </div>
@@ -163,9 +169,12 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
 
           {/* Conservative Margin of Safety */}
           <div className="p-4 rounded-2xl bg-[#FBFBFD] dark:bg-[#252528]/50 border border-black/[0.04] dark:border-white/[0.06]">
-            <span className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider block">
-              {isKo ? '보수적 안전마진' : t('marginOfSafety')}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">
+                {isKo ? '보수적 안전마진' : t('marginOfSafety')}
+              </span>
+              <HelpPopover content={DCF_GLOSSARY.marginOfSafety(language)} align="left" iconSize={12} />
+            </div>
             <div
               className={`text-xl sm:text-2xl font-bold font-mono tracking-tight tabular-nums mt-1 ${dcf.conservativeMarginOfSafety !== null && dcf.conservativeMarginOfSafety >= 0.2
                   ? 'text-[#34C759]'
@@ -192,7 +201,10 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
         {dcf.scenarios ? (
           <div className="p-4 rounded-2xl bg-[#F5F5F7]/80 dark:bg-[#252528]/60 border border-black/[0.04] dark:border-white/[0.06] space-y-3">
             <div className="flex items-center justify-between text-xs font-bold text-[#1D1D1F] dark:text-[#F5F5F7]">
-              <span>{isKo ? 'DCF 시나리오별 주당 내재가치 비교' : 'DCF Scenarios: Intrinsic Value Comparison'}</span>
+              <div className="flex items-center gap-1">
+                <span>{isKo ? 'DCF 시나리오별 주당 내재가치 비교' : 'DCF Scenarios: Intrinsic Value Comparison'}</span>
+                <HelpPopover content={DCF_GLOSSARY.scenarios(language)} align="left" />
+              </div>
               <span className="font-mono text-[11px] text-[#86868B]">
                 {isKo ? '할인율(WACC)' : 'Discount Rate'}: {formatPercent(dcf.discountRate)}
               </span>

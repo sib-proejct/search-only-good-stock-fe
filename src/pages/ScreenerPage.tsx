@@ -156,7 +156,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
     : 'LIVE';
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-5 sm:space-y-6 animate-fade-in">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-5 sm:space-y-6 animate-fade-in">
       {/* 1. Hero Bento Grid (3 Cards Row) */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-5">
         {/* Card 1: Current Market Scan & Total Passed */}

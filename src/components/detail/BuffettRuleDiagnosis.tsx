@@ -18,11 +18,13 @@ import {
   ShieldCheck,
   CheckCircle2,
   XCircle,
-  HelpCircle,
+  AlertCircle,
   AlertTriangle,
   Info,
   Calendar,
 } from 'lucide-react';
+import { HelpPopover } from '../common/HelpPopover';
+import { getBuffettRuleGlossary } from '../../utils/glossaryData';
 
 interface BuffettRuleDiagnosisProps {
   evaluations: RuleEvaluationDTO[];
@@ -112,8 +114,8 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
       case 'N/A':
       default:
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#86868B] font-mono">
-            <HelpCircle className="w-3.5 h-3.5" />
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF9500] font-mono">
+            <AlertCircle className="w-3.5 h-3.5" />
             N/A
           </span>
         );
@@ -134,6 +136,19 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
             <h2 className="text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
               {t('buffett6RuleDiagnosis')}
             </h2>
+            <HelpPopover
+              align="left"
+              content={{
+                title: language === 'ko' ? '워런 버핏 11대 투자 원칙 진단 시스템' : 'Warren Buffett 11-Pillar Diagnosis',
+                badge: language === 'ko' ? '진단 시스템' : 'DIAGNOSIS SYSTEM',
+                description: language === 'ko'
+                  ? '워런 버핏의 경제적 해자(Moat), 재무 안전성, 소유주 주주이익 원칙을 기반으로 종목을 엄격히 평가하는 진단 모델입니다.'
+                  : 'Rigorous 11-pillar evaluation framework based on Warren Buffett economic moats, solvency, and owner earnings.',
+                whyItMatters: language === 'ko'
+                  ? '핵심 7원칙을 모두 통과(PASS)해야만 최종 적합 종목으로 판정되며, 한 가지 원칙이라도 미달하면 보수적으로 걸러냅니다.'
+                  : 'All core 7 rules must be satisfied to earn a PASS rating.',
+              }}
+            />
           </div>
           <p className="text-xs text-[#86868B] mt-1 font-normal">
             {language === 'ko'
@@ -160,6 +175,7 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
           const ruleInfo = getRuleInfo(evalItem.ruleId, language, ruleDef?.name);
           const criteriaText = formatCriteria(ruleDef, currency, language);
           const categoryLabel = getCategoryBadgeLabel(evalItem.category, language);
+          const ruleGlossary = getBuffettRuleGlossary(evalItem.ruleId, language);
 
           return (
             <div
@@ -191,9 +207,12 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
                 </div>
 
                 {/* Friendly Title & Subtitle */}
-                <h3 className="text-xs sm:text-[13px] font-bold text-[#1D1D1F] dark:text-[#F5F5F7] leading-snug">
-                  {ruleInfo.title}
-                </h3>
+                <div className="flex items-center gap-1">
+                  <h3 className="text-xs sm:text-[13px] font-bold text-[#1D1D1F] dark:text-[#F5F5F7] leading-snug">
+                    {ruleInfo.title}
+                  </h3>
+                  <HelpPopover content={ruleGlossary} align="left" iconSize={13} />
+                </div>
                 <p className="text-[11px] text-[#86868B] mt-0.5 leading-normal">
                   {ruleInfo.subtitle}
                 </p>

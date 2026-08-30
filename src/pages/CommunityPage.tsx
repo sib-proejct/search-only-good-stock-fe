@@ -442,7 +442,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
         paddingRight: isPanelOpenOnDesktop ? `${drawerWidth}px` : 0,
         transition: isDrawerResizing ? 'none' : 'padding-right 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
-      className="max-w-[1280px] mx-auto px-4 sm:px-8 py-6 space-y-6 animate-fade-in font-sans"
+      className="max-w-[1600px] mx-auto px-4 sm:px-8 py-6 space-y-6 animate-fade-in font-sans"
     >
 
       {/* Toast Feedback Notification */}

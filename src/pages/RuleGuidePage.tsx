@@ -6,10 +6,12 @@ import {
   X,
   TrendingUp,
   Sparkles,
+  Calculator,
 } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import { GuideType } from '../components/common/TopNavBar';
 import { RuleDefinitionCategory } from '../types/api';
+import { RuleMathFormula } from '../components/common/MathFormula';
 
 interface RuleGuidePageProps {
   activeGuide?: GuideType;
@@ -599,6 +601,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
     {
       id: 1,
       num: '01',
+      ruleId: 'peg_ratio',
       category: language === 'ko' ? '성장 대비 저평가' : 'GARP Valuation',
       targetHurdle: 'PEG Ratio ≤ 1.0',
       title:
@@ -635,6 +638,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
     {
       id: 2,
       num: '02',
+      ruleId: 'sustainable_growth',
       category: language === 'ko' ? '건전한 이익 복리' : 'Sustainable Growth',
       targetHurdle: '15.0% ≤ EPS CAGR ≤ 30.0%',
       title:
@@ -670,6 +674,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
     {
       id: 3,
       num: '03',
+      ruleId: 'debt_to_equity',
       category: language === 'ko' ? '재무 안전성 & 순현금' : 'Net Cash & Solvency',
       targetHurdle: 'Debt / Equity ≤ 50.0%',
       title:
@@ -705,6 +710,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
     {
       id: 4,
       num: '04',
+      ruleId: 'cash_flow_realization',
       category: language === 'ko' ? '영업현금흐름 건전성' : 'Cash Flow Realization',
       targetHurdle: 'Operating Cash Flow > Net Income',
       title:
@@ -775,7 +781,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
   };
 
   return (
-    <div className="max-w-[780px] mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8 animate-fade-in transition-colors duration-300">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-8 sm:py-12 space-y-8 animate-fade-in transition-colors duration-300">
       {/* 1. Editorial Header Section */}
       <header className="space-y-4 pb-8 border-b border-black/[0.08] dark:border-white/[0.10]">
         {/* Top Controls: Eyebrow + Guide Switcher Pill */}
@@ -809,11 +815,10 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                 navigate('/guide/buffett');
                 setSelectedCategory('ALL');
               }}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                activeGuide === 'buffett'
-                  ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-xs'
-                  : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
-              }`}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeGuide === 'buffett'
+                ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-xs'
+                : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
+                }`}
             >
               {t('guideBuffett')}
             </button>
@@ -822,11 +827,10 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                 navigate('/guide/lynch');
                 setSelectedCategory('ALL');
               }}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                activeGuide === 'lynch'
-                  ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-xs'
-                  : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
-              }`}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeGuide === 'lynch'
+                ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-xs'
+                : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
+                }`}
             >
               {t('guideLynch')}
             </button>
@@ -887,11 +891,10 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer border ${
-                      isSelected
-                        ? 'bg-[#1D1D1F] dark:bg-[#F5F5F7] text-white dark:text-[#1D1D1F] border-transparent shadow-xs'
-                        : 'bg-[#F5F5F7] dark:bg-[#1C1C1E] text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] border-black/[0.04] dark:border-white/[0.08]'
-                    }`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer border ${isSelected
+                      ? 'bg-[#1D1D1F] dark:bg-[#F5F5F7] text-white dark:text-[#1D1D1F] border-transparent shadow-xs'
+                      : 'bg-[#F5F5F7] dark:bg-[#1C1C1E] text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] border-black/[0.04] dark:border-white/[0.08]'
+                      }`}
                   >
                     {label}
                   </button>
@@ -904,7 +907,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
 
       {/* Peter Lynch Engine Status Notice Banner */}
       {activeGuide === 'lynch' && (
-        <div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 text-amber-900 dark:text-amber-200 flex items-start gap-3.5">
+        <div className="w-fit max-w-full rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 text-amber-900 dark:text-amber-200 flex items-start gap-3.5">
           <Sparkles className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
           <div className="space-y-1">
             <h4 className="text-xs sm:text-sm font-bold text-amber-800 dark:text-amber-300">
@@ -917,7 +920,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
         </div>
       )}
 
-      {/* 2. Editorial Rules List */}
+      {/* 2. Editorial Rules List (1-Column Layout with Content-Fitted Boxes) */}
       <div className="divide-y divide-black/[0.08] dark:divide-white/[0.10]">
         {activeGuide === 'buffett' ? (
           filteredBuffettRules.map((rule) => (
@@ -963,7 +966,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
               </div>
 
               {/* Editorial Pull-Quote (NYT Style Quote Box) */}
-              <figure className="pl-4 sm:pl-5 border-l-2 border-[#0071E3] dark:border-[#2997FF] space-y-2 py-0.5">
+              <figure className="w-fit max-w-full pl-4 sm:pl-5 border-l-2 border-[#0071E3] dark:border-[#2997FF] space-y-2 py-0.5">
                 <blockquote className="font-serif italic text-[15px] sm:text-[16px] text-[#1D1D1F] dark:text-[#F5F5F7] leading-[1.75]">
                   {rule.quote}
                 </blockquote>
@@ -974,7 +977,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
               </figure>
 
               {/* Objective Section */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 max-w-5xl">
                 <h3 className="text-xs font-semibold text-[#86868B] uppercase tracking-wider">
                   {t('objective')}
                 </h3>
@@ -983,10 +986,10 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                 </p>
               </div>
 
-              {/* Criteria & Formula Section */}
+              {/* Criteria & Formula Section (Fitted to content) */}
               <div className="space-y-3 pt-1">
-                {/* Pass / Fail Criteria */}
-                <div className="rounded-xl bg-[#F5F5F7] dark:bg-[#1E1E20] p-4 sm:p-5 space-y-3 border border-black/[0.04] dark:border-white/[0.06]">
+                {/* Pass / Fail Criteria Box */}
+                <div className="w-fit max-w-full rounded-xl bg-[#F5F5F7] dark:bg-[#1E1E20] p-4 sm:p-5 space-y-3 border border-black/[0.04] dark:border-white/[0.06]">
                   {/* Pass */}
                   <div className="flex items-start gap-2.5">
                     <div className="w-4 h-4 rounded-full bg-[#34C759]/15 text-[#34C759] flex items-center justify-center shrink-0 mt-0.5">
@@ -1019,23 +1022,28 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                 </div>
 
                 {/* Formula Block */}
-                <div className="rounded-xl bg-[#FBFBFD] dark:bg-[#171719] border border-black/[0.06] dark:border-white/[0.08] p-4 space-y-2">
-                  <div className="flex items-center justify-between text-xs text-[#86868B]">
-                    <span className="font-semibold uppercase tracking-wider">
-                      {t('formula')}
-                    </span>
-                    <span className="font-mono text-[11px] text-[#0071E3] dark:text-[#2997FF]">
+                <div className="w-full max-w-4xl rounded-2xl bg-[#FBFBFD] dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] p-4 sm:p-5 space-y-3.5 shadow-xs transition-colors">
+                  <div className="flex items-center justify-between gap-4 text-xs text-[#86868B]">
+                    <div className="flex items-center gap-1.5 font-semibold uppercase tracking-wider text-[#1D1D1F] dark:text-[#F5F5F7]">
+                      <Calculator className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />
+                      <span>{t('formula')}</span>
+                    </div>
+                    <span className="font-mono text-[11px] text-[#0071E3] dark:text-[#2997FF] bg-[#0071E3]/10 dark:bg-[#2997FF]/15 px-2.5 py-0.5 rounded-full font-medium">
                       {rule.conditionText}
                     </span>
                   </div>
-                  <div className="font-mono text-xs sm:text-[13px] text-[#1D1D1F] dark:text-[#F5F5F7] bg-black/[0.03] dark:bg-white/[0.05] p-2.5 rounded-lg overflow-x-auto whitespace-pre-wrap">
-                    {rule.formula}
+
+                  {/* Real Mathematical Formula Display */}
+                  <div className="w-full bg-white dark:bg-[#1C1C1E] p-3.5 sm:p-4 rounded-xl border border-black/[0.04] dark:border-white/[0.06] overflow-x-auto">
+                    <RuleMathFormula ruleId={rule.ruleId} language={language} />
                   </div>
-                  <div className="text-[11px] text-[#86868B] pt-1">
+
+                  {/* Benchmark & Note */}
+                  <div className="text-xs text-[#86868B] pt-0.5 flex items-center gap-1.5">
                     <span className="font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">
                       {language === 'ko' ? '대표 벤치마크' : 'Benchmark'}:
                     </span>{' '}
-                    {rule.benchmarkStock}
+                    <span>{rule.benchmarkStock}</span>
                   </div>
                 </div>
               </div>
@@ -1067,7 +1075,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
               </h2>
 
               {/* Editorial Pull-Quote */}
-              <figure className="pl-4 sm:pl-5 border-l-2 border-[#0071E3] dark:border-[#2997FF] space-y-2 py-0.5">
+              <figure className="w-fit max-w-full pl-4 sm:pl-5 border-l-2 border-[#0071E3] dark:border-[#2997FF] space-y-2 py-0.5">
                 <blockquote className="font-serif italic text-[15px] sm:text-[16px] text-[#1D1D1F] dark:text-[#F5F5F7] leading-[1.75]">
                   {rule.quote}
                 </blockquote>
@@ -1077,7 +1085,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
               </figure>
 
               {/* Objective Section */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 max-w-5xl">
                 <h3 className="text-xs font-semibold text-[#86868B] uppercase tracking-wider">
                   {t('objective')}
                 </h3>
@@ -1086,10 +1094,10 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                 </p>
               </div>
 
-              {/* Criteria & Formula Section */}
+              {/* Criteria & Formula Section (Fitted to content) */}
               <div className="space-y-3 pt-1">
-                {/* Pass / Fail Criteria */}
-                <div className="rounded-xl bg-[#F5F5F7] dark:bg-[#1E1E20] p-4 sm:p-5 space-y-3 border border-black/[0.04] dark:border-white/[0.06]">
+                {/* Pass / Fail Criteria Box */}
+                <div className="w-fit max-w-full rounded-xl bg-[#F5F5F7] dark:bg-[#1E1E20] p-4 sm:p-5 space-y-3 border border-black/[0.04] dark:border-white/[0.06]">
                   {/* Pass */}
                   <div className="flex items-start gap-2.5">
                     <div className="w-4 h-4 rounded-full bg-[#34C759]/15 text-[#34C759] flex items-center justify-center shrink-0 mt-0.5">
@@ -1122,23 +1130,28 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                 </div>
 
                 {/* Formula Block */}
-                <div className="rounded-xl bg-[#FBFBFD] dark:bg-[#171719] border border-black/[0.06] dark:border-white/[0.08] p-4 space-y-2">
-                  <div className="flex items-center justify-between text-xs text-[#86868B]">
-                    <span className="font-semibold uppercase tracking-wider">
-                      {t('formula')}
-                    </span>
-                    <span className="font-mono text-[11px] text-[#0071E3] dark:text-[#2997FF]">
+                <div className="w-full max-w-4xl rounded-2xl bg-[#FBFBFD] dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] p-4 sm:p-5 space-y-3.5 shadow-xs transition-colors">
+                  <div className="flex items-center justify-between gap-4 text-xs text-[#86868B]">
+                    <div className="flex items-center gap-1.5 font-semibold uppercase tracking-wider text-[#1D1D1F] dark:text-[#F5F5F7]">
+                      <Calculator className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />
+                      <span>{t('formula')}</span>
+                    </div>
+                    <span className="font-mono text-[11px] text-[#0071E3] dark:text-[#2997FF] bg-[#0071E3]/10 dark:bg-[#2997FF]/15 px-2.5 py-0.5 rounded-full font-medium">
                       {rule.conditionText}
                     </span>
                   </div>
-                  <div className="font-mono text-xs sm:text-[13px] text-[#1D1D1F] dark:text-[#F5F5F7] bg-black/[0.03] dark:bg-white/[0.05] p-2.5 rounded-lg overflow-x-auto whitespace-pre-wrap">
-                    {rule.formula}
+
+                  {/* Real Mathematical Formula Display */}
+                  <div className="w-full bg-white dark:bg-[#1C1C1E] p-3.5 sm:p-4 rounded-xl border border-black/[0.04] dark:border-white/[0.06] overflow-x-auto">
+                    <RuleMathFormula ruleId={rule.ruleId} language={language} />
                   </div>
-                  <div className="text-[11px] text-[#86868B] pt-1">
+
+                  {/* Benchmark & Note */}
+                  <div className="text-xs text-[#86868B] pt-0.5 flex items-center gap-1.5">
                     <span className="font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">
                       {language === 'ko' ? '대표 벤치마크' : 'Benchmark'}:
                     </span>{' '}
-                    {rule.benchmarkStock}
+                    <span>{rule.benchmarkStock}</span>
                   </div>
                 </div>
               </div>

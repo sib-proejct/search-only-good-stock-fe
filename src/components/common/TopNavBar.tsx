@@ -72,7 +72,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-[#FBFBFD]/90 dark:bg-black/85 backdrop-blur-xl border-b border-black/[0.04] dark:border-white/[0.08] transition-colors duration-300">
-      <div className="max-w-[1280px] mx-auto px-3 sm:px-8 h-14 sm:h-18 flex items-center justify-between gap-1.5 sm:gap-4">
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-8 h-14 sm:h-18 flex items-center justify-between gap-1.5 sm:gap-4">
 
         {/* Mobile Search Overlay */}
         {showMobileSearch ? (

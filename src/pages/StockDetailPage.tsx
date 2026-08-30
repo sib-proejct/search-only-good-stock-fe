@@ -26,7 +26,7 @@ import {
   Calendar,
   CheckCircle2,
   XCircle,
-  HelpCircle,
+  AlertCircle,
   RotateCcw,
   Search,
 } from 'lucide-react';
@@ -238,7 +238,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   // 1. Empty Prompt State (when no ticker selected)
   if (!currentTicker) {
     return (
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-20 text-center space-y-4 animate-fade-in">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-20 text-center space-y-4 animate-fade-in">
         <div className="w-14 h-14 rounded-3xl bg-[#0071E3]/10 dark:bg-[#2997FF]/15 flex items-center justify-center mx-auto text-[#0071E3] dark:text-[#2997FF]">
           <Search className="w-7 h-7" />
         </div>
@@ -263,7 +263,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   // 2. Loading State
   if (loading) {
     return (
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-24 text-center space-y-3 animate-fade-in">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-24 text-center space-y-3 animate-fade-in">
         <div className="inline-block w-8 h-8 border-2 border-[#0071E3] dark:border-[#2997FF] border-t-transparent rounded-full animate-spin" />
         <p className="text-[#86868B] text-xs font-medium">
           {t('loadingStocks')}
@@ -275,7 +275,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   // 3. 404 Not Found State
   if (is404) {
     return (
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-20 text-center space-y-4 animate-fade-in">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-20 text-center space-y-4 animate-fade-in">
         <div className="w-14 h-14 rounded-3xl bg-[#FF9500]/10 flex items-center justify-center mx-auto text-[#FF9500]">
           <AlertTriangle className="w-7 h-7" />
         </div>
@@ -300,7 +300,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   // 4. General Error State
   if (error || !detail) {
     return (
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-20 text-center space-y-4 animate-fade-in">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-20 text-center space-y-4 animate-fade-in">
         <div className="w-14 h-14 rounded-3xl bg-[#FF3B30]/10 flex items-center justify-center mx-auto text-[#FF3B30]">
           <AlertTriangle className="w-7 h-7" />
         </div>
@@ -330,7 +330,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   }
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-6 animate-fade-in">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-6 animate-fade-in">
       {/* 1. Sub Header: Back Button & Stock Switcher Dropdown */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <button
@@ -477,8 +477,8 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
                 </span>
               )}
               {detail.coreStatus === 'N/A' && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#86868B]">
-                  <HelpCircle className="w-3.5 h-3.5" />
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FF9500]">
+                  <AlertCircle className="w-3.5 h-3.5" />
                   <span className="font-mono tabular-nums">
                     {detail.corePassCount} PASS / {detail.coreFailCount} FAIL / {detail.coreNaCount} NA
                   </span>
