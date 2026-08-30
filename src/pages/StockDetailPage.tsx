@@ -24,9 +24,6 @@ import {
   Check,
   AlertTriangle,
   Calendar,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
   RotateCcw,
   Search,
 } from 'lucide-react';
@@ -457,35 +454,6 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
                 {detail.ticker}
               </span>
 
-              {/* Core Status Badge */}
-              {detail.coreStatus === 'PASS' && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#34C759]">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span className="font-mono tabular-nums">
-                    {detail.corePassCount} PASS / {detail.coreFailCount} FAIL / {detail.coreNaCount} NA
-                  </span>
-                  <span>{t('pass')}</span>
-                </span>
-              )}
-              {detail.coreStatus === 'FAIL' && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FF3B30]">
-                  <XCircle className="w-3.5 h-3.5" />
-                  <span className="font-mono tabular-nums">
-                    {detail.corePassCount} PASS / {detail.coreFailCount} FAIL / {detail.coreNaCount} NA
-                  </span>
-                  <span>{t('fail')}</span>
-                </span>
-              )}
-              {detail.coreStatus === 'N/A' && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FF9500]">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  <span className="font-mono tabular-nums">
-                    {detail.corePassCount} PASS / {detail.coreFailCount} FAIL / {detail.coreNaCount} NA
-                  </span>
-                  <span>{t('na')}</span>
-                </span>
-              )}
-
               {/* Data As Of Date */}
               <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#86868B]">
                 <Calendar className="w-3 h-3 text-[#86868B]" />
@@ -512,16 +480,38 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
             </div>
           </div>
 
-          {/* Right: Price & Cap */}
-          <div className="text-left sm:text-right shrink-0">
-            <div className="text-2xl sm:text-3xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight tabular-nums">
-              {formatPrice(detail.currentPrice, detail.currency)}
-            </div>
-            <div className="text-xs text-[#86868B] mt-1">
-              {t('marketCapLabel')}:{' '}
-              <span className="font-semibold font-mono tabular-nums text-[#1D1D1F] dark:text-[#F5F5F7]">
-                {formatMarketCap(detail.marketCap, detail.currency)}
+          {/* Right: Price & Intrinsic Value */}
+          <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-5 sm:gap-7 shrink-0">
+            {/* Current Price */}
+            <div className="text-left sm:text-right">
+              <span className="text-[11px] font-medium text-[#86868B] uppercase tracking-wider block mb-0.5">
+                {t('price')}
               </span>
+              <div className="text-2xl sm:text-3xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight tabular-nums">
+                {formatPrice(detail.currentPrice, detail.currency)}
+              </div>
+              <div className="text-xs text-[#86868B] mt-1">
+                {t('marketCapLabel')}:{' '}
+                <span className="font-semibold font-mono tabular-nums text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  {formatMarketCap(detail.marketCap, detail.currency)}
+                </span>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="hidden sm:block w-px h-10 bg-black/[0.08] dark:bg-white/[0.1] self-center" />
+
+            {/* Conservative Intrinsic Value */}
+            <div className="text-left sm:text-right">
+              <span className="text-[11px] font-semibold text-[#0071E3] dark:text-[#2997FF] uppercase tracking-wider block mb-0.5">
+                {t('intrinsicValue')}
+              </span>
+              <div className="text-2xl sm:text-3xl font-bold font-mono text-[#0071E3] dark:text-[#2997FF] tracking-tight tabular-nums">
+                {formatPrice(detail.conservativeIntrinsicValue, detail.currency)}
+              </div>
+              <div className="text-xs text-[#86868B] mt-1">
+                <span>{language === 'ko' ? '보수적 DCF 추정' : 'Conservative DCF'}</span>
+              </div>
             </div>
           </div>
         </div>

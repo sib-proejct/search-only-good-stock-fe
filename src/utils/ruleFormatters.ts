@@ -88,8 +88,8 @@ export function getRuleInfo(
           : 'EPS Compound Growth (CAGR)',
         shortTitle: isKo ? 'EPS 복리성장' : 'EPS Growth',
         subtitle: isKo
-          ? '희석 주당순이익(EPS) 5개년 복리성장률 7% 이상'
-          : '5-Year Diluted EPS CAGR ≥ 7.0%',
+          ? '희석 주당순이익(EPS) 5개년 복리성장률 8% 이상'
+          : '5-Year Diluted EPS CAGR ≥ 8.0%',
       };
     case 'capital_action_flag':
       return {
@@ -108,8 +108,8 @@ export function getRuleInfo(
           : 'Owner Earnings Quality (Cash Conversion)',
         shortTitle: isKo ? '주주이익 품질' : 'OE Quality',
         subtitle: isKo
-          ? '실질 주주이익(OE) 흑자 및 현금전환율 70% 이상'
-          : 'Positive Owner Earnings & Cash Conversion ≥ 70%',
+          ? '실질 주주이익(OE) 흑자 및 현금전환율 80% 이상'
+          : 'Positive Owner Earnings & Cash Conversion ≥ 80%',
       };
     case 'owner_earnings_yield':
       return {

@@ -636,7 +636,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                         </td>
 
                         {/* Intrinsic Value */}
-                        <td className="py-4 px-4 text-right font-mono font-semibold tabular-nums whitespace-nowrap text-[#1D1D1F] dark:text-[#F5F5F7]">
+                        <td className="py-4 px-4 text-right font-mono font-semibold tabular-nums whitespace-nowrap text-[#0071E3] dark:text-[#2997FF]">
                           {formatPrice(stock.conservativeIntrinsicValue, stock.currency)}
                         </td>
 

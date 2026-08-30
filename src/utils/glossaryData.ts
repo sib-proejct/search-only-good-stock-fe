@@ -138,14 +138,14 @@ export const getBuffettRuleGlossary = (ruleId: string, language: Language): Help
         title: isKo ? 'EPS 복리 성장률 (EPS Compound Growth)' : 'EPS Compound Growth',
         badge: isKo ? '핵심 7원칙 #7' : 'CORE RULE #7',
         description: isKo
-          ? '1주당 벌어들이는 순이익(희석 EPS)이 지난 5년간 연평균(CAGR) 7% 이상 꾸준히 성장했는지를 평가합니다.'
-          : 'Evaluates whether diluted Earnings Per Share has compounded at an annualized rate of 7.0%+ over 5 years.',
+          ? '1주당 벌어들이는 순이익(희석 EPS)이 지난 5년간 연평균(CAGR) 8% 이상 꾸준히 성장했는지를 평가합니다.'
+          : 'Evaluates whether diluted Earnings Per Share has compounded at an annualized rate of 8.0%+ over 5 years.',
         whyItMatters: isKo
           ? '총 이익이 늘더라도 주식수가 남발되면 주당 가치는 정체됩니다. 주주 입장에서 실질적인 성장은 오직 "주당순이익(EPS)의 성장"입니다.'
           : 'Per-share earnings growth is the true driver of long-term intrinsic value expansion.',
         formula: isKo
-          ? '5개년 희석 EPS 연평균 복리성장률(CAGR) ≥ 7.0%'
-          : '5-Year Diluted EPS CAGR ≥ 7.0%',
+          ? '5개년 희석 EPS 연평균 복리성장률(CAGR) ≥ 8.0%'
+          : '5-Year Diluted EPS CAGR ≥ 8.0%',
       };
 
     case 'owner_earnings_quality':
@@ -156,11 +156,11 @@ export const getBuffettRuleGlossary = (ruleId: string, language: Language): Help
           ? '회계상 당기순이익이 실제 현금 형태의 주주이익(Owner Earnings)으로 얼마나 충실히 전환되는지를 검증합니다.'
           : 'Checks if accounting net income translates effectively into real, unencumbered cash for owners.',
         whyItMatters: isKo
-          ? '장부상 이익만 있고 실제 현금이 들어오지 않는 기업(매출채권 급증 등)은 분식 위험이 있습니다. 현금 전환율 70% 이상인 기업이 정직한 이익을 냅니다.'
+          ? '장부상 이익만 있고 실제 현금이 들어오지 않는 기업(매출채권 급증 등)은 분식 위험이 있습니다. 현금 전환율 80% 이상인 기업이 정직한 이익을 냅니다.'
           : 'High cash conversion guarantees high earnings quality and low accounting risk.',
         formula: isKo
-          ? '주주이익(순이익 + 감가상각 - 유지CapEx) > 0 AND 현금전환율 ≥ 70%'
-          : 'Owner Earnings > 0 & Cash Conversion Ratio ≥ 70%',
+          ? '주주이익(순이익 + 감가상각 - 유지CapEx) > 0 AND 현금전환율 ≥ 80%'
+          : 'Owner Earnings > 0 & Cash Conversion Ratio ≥ 80%',
       };
 
     case 'owner_earnings_yield':
