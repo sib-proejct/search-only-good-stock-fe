@@ -285,10 +285,10 @@ export function formatCriteria(
         th.operator === 'GTE'
           ? '≥'
           : th.operator === 'LTE'
-          ? '≤'
-          : th.operator === 'GT'
-          ? '>'
-          : '<';
+            ? '≤'
+            : th.operator === 'GT'
+              ? '>'
+              : '<';
       const numVal = typeof th.value === 'string' ? parseFloat(th.value) : th.value;
       let valStr = `${th.value}`;
       if (!isNaN(numVal)) {
@@ -411,3 +411,99 @@ export function getConfidenceInfo(
       };
   }
 }
+
+export interface CoreGradeInfo {
+  grade: 'S' | 'A' | 'B' | 'C' | 'N/A';
+  label: string;
+  badgeLabel: string;
+  badgeClass: string;
+  dotClass: string;
+  textClass: string;
+  passRatioText: string;
+  desc: string;
+}
+
+/**
+ * Returns core evaluation grade based on pass count (7 core rules)
+ */
+export function getCoreGradeInfo(
+  passCount: number,
+  coreStatus: string,
+  language: Language
+): CoreGradeInfo {
+  const isKo = language === 'ko';
+  if (coreStatus === 'N/A' && passCount === 0) {
+    return {
+      grade: 'N/A',
+      label: isKo ? 'N/A (평가 불가)' : 'N/A (Not Applicable)',
+      badgeLabel: 'N/A',
+      badgeClass:
+        'bg-[#86868B]/10 text-[#86868B] border-[#86868B]/20 dark:bg-white/[0.06] dark:text-[#A1A1A6] dark:border-white/[0.1]',
+      dotClass: 'bg-[#86868B]',
+      textClass: 'text-[#86868B] dark:text-[#A1A1A6]',
+      passRatioText: '0/7',
+      desc: isKo
+        ? '금융업 또는 데이터 부재로 핵심 원칙 평가 불가'
+        : 'Not applicable due to financial sector or missing data',
+    };
+  }
+  if (coreStatus === 'PASS' || passCount === 7) {
+    return {
+      grade: 'S',
+      label: isKo ? 'S등급 (통과)' : 'Grade S (Pass)',
+      badgeLabel: isKo ? 'S등급' : 'Grade S',
+      badgeClass:
+        'bg-[#34C759]/10 text-[#34C759] border-[#34C759]/20 dark:bg-[#34C759]/15 dark:text-[#30D158] dark:border-[#30D158]/25',
+      dotClass: 'bg-[#34C759]',
+      textClass: 'text-[#34C759] dark:text-[#30D158]',
+      passRatioText: `${passCount}/7`,
+      desc: isKo
+        ? '7개 핵심 투자 원칙을 모두 통과한 최우량 기업'
+        : 'Meets all 7 core investment principles',
+    };
+  }
+  if (passCount >= 5) {
+    return {
+      grade: 'A',
+      label: isKo ? 'A등급 (우량)' : 'Grade A (Great)',
+      badgeLabel: isKo ? 'A등급' : 'Grade A',
+      badgeClass:
+        'bg-[#34C759]/10 text-[#34C759] border-[#34C759]/20 dark:bg-[#34C759]/15 dark:text-[#30D158] dark:border-[#30D158]/25',
+      dotClass: 'bg-[#34C759]',
+      textClass: 'text-[#34C759] dark:text-[#30D158]',
+      passRatioText: `${passCount}/7`,
+      desc: isKo
+        ? '5~6개 핵심 지표를 충족한 우량 관심 종목'
+        : 'Meets 5-6 core investment principles',
+    };
+  }
+  if (passCount >= 3) {
+    return {
+      grade: 'B',
+      label: isKo ? 'B등급 (보통)' : 'Grade B (Average)',
+      badgeLabel: isKo ? 'B등급' : 'Grade B',
+      badgeClass:
+        'bg-[#FF9500]/10 text-[#FF9500] border-[#FF9500]/20 dark:bg-[#FF9F0A]/15 dark:text-[#FF9F0A] dark:border-[#FF9F0A]/25',
+      dotClass: 'bg-[#FF9500]',
+      textClass: 'text-[#FF9500] dark:text-[#FF9F0A]',
+      passRatioText: `${passCount}/7`,
+      desc: isKo
+        ? '3~4개 핵심 지표 충족, 추가 관찰 필요'
+        : 'Meets 3-4 core investment principles',
+    };
+  }
+  return {
+    grade: 'C',
+    label: isKo ? 'C등급 (미달)' : 'Grade C (Low)',
+    badgeLabel: isKo ? 'C등급' : 'Grade C',
+    badgeClass:
+      'bg-[#86868B]/10 text-[#86868B] border-[#86868B]/20 dark:bg-white/[0.06] dark:text-[#A1A1A6] dark:border-white/[0.1]',
+    dotClass: 'bg-[#86868B]',
+    textClass: 'text-[#86868B] dark:text-[#A1A1A6]',
+    passRatioText: `${passCount}/7`,
+    desc: isKo
+      ? '핵심 투자 기준 충족 미흡 (3개 미만)'
+      : 'Meets fewer than 3 core principles',
+  };
+}
+

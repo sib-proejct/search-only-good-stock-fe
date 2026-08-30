@@ -279,3 +279,71 @@ export const TRENDING_TICKERS = [
   { ticker: 'SYN-PASS', name: 'Synthetic Pass Co', price: '$5.00', change: '+0.00%', score: 100, pass: true },
 ];
 
+const STORAGE_KEY_DISCUSSIONS = 'sogs_discussions';
+const STORAGE_KEY_DRAFT = 'sogs_community_write_draft';
+
+export interface WritePostDraft {
+  title: string;
+  category: string;
+  ticker: string;
+  content: string;
+  savedAt: string;
+}
+
+export function getStoredDiscussions(): DiscussionPost[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_DISCUSSIONS);
+    if (!raw) return INITIAL_DISCUSSIONS;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_DISCUSSIONS;
+  } catch {
+    return INITIAL_DISCUSSIONS;
+  }
+}
+
+export function saveDiscussions(discussions: DiscussionPost[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_DISCUSSIONS, JSON.stringify(discussions));
+  } catch (e) {
+    console.error('Failed to save discussions to localStorage', e);
+  }
+}
+
+export function addDiscussionPost(newPost: DiscussionPost): DiscussionPost[] {
+  const current = getStoredDiscussions();
+  const updated = [newPost, ...current];
+  saveDiscussions(updated);
+  return updated;
+}
+
+export function saveWriteDraft(draft: { title: string; category: string; ticker: string; content: string }): void {
+  try {
+    const data: WritePostDraft = {
+      ...draft,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(data));
+  } catch (e) {
+    console.error('Failed to save draft to localStorage', e);
+  }
+}
+
+export function getWriteDraft(): WritePostDraft | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_DRAFT);
+    if (!raw) return null;
+    return JSON.parse(raw) as WritePostDraft;
+  } catch {
+    return null;
+  }
+}
+
+export function clearWriteDraft(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY_DRAFT);
+  } catch (e) {
+    console.error('Failed to clear draft from localStorage', e);
+  }
+}
+
+

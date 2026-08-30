@@ -6,6 +6,7 @@ import { ScreenerPage } from './pages/ScreenerPage';
 import { StockDetailPage } from './pages/StockDetailPage';
 import { RuleGuidePage } from './pages/RuleGuidePage';
 import { CommunityPage } from './pages/CommunityPage';
+import { CommunityWritePage } from './pages/CommunityWritePage';
 import { Sun, Moon, Globe } from 'lucide-react';
 
 function AppContent() {
@@ -65,6 +66,10 @@ function AppContent() {
           <Route
             path="/community"
             element={<CommunityPage />}
+          />
+          <Route
+            path="/community/write"
+            element={<CommunityWritePage />}
           />
 
           {/* Fallback */}

@@ -2,16 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { StockSummaryDTO, StockDetailDTO, ReasonCode } from '../../types/api';
 import { stockApi } from '../../services/api';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
-import { getMetricLabel, getRuleInfo } from '../../utils/ruleFormatters';
+import { getMetricLabel, getRuleInfo, getCoreGradeInfo } from '../../utils/ruleFormatters';
 import {
   X,
   ChevronLeft,
   ChevronRight,
   ArrowUpRight,
   Calendar,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
   ShieldCheck,
   TrendingUp,
   AlertTriangle,
@@ -342,24 +339,15 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                     {stock.ticker}
                   </span>
 
-                  {stock.coreStatus === 'PASS' && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#34C759]">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>{t('pass')}</span>
-                    </span>
-                  )}
-                  {stock.coreStatus === 'FAIL' && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FF3B30]">
-                      <XCircle className="w-3.5 h-3.5" />
-                      <span>{t('fail')}</span>
-                    </span>
-                  )}
-                  {stock.coreStatus === 'N/A' && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FF9500]">
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      <span>{t('na')}</span>
-                    </span>
-                  )}
+                  {(() => {
+                    const gradeInfo = getCoreGradeInfo(stock.corePassCount, stock.coreStatus, language);
+                    return (
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${gradeInfo.textClass}`} title={gradeInfo.desc}>
+                        <span className={`w-2 h-2 rounded-full ${gradeInfo.dotClass}`} />
+                        <span>{gradeInfo.label}</span>
+                      </span>
+                    );
+                  })()}
 
                   <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#86868B]">
                     <Calendar className="w-3 h-3 text-[#86868B]" />
@@ -401,22 +389,26 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
           {/* 2. Key KPI Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {/* Core Status */}
-            <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">{t('coreStatusLabel')}</span>
-              <div className="mt-2">
-                <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight block ${stock.coreStatus === 'PASS' ? 'text-[#34C759]' : stock.coreStatus === 'FAIL' ? 'text-[#FF3B30]' : 'text-[#86868B]'
-                  }`}>
-                  {stock.coreStatus}
-                </span>
-                <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06] font-mono tabular-nums">
-                  <span className="font-semibold text-[#34C759]">{stock.corePassCount}P</span>
-                  <span className="text-[#86868B] dark:text-[#636366] mx-1">/</span>
-                  <span className="font-semibold text-[#FF3B30]">{stock.coreFailCount}F</span>
-                  <span className="text-[#86868B] dark:text-[#636366] mx-1">/</span>
-                  <span className="font-semibold text-[#FF9500]">{stock.coreNaCount}NA</span>
+            {(() => {
+              const gradeInfo = getCoreGradeInfo(stock.corePassCount, stock.coreStatus, language);
+              return (
+                <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
+                  <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">{t('coreStatusLabel')}</span>
+                  <div className="mt-2">
+                    <span className={`text-lg sm:text-xl font-bold tracking-tight block ${gradeInfo.textClass}`} title={gradeInfo.desc}>
+                      {gradeInfo.label}
+                    </span>
+                    <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06] font-mono tabular-nums">
+                      <span className="font-semibold text-[#34C759]">{stock.corePassCount}P</span>
+                      <span className="text-[#86868B] dark:text-[#636366] mx-1">/</span>
+                      <span className="font-semibold text-[#FF3B30]">{stock.coreFailCount}F</span>
+                      <span className="text-[#86868B] dark:text-[#636366] mx-1">/</span>
+                      <span className="font-semibold text-[#FF9500]">{stock.coreNaCount}NA</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Valuation Status */}
             <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">

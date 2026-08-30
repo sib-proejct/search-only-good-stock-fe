@@ -10,6 +10,7 @@ import { stockApi } from '../services/api';
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import {
   getConfidenceInfo,
+  getCoreGradeInfo,
   getIndustryTypeLabel,
   getValuationStatusInfo,
 } from '../utils/ruleFormatters';
@@ -417,16 +418,16 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
                         </div>
 
                         <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                          <span
-                            className={`text-[10px] font-mono font-bold ${s.coreStatus === 'PASS'
-                              ? 'text-[#34C759]'
-                              : s.coreStatus === 'FAIL'
-                                ? 'text-[#FF3B30]'
-                                : 'text-[#86868B]'
-                              }`}
-                          >
-                            {s.coreStatus}
-                          </span>
+                          {(() => {
+                            const gradeInfo = getCoreGradeInfo(s.corePassCount, s.coreStatus, language);
+                            return (
+                              <span
+                                className={`text-[10px] font-mono font-bold ${gradeInfo.textClass}`}
+                              >
+                                {gradeInfo.badgeLabel}
+                              </span>
+                            );
+                          })()}
                           {isCurrent && (
                             <Check className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF] stroke-[2.5]" />
                           )}
@@ -539,33 +540,30 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
       {/* 3. Refined Key KPI Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* KPI 1: Core Status */}
-        <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 sm:p-5 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
-          <span className="text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">
-            {t('coreStatusLabel')}
-          </span>
-          <div className="mt-2">
-            <span
-              className={`text-2xl sm:text-3xl font-bold font-mono tracking-tight tabular-nums block ${detail.coreStatus === 'PASS'
-                ? 'text-[#34C759]'
-                : detail.coreStatus === 'FAIL'
-                  ? 'text-[#FF3B30]'
-                  : 'text-[#86868B]'
-                }`}
-            >
-              {detail.coreStatus === 'PASS'
-                ? (language === 'ko' ? '통과 (PASS)' : 'PASS')
-                : detail.coreStatus === 'FAIL'
-                  ? (language === 'ko' ? '탈락 (FAIL)' : 'FAIL')
-                  : 'N/A'}
-            </span>
-            <div className="text-[11px] text-[#86868B] mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between font-mono">
-              <span>{detail.corePassCount} PASS · {detail.coreFailCount} FAIL · {detail.coreNaCount} NA</span>
-              <span className="text-[10px] font-bold">
-                {language === 'ko' ? '핵심 7원칙' : 'CORE RULES'}
+        {(() => {
+          const gradeInfo = getCoreGradeInfo(detail.corePassCount, detail.coreStatus, language);
+          return (
+            <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 sm:p-5 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
+              <span className="text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">
+                {t('coreStatusLabel')}
               </span>
+              <div className="mt-2">
+                <span
+                  className={`text-2xl sm:text-3xl font-bold tracking-tight block ${gradeInfo.textClass}`}
+                  title={gradeInfo.desc}
+                >
+                  {gradeInfo.label}
+                </span>
+                <div className="text-[11px] text-[#86868B] mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between font-mono">
+                  <span>{detail.corePassCount} PASS · {detail.coreFailCount} FAIL · {detail.coreNaCount} NA</span>
+                  <span className="text-[10px] font-bold">
+                    {language === 'ko' ? '핵심 7원칙' : 'CORE RULES'}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* KPI 2: Valuation Status */}
         {(() => {

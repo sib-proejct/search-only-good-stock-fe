@@ -54,7 +54,7 @@ export function useStocks(): UseStocksReturn {
   const [market, setMarket] = useState<MarketFilter>('ALL');
   const [coreStatus, setCoreStatus] = useState<CoreStatusFilter>('ALL');
   const [valuationStatus, setValuationStatus] = useState<ValuationStatusFilter>('ALL');
-  const [sortField, setSortField] = useState<StockSort>('conservativeMarginOfSafety');
+  const [sortField, setSortField] = useState<StockSort>('corePassCount');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [offset, setOffset] = useState(0);
   const limit = 50;
@@ -201,7 +201,7 @@ export function useStocks(): UseStocksReturn {
     setMarket('ALL');
     setCoreStatus('ALL');
     setValuationStatus('ALL');
-    setSortField('conservativeMarginOfSafety');
+    setSortField('corePassCount');
     setSortOrder('desc');
     setOffset(0);
   }, []);
