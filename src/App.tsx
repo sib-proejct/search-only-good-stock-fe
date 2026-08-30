@@ -1,13 +1,42 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeLanguageProvider, useAppConfig } from './context/ThemeLanguageContext';
 import { TopNavBar } from './components/common/TopNavBar';
-import { ScreenerPage } from './pages/ScreenerPage';
-import { StockDetailPage } from './pages/StockDetailPage';
-import { RuleGuidePage } from './pages/RuleGuidePage';
-import { CommunityPage } from './pages/CommunityPage';
-import { CommunityWritePage } from './pages/CommunityWritePage';
 import { Sun, Moon, Globe } from 'lucide-react';
+
+const ScreenerPage = lazy(() =>
+  import('./pages/ScreenerPage').then((module) => ({
+    default: module.ScreenerPage,
+  }))
+);
+const StockDetailPage = lazy(() =>
+  import('./pages/StockDetailPage').then((module) => ({
+    default: module.StockDetailPage,
+  }))
+);
+const RuleGuidePage = lazy(() =>
+  import('./pages/RuleGuidePage').then((module) => ({
+    default: module.RuleGuidePage,
+  }))
+);
+const CommunityPage = lazy(() =>
+  import('./pages/CommunityPage').then((module) => ({
+    default: module.CommunityPage,
+  }))
+);
+const CommunityWritePage = lazy(() =>
+  import('./pages/CommunityWritePage').then((module) => ({
+    default: module.CommunityWritePage,
+  }))
+);
+
+function RouteFallback() {
+  return (
+    <div className="py-24 text-center">
+      <div className="inline-block w-8 h-8 border-2 border-[#0071E3] dark:border-[#2997FF] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function AppContent() {
   const { t, theme, toggleTheme, language, toggleLanguage } = useAppConfig();
@@ -23,7 +52,8 @@ function AppContent() {
 
       {/* 2. Main Body Content with Client-Side Routing */}
       <main className="flex-1 w-full pb-16">
-        <Routes>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
           {/* Screener (Home) */}
           <Route
             path="/"
@@ -77,7 +107,8 @@ function AppContent() {
             path="*"
             element={<Navigate to="/" replace />}
           />
-        </Routes>
+          </Routes>
+        </Suspense>
       </main>
 
       {/* 3. Apple Minimalist Footer with Inline Controls on a Single Line */}

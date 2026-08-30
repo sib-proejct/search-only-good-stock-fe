@@ -1,4 +1,8 @@
 # 프론트엔드 구성 현황 및 백엔드(BE) 연동 인터페이스 명세서
+
+> [!WARNING]
+> 이 문서는 초기 6개 규칙 및 구형 DTO를 설명하는 과거 설계 자료입니다. 신규 구현의 기준으로 사용하지 마세요. 현재 계약은 [프론트엔드-백엔드 연동 설계](frontend_backend_integration_design.md)와 `src/types/openapi.generated.ts`를 따릅니다.
+
 > **Frontend-Backend Integration Specification & Architecture Guide**  
 > 문서 버전: `1.0.0` | 대상 저장소: `search-only-good-stock` (BE) & `search-only-good-stock-fe` (FE)
 

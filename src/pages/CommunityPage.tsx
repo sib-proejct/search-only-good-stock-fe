@@ -15,6 +15,7 @@ import {
 } from '../types/community';
 import {
   TRENDING_TICKERS,
+  applyDiscussionVote,
   getStoredDiscussions,
   saveDiscussions
 } from '../services/communityData';
@@ -212,37 +213,9 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
   // Upvote / Downvote Handler
   const handleVote = (postId: string, type: 'up' | 'down') => {
     setDiscussions((prev) => {
-      const updated = prev.map((post) => {
-        if (post.id !== postId) return post;
-
-        let newUpvotes = post.upvotes;
-        let newDownvotes = post.downvotes;
-        let newVote: 'up' | 'down' | null = type;
-
-        if (post.userVote === type) {
-          newVote = null;
-          if (type === 'up') newUpvotes -= 1;
-          else newDownvotes -= 1;
-        } else if (post.userVote) {
-          if (type === 'up') {
-            newUpvotes += 1;
-            newDownvotes -= 1;
-          } else {
-            newDownvotes += 1;
-            newUpvotes -= 1;
-          }
-        } else {
-          if (type === 'up') newUpvotes += 1;
-          else newDownvotes -= 1;
-        }
-
-        return {
-          ...post,
-          upvotes: newUpvotes,
-          downvotes: newDownvotes,
-          userVote: newVote,
-        };
-      });
+      const updated = prev.map((post) =>
+        post.id === postId ? applyDiscussionVote(post, type) : post
+      );
       saveDiscussions(updated);
       return updated;
     });
@@ -263,9 +236,8 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
     });
   };
 
-  // Add Comment Handler
-  const handleAddComment = (postId: string) => {
-    const text = newCommentText[postId]?.trim();
+  const addComment = (postId: string, rawText: string) => {
+    const text = rawText.trim();
     if (!text) return;
 
     const now = new Date();
@@ -296,6 +268,11 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
 
     setNewCommentText((prev) => ({ ...prev, [postId]: '' }));
     showToast('댓글이 등록되었습니다.');
+  };
+
+  // Add Comment Handler
+  const handleAddComment = (postId: string) => {
+    addComment(postId, newCommentText[postId] || '');
   };
 
   // Filter & Sort logic
@@ -359,7 +336,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
 
       {/* Search, Sort & Stock Category Controls Bar */}
       <div className="cq-controls-wrapper w-full space-y-2.5">
-        <div className="cq-top-controls flex flex-wrap items-center justify-between gap-2.5 bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-xl p-2 sm:p-2.5 rounded-2xl border border-black/[0.06] dark:border-white/[0.08] shadow-xs">
+        <div className="cq-top-controls flex flex-wrap items-center justify-between gap-2.5 bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-xl p-2 sm:p-2.5 rounded-2xl border border-black/[0.06] dark:border-white/[0.08] shadow-sm">
           
           {/* Left Group: Searchable Stock Tag Combobox (Far Left) & Sort Tabs */}
           <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -371,7 +348,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                   setIsCategoryDropdownOpen(!isCategoryDropdownOpen);
                   setCategorySearchTerm('');
                 }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border shadow-2xs ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border shadow-sm ${
                   activeCategory !== 'all'
                     ? 'bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] border-[#0071E3]/30 dark:border-[#2997FF]/40 font-bold'
                     : 'bg-black/[0.04] dark:bg-white/[0.05] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] border-transparent'
@@ -437,7 +414,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                       }}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all cursor-pointer text-left ${
                         activeCategory === 'all'
-                          ? 'bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] font-bold shadow-xs'
+                          ? 'bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] font-bold shadow-sm'
                           : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-[#1D1D1F] dark:text-[#F5F5F7]'
                       }`}
                     >
@@ -466,7 +443,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                             }}
                             className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all cursor-pointer text-left ${
                               isSelected
-                                ? 'bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] font-bold shadow-xs'
+                                ? 'bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] font-bold shadow-sm'
                                 : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-[#1D1D1F] dark:text-[#F5F5F7]'
                             }`}
                           >
@@ -527,7 +504,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                     key={s.id}
                     onClick={() => setActiveSort(s.id)}
                     className={`shrink-0 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${isActive
-                      ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-xs font-bold'
+                      ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-sm font-bold'
                       : 'text-[#86868B] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                       }`}
                   >
@@ -611,7 +588,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
             </div>
             <button
               onClick={() => setActiveCategory('all')}
-              className="text-xs font-bold text-[#0071E3] dark:text-[#2997FF] hover:underline flex items-center gap-1 cursor-pointer bg-white dark:bg-[#1C1C1E] px-2.5 py-1 rounded-lg border border-[#0071E3]/20 dark:border-[#2997FF]/30 shadow-2xs"
+              className="text-xs font-bold text-[#0071E3] dark:text-[#2997FF] hover:underline flex items-center gap-1 cursor-pointer bg-white dark:bg-[#1C1C1E] px-2.5 py-1 rounded-lg border border-[#0071E3]/20 dark:border-[#2997FF]/30 shadow-sm"
             >
               <span>전체 보기</span>
               <X className="w-3 h-3" />
@@ -973,31 +950,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
         onVote={handleVote}
         onToggleBookmark={handleToggleBookmark}
         isBookmarked={selectedPanelPostId ? bookmarkedIds.has(selectedPanelPostId) : false}
-        onAddComment={(postId, commentText) => {
-          setNewCommentText((prev) => ({ ...prev, [postId]: commentText }));
-          const text = commentText.trim();
-          if (!text) return;
-          const now = new Date();
-          const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-          const newComment: Comment = {
-            id: `c-${Date.now()}`,
-            author: { name: '나' },
-            createdAt: currentTime,
-            content: text,
-            likes: 0,
-          };
-          setDiscussions((prev) =>
-            prev.map((post) => {
-              if (post.id !== postId) return post;
-              return {
-                ...post,
-                commentsCount: post.commentsCount + 1,
-                comments: [...(post.comments || []), newComment],
-              };
-            })
-          );
-          showToast('댓글이 등록되었습니다.');
-        }}
+        onAddComment={addComment}
         onSelectStock={handleStockClick}
         showToast={showToast}
       />

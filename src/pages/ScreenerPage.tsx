@@ -58,11 +58,11 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
     if (globalSearchQuery !== searchQuery) {
       setSearchQuery(globalSearchQuery);
     }
-  }, [globalSearchQuery]);
+  }, [globalSearchQuery, searchQuery, setSearchQuery]);
 
   const [isMarketDropdownOpen, setIsMarketDropdownOpen] = useState(false);
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
-  const [drawerStockTicker, setDrawerStockTicker] = useState<string | null>(null);
+  const [drawerStockId, setDrawerStockId] = useState<string | null>(null);
 
   const marketDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
@@ -140,7 +140,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
   };
 
   const selectedDrawerStock: StockSummaryDTO | null =
-    stocks.find((s) => s.ticker === drawerStockTicker || s.id === drawerStockTicker) || null;
+    stocks.find((stock) => stock.id === drawerStockId) || null;
   const latestLoadedDataAsOf = stocks.reduce<string | null>(
     (latest, stock) => (!latest || stock.dataAsOf > latest ? stock.dataAsOf : latest),
     null
@@ -168,7 +168,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
             </div>
             <div className="flex items-baseline gap-2 mt-2 whitespace-nowrap">
               <span className="text-2xl sm:text-3xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight tabular-nums">
-                {passedStockCount} / {totalStockCount}
+                {passedStockCount ?? '—'} / {totalStockCount ?? '—'}
               </span>
               <span className="text-xs sm:text-sm font-semibold text-[#86868B] dark:text-[#A1A1A6]">
                 {t('stocksPassed')}
@@ -241,7 +241,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
           <div className="relative shrink-0 z-30" ref={marketDropdownRef}>
             <button
               onClick={() => setIsMarketDropdownOpen(!isMarketDropdownOpen)}
-              className="h-10 sm:h-11 px-3.5 sm:px-4 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-semibold text-xs sm:text-[13px] flex items-center gap-1.5 border border-black/[0.06] dark:border-white/[0.08] shadow-2xs transition-all cursor-pointer select-none focus:outline-none"
+              className="h-10 sm:h-11 px-3.5 sm:px-4 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-semibold text-xs sm:text-[13px] flex items-center gap-1.5 border border-black/[0.06] dark:border-white/[0.08] shadow-sm transition-all cursor-pointer select-none focus:outline-none"
               aria-haspopup="true"
               aria-expanded={isMarketDropdownOpen}
             >
@@ -439,7 +439,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
               return (
                 <div
                   key={stock.id}
-                  onClick={() => setDrawerStockTicker(stock.ticker)}
+                  onClick={() => setDrawerStockId(stock.id)}
                   className="p-4 flex items-center justify-between gap-3 active:bg-[#F5F5F7] dark:active:bg-[#2C2C2E] transition-colors cursor-pointer"
                 >
                   {/* Left: Rank & Ticker & Name & Grade */}
@@ -508,7 +508,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                     return (
                       <tr
                         key={stock.id}
-                        onClick={() => setDrawerStockTicker(stock.ticker)}
+                        onClick={() => setDrawerStockId(stock.id)}
                         className="hover:bg-[#F5F5F7]/80 dark:hover:bg-[#2C2C2E]/60 transition-colors cursor-pointer group"
                       >
                         {/* Rank */}
@@ -616,16 +616,16 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
       <StockDetailDrawer
         stock={selectedDrawerStock}
         isOpen={Boolean(selectedDrawerStock)}
-        onClose={() => setDrawerStockTicker(null)}
+        onClose={() => setDrawerStockId(null)}
         onNavigateToFullDetail={(ticker, market) => {
-          setDrawerStockTicker(null);
+          setDrawerStockId(null);
           if (onSelectStock) {
             onSelectStock(ticker);
           }
           navigate(`/stock/${ticker}?market=${encodeURIComponent(market)}`);
         }}
         stockList={stocks}
-        onSelectStock={(ticker) => setDrawerStockTicker(ticker)}
+        onSelectStock={(stock) => setDrawerStockId(stock.id)}
       />
     </div>
   );

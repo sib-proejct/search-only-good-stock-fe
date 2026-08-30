@@ -21,7 +21,7 @@ interface StockDetailDrawerProps {
   onClose: () => void;
   onNavigateToFullDetail: (ticker: string, market: Market) => void;
   stockList: StockSummaryDTO[];
-  onSelectStock: (ticker: string) => void;
+  onSelectStock: (stock: StockSummaryDTO) => void;
 }
 
 export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
@@ -153,20 +153,20 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
 
   // Find index of current stock in the active list
   const currentIndex = stock
-    ? stockList.findIndex((s) => s.id === stock.id || s.ticker === stock.ticker)
+    ? stockList.findIndex((candidate) => candidate.id === stock.id)
     : -1;
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex >= 0 && currentIndex < stockList.length - 1;
 
   const handlePrevStock = useCallback(() => {
     if (hasPrev && currentIndex > 0) {
-      onSelectStock(stockList[currentIndex - 1].ticker);
+      onSelectStock(stockList[currentIndex - 1]);
     }
   }, [hasPrev, currentIndex, stockList, onSelectStock]);
 
   const handleNextStock = useCallback(() => {
     if (hasNext && currentIndex < stockList.length - 1) {
-      onSelectStock(stockList[currentIndex + 1].ticker);
+      onSelectStock(stockList[currentIndex + 1]);
     }
   }, [hasNext, currentIndex, stockList, onSelectStock]);
 
@@ -485,7 +485,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                   return (
                     <div
                       key={evalItem.ruleId}
-                      className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs flex flex-col justify-between space-y-2"
+                      className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between space-y-2"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-bold text-[#1D1D1F] dark:text-[#F5F5F7] truncate" title={ruleInfo.title}>

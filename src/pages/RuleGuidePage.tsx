@@ -816,7 +816,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                 setSelectedCategory('ALL');
               }}
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeGuide === 'buffett'
-                ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-xs'
+                ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-sm'
                 : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                 }`}
             >
@@ -828,7 +828,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                 setSelectedCategory('ALL');
               }}
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeGuide === 'lynch'
-                ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-xs'
+                ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-sm'
                 : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                 }`}
             >
@@ -892,7 +892,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer border ${isSelected
-                      ? 'bg-[#1D1D1F] dark:bg-[#F5F5F7] text-white dark:text-[#1D1D1F] border-transparent shadow-xs'
+                      ? 'bg-[#1D1D1F] dark:bg-[#F5F5F7] text-white dark:text-[#1D1D1F] border-transparent shadow-sm'
                       : 'bg-[#F5F5F7] dark:bg-[#1C1C1E] text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] border-black/[0.04] dark:border-white/[0.08]'
                       }`}
                   >
@@ -1022,7 +1022,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                 </div>
 
                 {/* Formula Block */}
-                <div className="w-full max-w-4xl rounded-2xl bg-[#FBFBFD] dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] p-4 sm:p-5 space-y-3.5 shadow-xs transition-colors">
+                <div className="w-full max-w-4xl rounded-2xl bg-[#FBFBFD] dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] p-4 sm:p-5 space-y-3.5 shadow-sm transition-colors">
                   <div className="flex items-center justify-between gap-4 text-xs text-[#86868B]">
                     <div className="flex items-center gap-1.5 font-semibold uppercase tracking-wider text-[#1D1D1F] dark:text-[#F5F5F7]">
                       <Calculator className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />
@@ -1130,7 +1130,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                 </div>
 
                 {/* Formula Block */}
-                <div className="w-full max-w-4xl rounded-2xl bg-[#FBFBFD] dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] p-4 sm:p-5 space-y-3.5 shadow-xs transition-colors">
+                <div className="w-full max-w-4xl rounded-2xl bg-[#FBFBFD] dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] p-4 sm:p-5 space-y-3.5 shadow-sm transition-colors">
                   <div className="flex items-center justify-between gap-4 text-xs text-[#86868B]">
                     <div className="flex items-center gap-1.5 font-semibold uppercase tracking-wider text-[#1D1D1F] dark:text-[#F5F5F7]">
                       <Calculator className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />

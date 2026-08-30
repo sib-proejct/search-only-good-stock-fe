@@ -6,7 +6,7 @@ import {
   StockListResponse,
 } from '../types/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
 async function parseErrorMessage(response: Response): Promise<string> {
   const errorBody = await response.json().catch(() => null);
@@ -26,10 +26,7 @@ async function parseErrorMessage(response: Response): Promise<string> {
 
 export const stockApi = {
   async getRules(signal?: AbortSignal): Promise<RuleListResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/rules`, {
-      headers: { 'Content-Type': 'application/json' },
-      signal,
-    });
+    const response = await fetch(`${API_BASE_URL}/api/rules`, { signal });
 
     if (!response.ok) {
       throw new Error(await parseErrorMessage(response));
@@ -79,10 +76,7 @@ export const stockApi = {
       ? `${API_BASE_URL}/api/stocks?${queryString}`
       : `${API_BASE_URL}/api/stocks`;
 
-    const response = await fetch(url, {
-      headers: { 'Content-Type': 'application/json' },
-      signal,
-    });
+    const response = await fetch(url, { signal });
 
     if (!response.ok) {
       throw new Error(await parseErrorMessage(response));
@@ -110,10 +104,7 @@ export const stockApi = {
     const url = `${API_BASE_URL}/api/stocks/${encodedTicker}${
       queryString ? `?${queryString}` : ''
     }`;
-    const response = await fetch(url, {
-      headers: { 'Content-Type': 'application/json' },
-      signal,
-    });
+    const response = await fetch(url, { signal });
 
     if (!response.ok) {
       throw new Error(await parseErrorMessage(response));

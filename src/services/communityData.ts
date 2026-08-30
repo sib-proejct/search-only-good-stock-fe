@@ -290,6 +290,35 @@ export interface WritePostDraft {
   savedAt: string;
 }
 
+export function applyDiscussionVote(
+  post: DiscussionPost,
+  direction: 'up' | 'down'
+): DiscussionPost {
+  let upvotes = post.upvotes;
+  let downvotes = post.downvotes;
+  let userVote: 'up' | 'down' | null = direction;
+
+  if (post.userVote === direction) {
+    userVote = null;
+    if (direction === 'up') upvotes -= 1;
+    else downvotes -= 1;
+  } else if (post.userVote) {
+    if (direction === 'up') {
+      upvotes += 1;
+      downvotes -= 1;
+    } else {
+      downvotes += 1;
+      upvotes -= 1;
+    }
+  } else if (direction === 'up') {
+    upvotes += 1;
+  } else {
+    downvotes += 1;
+  }
+
+  return { ...post, upvotes, downvotes, userVote };
+}
+
 export function getStoredDiscussions(): DiscussionPost[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_DISCUSSIONS);
@@ -345,5 +374,4 @@ export function clearWriteDraft(): void {
     console.error('Failed to clear draft from localStorage', e);
   }
 }
-
 

@@ -157,7 +157,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
     return () => {
       controller.abort();
     };
-  }, [currentTicker, currentMarket, navigate]);
+  }, [currentTicker, currentMarket, navigate, t]);
 
   const handleBack = () => {
     if (onBack) {
@@ -378,7 +378,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
 
             {/* Dropdown Menu */}
             {isDropdownOpen && (
-              <div className="absolute right-0 top-full mt-2 w-72 sm:w-84 bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-2xl border border-black/[0.08] dark:border-white/[0.12] p-2 z-50 animate-fade-in max-h-[420px] overflow-y-auto">
+              <div className="absolute right-0 top-full mt-2 w-72 sm:w-[21rem] bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-2xl border border-black/[0.08] dark:border-white/[0.12] p-2 z-50 animate-fade-in max-h-[420px] overflow-y-auto">
                 {/* Market Switcher */}
                 <div className="flex items-center gap-1 p-1 bg-[#F2F4F6] dark:bg-[#252528] rounded-xl mb-2">
                   {(['ALL', 'NASDAQ', 'NYSE', 'KOSPI', 'KOSDAQ'] as const).map((m) => (
@@ -386,7 +386,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
                       key={m}
                       onClick={() => setMarketFilter(m)}
                       className={`flex-1 py-1 text-[10px] font-semibold rounded-lg transition-all cursor-pointer select-none text-center ${marketFilter === m
-                        ? 'bg-white dark:bg-[#1C1C1E] text-[#0071E3] dark:text-[#2997FF] shadow-xs font-bold'
+                        ? 'bg-white dark:bg-[#1C1C1E] text-[#0071E3] dark:text-[#2997FF] shadow-sm font-bold'
                         : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                         }`}
                     >

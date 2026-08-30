@@ -355,7 +355,7 @@ export const CommunityWritePage: React.FC = () => {
       {/* Toast Notification */}
       {toastMessage && (
         <div
-          className={`fixed top-18 right-6 z-50 px-4 py-2.5 rounded-xl shadow-xl border backdrop-blur-md flex items-center gap-2 text-xs font-semibold animate-scale-up ${
+          className={`fixed top-[4.5rem] right-6 z-50 px-4 py-2.5 rounded-xl shadow-xl border backdrop-blur-md flex items-center gap-2 text-xs font-semibold animate-scale-up ${
             toastMessage.type === 'error'
               ? 'bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30'
               : toastMessage.type === 'info'
@@ -413,7 +413,7 @@ export const CommunityWritePage: React.FC = () => {
           <button
             type="button"
             onClick={handleCancel}
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-white dark:bg-[#1C1C1E] text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] border border-black/[0.06] dark:border-white/[0.08] shadow-2xs hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-white dark:bg-[#1C1C1E] text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] border border-black/[0.06] dark:border-white/[0.08] shadow-sm hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer"
             title={t('backToCommunity')}
           >
             <ArrowLeft className="w-4 h-4" />
@@ -445,7 +445,7 @@ export const CommunityWritePage: React.FC = () => {
           <button
             type="button"
             onClick={handleManualSaveDraft}
-            className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-[#F5F5F7] border border-black/[0.08] dark:border-white/[0.1] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-[#F5F5F7] border border-black/[0.08] dark:border-white/[0.1] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
             title={t('saveDraft')}
           >
             <Save className="w-3.5 h-3.5 text-[#86868B]" />
@@ -719,7 +719,7 @@ export const CommunityWritePage: React.FC = () => {
                 onClick={() => setViewMode('split')}
                 className={`px-3 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                   viewMode === 'split'
-                    ? 'bg-white dark:bg-[#1C1C1E] text-[#0071E3] dark:text-[#2997FF] shadow-2xs'
+                    ? 'bg-white dark:bg-[#1C1C1E] text-[#0071E3] dark:text-[#2997FF] shadow-sm'
                     : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                 }`}
               >
@@ -732,7 +732,7 @@ export const CommunityWritePage: React.FC = () => {
                 onClick={() => setViewMode('editor')}
                 className={`px-3 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                   viewMode === 'editor'
-                    ? 'bg-white dark:bg-[#1C1C1E] text-[#0071E3] dark:text-[#2997FF] shadow-2xs'
+                    ? 'bg-white dark:bg-[#1C1C1E] text-[#0071E3] dark:text-[#2997FF] shadow-sm'
                     : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                 }`}
               >
@@ -745,7 +745,7 @@ export const CommunityWritePage: React.FC = () => {
                 onClick={() => setViewMode('preview')}
                 className={`px-3 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                   viewMode === 'preview'
-                    ? 'bg-white dark:bg-[#1C1C1E] text-[#0071E3] dark:text-[#2997FF] shadow-2xs'
+                    ? 'bg-white dark:bg-[#1C1C1E] text-[#0071E3] dark:text-[#2997FF] shadow-sm'
                     : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                 }`}
               >

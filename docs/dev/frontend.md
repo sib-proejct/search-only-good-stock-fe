@@ -2,7 +2,7 @@
 
 Next.js (App Router) 및 Vite (React) 기반 프론트엔드 애플리케이션의 개발 가이드입니다. (TypeScript, Tailwind CSS)
 
-> 💡 **백엔드 연동 명세서**: 백엔드와 연동되는 데이터 모델(DTO), API 엔드포인트 및 화면별 요구 데이터는 [프론트엔드 연동 명세서](frontend_be_integration_spec.md)를 참고하세요.
+> 💡 **백엔드 연동 명세서**: 현재 데이터 모델(DTO), API 엔드포인트 및 화면별 요구 데이터는 [프론트엔드-백엔드 연동 설계](frontend_backend_integration_design.md)를 참고하세요. 실제 타입 계약의 최종 기준은 `src/types/openapi.generated.ts`입니다.
 
 ---
 

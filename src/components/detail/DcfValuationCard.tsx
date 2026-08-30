@@ -212,7 +212,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
 
             <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
               {/* Conservative */}
-              <div className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.06] shadow-2xs">
+              <div className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.06] shadow-sm">
                 <div className="text-[10px] sm:text-[11px] font-semibold text-[#86868B]">
                   {isKo ? '보수적 (Conservative)' : 'Conservative'}
                 </div>
@@ -225,7 +225,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
               </div>
 
               {/* Base */}
-              <div className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#0071E3]/20 shadow-2xs">
+              <div className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#0071E3]/20 shadow-sm">
                 <div className="text-[10px] sm:text-[11px] font-bold text-[#0071E3] dark:text-[#2997FF]">
                   {isKo ? '기본 (Base)' : 'Base'}
                 </div>
@@ -238,7 +238,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
               </div>
 
               {/* Optimistic */}
-              <div className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.06] shadow-2xs">
+              <div className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.06] shadow-sm">
                 <div className="text-[10px] sm:text-[11px] font-semibold text-[#86868B]">
                   {isKo ? '낙관적 (Optimistic)' : 'Optimistic'}
                 </div>
