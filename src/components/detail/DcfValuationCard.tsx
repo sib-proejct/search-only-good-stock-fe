@@ -206,7 +206,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
                 <HelpPopover content={DCF_GLOSSARY.scenarios(language)} align="left" />
               </div>
               <span className="font-mono text-[11px] text-[#86868B]">
-                {isKo ? '할인율(WACC)' : 'Discount Rate'}: {formatPercent(dcf.discountRate)}
+                {isKo ? '할인율(주주요구수익률)' : 'Discount Rate (Cost of Equity)'}: {formatPercent(dcf.discountRate)}
               </span>
             </div>
 

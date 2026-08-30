@@ -196,8 +196,8 @@ export const DCF_GLOSSARY = {
       title: isKo ? '10개년 주주이익 DCF 가치평가 모델' : '10-Year Owner Earnings DCF Valuation',
       badge: isKo ? '내재가치 평가' : 'VALUATION MODEL',
       description: isKo
-        ? '워런 버핏이 버크셔 해서웨이 주주서한에서 정의한 "주주이익(Owner Earnings)"을 바탕으로, 향후 10년간 기업이 창출할 현금흐름을 현재가치로 할인하여 주당 본질가치(Intrinsic Value)를 산출하는 정통 가치평가 모델입니다.'
-        : 'Warren Buffett’s discounted cash flow model using Owner Earnings to calculate the true intrinsic value per share.',
+        ? '워런 버핏의 "주주이익(Owner Earnings = 영업현금흐름 - 총 CapEx)"을 바탕으로, 향후 10년간 기업이 창출할 현금흐름을 주주요구수익률로 할인하여 주당 본질가치(Intrinsic Value)를 산출하는 보수적 가치평가 모델입니다 (성장 CapEx까지 전액 차감된 보수적 현금흐름 하한선 기준).'
+        : 'Warren Buffett’s discounted cash flow model using Owner Earnings discounted by the required cost of equity to calculate a conservative baseline intrinsic value per share.',
       whyItMatters: isKo
         ? '주가는 단기적으로 시장의 인기투표에 의해 등락하지만, 장기적으로는 기업이 평생 벌어들일 현금의 현재가치(내재가치)로 수렴합니다.'
         : 'Price is what you pay; value is what you get. Stock prices ultimately track per-share cash flow generation.',
@@ -218,8 +218,8 @@ export const DCF_GLOSSARY = {
       title: isKo ? '보수적 추정 내재가치 (Conservative IV)' : 'Conservative Intrinsic Value',
       badge: isKo ? '적정주가 추정' : 'FAIR VALUE',
       description: isKo
-        ? '미래의 불확실성을 감안하여 가장 보수적인 성장률(기본 성장률의 50% 수준)과 충분한 할인율을 적용해 산출한 주당 적정 본질가치입니다.'
-        : 'Estimated intrinsic value per share applying conservative growth assumptions to protect against optimism bias.',
+        ? '미래의 불확실성을 감안하여 기본 성장률 대비 3.0%p 차감된 보수적 성장률(하한 0%)과 주주요구수익률(할인율)을 적용해 산출한 주당 적정 본질가치입니다.'
+        : 'Estimated intrinsic value per share applying a conservative growth assumption (base growth minus 3.0%p, floored at 0%) and required discount rate.',
       whyItMatters: isKo
         ? '과도한 낙관론으로 인한 투자 손실을 막기 위해, 최악의 경제 환경에서도 기업이 창출할 수 있는 안전한 가치를 기준점으로 삼습니다.'
         : 'Prevents overpaying by grounding valuation in pessimistic/modest growth realities.',
@@ -253,11 +253,11 @@ export const DCF_GLOSSARY = {
   scenarios: (language: Language): HelpPopoverContent => {
     const isKo = language === 'ko';
     return {
-      title: isKo ? 'DCF 3대 시나리오 & 할인율 (WACC)' : 'DCF Scenarios & Discount Rate',
+      title: isKo ? 'DCF 3대 시나리오 & 할인율 (주주요구수익률)' : 'DCF Scenarios & Discount Rate (Cost of Equity)',
       badge: isKo ? '시나리오 분석' : 'SENSITIVITY',
       description: isKo
-        ? '미래 성장률에 따라 보수적(Conservative), 기본(Base), 낙관적(Optimistic) 3가지 시나리오로 내재가치를 다각도 비교합니다.'
-        : 'Compares intrinsic value estimates across 3 growth scenarios with explicit discount rates.',
+        ? '미래 성장률에 따라 보수적(Base-3%p), 기본(Base), 낙관적(Base+3%p) 3가지 시나리오로 내재가치를 다각도 비교하며, 주주요구수익률(무위험수익률+5%p 가산, 최저 8% 및 부채 리스크 가산)을 할인율로 적용합니다.'
+        : 'Compares intrinsic value estimates across Conservative (Base-3%p), Base, and Optimistic (Base+3%p) scenarios discounted by required cost of equity (Risk-Free + 5%p floor 8%, plus debt risk adjustments).',
       whyItMatters: isKo
         ? '단 하나의 확정된 숫자가 아닌 합리적인 가치 범위를 파악하여 의사결정의 유연성을 확보합니다.'
         : 'Helps understand the plausible range of value rather than relying on a single static number.',
