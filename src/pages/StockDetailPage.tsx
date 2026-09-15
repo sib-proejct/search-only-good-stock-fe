@@ -10,6 +10,7 @@ import { stockApi } from '../services/api';
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import {
   getConfidenceInfo,
+  getDcfWarningLabel,
   getCoreGradeInfo,
   getIndustryTypeLabel,
   getValuationStatusInfo,
@@ -27,6 +28,7 @@ import {
   Calendar,
   RotateCcw,
   Search,
+  X,
 } from 'lucide-react';
 
 interface StockDetailPageProps {
@@ -62,7 +64,9 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   // Dropdown state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [marketFilter, setMarketFilter] = useState<'ALL' | Market>('ALL');
+  const [dropdownSearch, setDropdownSearch] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -74,6 +78,18 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Auto focus search input on dropdown open, clear search on dropdown close
+  useEffect(() => {
+    if (isDropdownOpen) {
+      const timer = setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    } else {
+      setDropdownSearch('');
+    }
+  }, [isDropdownOpen]);
 
   // Fetch stock detail & rules & stock list
   useEffect(() => {
@@ -88,7 +104,10 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
       try {
         // If currentTicker is not provided (e.g. accessed via /stock directly), fetch stock list and auto-navigate to the first stock
         if (!currentTicker) {
-          const listRes = await stockApi.getStocks({ limit: 100 }, signal);
+          const listRes = await stockApi.getStocks(
+            { limit: 100, sort: 'marketCap', order: 'desc' },
+            signal
+          );
           if (signal.aborted) return;
           if (listRes.items.length > 0) {
             const firstStock = listRes.items[0];
@@ -107,7 +126,10 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
         const [detailRes, rulesRes, listRes] = await Promise.allSettled([
           stockApi.getStockDetail(currentTicker, signal, currentMarket),
           stockApi.getRules(signal),
-          stockApi.getStocks({ limit: 100 }, signal),
+          stockApi.getStocks(
+            { limit: 100, sort: 'marketCap', order: 'desc' },
+            signal
+          ),
         ]);
 
         if (signal.aborted) return;
@@ -236,8 +258,14 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
 
   // Dropdown filtering
   const filteredDropdownStocks = stockList.filter((s) => {
-    if (marketFilter === 'ALL') return true;
-    return s.market === marketFilter;
+    if (marketFilter !== 'ALL' && s.market !== marketFilter) return false;
+    if (dropdownSearch.trim()) {
+      const q = dropdownSearch.trim().toLowerCase();
+      const tickerMatch = s.ticker.toLowerCase().includes(q);
+      const nameMatch = s.name.toLowerCase().includes(q);
+      if (!tickerMatch && !nameMatch) return false;
+    }
+    return true;
   });
 
   const currentIndex = stockList.findIndex(
@@ -378,9 +406,35 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
 
             {/* Dropdown Menu */}
             {isDropdownOpen && (
-              <div className="absolute right-0 top-full mt-2 w-72 sm:w-[21rem] bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-2xl border border-black/[0.08] dark:border-white/[0.12] p-2 z-50 animate-fade-in max-h-[420px] overflow-y-auto">
+              <div className="absolute right-0 top-full mt-2 w-72 sm:w-[22rem] bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-2xl border border-black/[0.08] dark:border-white/[0.12] p-2 z-50 animate-fade-in flex flex-col max-h-[440px]">
+                {/* Search Input */}
+                <div className="relative mb-2">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#86868B] pointer-events-none" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={dropdownSearch}
+                    onChange={(e) => setDropdownSearch(e.target.value)}
+                    placeholder={t('searchPlaceholder')}
+                    className="w-full pl-8 pr-7 py-1.5 text-xs bg-[#F2F4F6] dark:bg-[#252528] text-[#1D1D1F] dark:text-[#F5F5F7] placeholder-[#86868B] rounded-xl border border-transparent focus:border-[#0071E3]/30 dark:focus:border-[#2997FF]/30 focus:outline-none transition-all"
+                  />
+                  {dropdownSearch && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDropdownSearch('');
+                        searchInputRef.current?.focus();
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] p-1 rounded-full cursor-pointer"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+
                 {/* Market Switcher */}
-                <div className="flex items-center gap-1 p-1 bg-[#F2F4F6] dark:bg-[#252528] rounded-xl mb-2">
+                <div className="flex items-center gap-1 p-1 bg-[#F2F4F6] dark:bg-[#252528] rounded-xl mb-2 shrink-0">
                   {(['ALL', 'NASDAQ', 'NYSE', 'KOSPI', 'KOSDAQ'] as const).map((m) => (
                     <button
                       key={m}
@@ -396,60 +450,71 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
                 </div>
 
                 {/* Stock List */}
-                <div className="space-y-0.5">
-                  {filteredDropdownStocks.map((s, idx) => {
-                    const isCurrent =
-                      s.ticker.toUpperCase() === detail.ticker.toUpperCase() &&
-                      s.market === detail.market;
-                    return (
-                      <button
-                        key={s.id}
-                        onClick={() => handleSelectFromList(s)}
-                        className={`w-full text-left px-3 py-2.5 rounded-xl flex items-center justify-between transition-colors cursor-pointer select-none ${isCurrent
-                          ? 'bg-[#F2F4F6] dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] font-bold'
-                          : 'text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F9FAFB] dark:hover:bg-[#252528]'
-                          }`}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="font-mono text-xs text-[#86868B] w-4 shrink-0 tabular-nums">
-                            {idx + 1}
-                          </span>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-bold font-mono text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
-                                {s.ticker}
-                              </span>
-                              <span className="text-[10px] text-[#86868B] truncate">
-                                {s.name}
-                              </span>
-                            </div>
-                            <div className="text-[10px] text-[#86868B] mt-0.5">
-                              <span className="font-mono tabular-nums">
-                                {formatPrice(s.currentPrice, s.currency)}
-                              </span>{' '}
-                              · {s.market}
+                <div className="space-y-0.5 overflow-y-auto flex-1 pr-0.5">
+                  {filteredDropdownStocks.length === 0 ? (
+                    <div className="py-8 text-center text-xs text-[#86868B]">
+                      {t('noStocksFound')}
+                    </div>
+                  ) : (
+                    filteredDropdownStocks.map((s, idx) => {
+                      const isCurrent =
+                        s.ticker.toUpperCase() === detail.ticker.toUpperCase() &&
+                        s.market === detail.market;
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => handleSelectFromList(s)}
+                          className={`w-full text-left px-3 py-2.5 rounded-xl flex items-center justify-between transition-colors cursor-pointer select-none ${isCurrent
+                            ? 'bg-[#F2F4F6] dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] font-bold'
+                            : 'text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F9FAFB] dark:hover:bg-[#252528]'
+                            }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="font-mono text-xs text-[#86868B] w-4 shrink-0 tabular-nums">
+                              {idx + 1}
+                            </span>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold font-mono text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
+                                  {s.ticker}
+                                </span>
+                                <span className="text-[10px] text-[#86868B] truncate">
+                                  {s.name}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-[#86868B] mt-0.5 flex items-center gap-1">
+                                <span className="font-mono tabular-nums">
+                                  {formatPrice(s.currentPrice, s.currency)}
+                                </span>
+                                <span>·</span>
+                                <span className="font-mono tabular-nums">
+                                  {formatMarketCap(s.marketCap, s.currency)}
+                                </span>
+                                <span>·</span>
+                                <span>{s.market}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                          {(() => {
-                            const gradeInfo = getCoreGradeInfo(s.corePassCount, s.coreStatus, language);
-                            return (
-                              <span
-                                className={`text-[10px] font-mono font-bold ${gradeInfo.textClass}`}
-                              >
-                                {gradeInfo.badgeLabel}
-                              </span>
-                            );
-                          })()}
-                          {isCurrent && (
-                            <Check className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF] stroke-[2.5]" />
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
+                          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                            {(() => {
+                              const gradeInfo = getCoreGradeInfo(s, language);
+                              return (
+                                <span
+                                  className={`text-[10px] font-mono font-bold ${gradeInfo.textClass}`}
+                                >
+                                  {gradeInfo.badgeLabel}
+                                </span>
+                              );
+                            })()}
+                            {isCurrent && (
+                              <Check className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF] stroke-[2.5]" />
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             )}
@@ -534,21 +599,21 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
 
         {/* Global Warnings Banner */}
         {detail.warnings && detail.warnings.length > 0 && (
-          <div className="mt-5 p-3.5 rounded-2xl bg-[#FF9500]/10 border border-[#FF9500]/20 space-y-1">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#C93400] dark:text-[#FF9500]">
+          <details className="mt-5 p-3.5 rounded-2xl bg-[#FF9500]/10 border border-[#FF9500]/20 space-y-1">
+            <summary className="flex items-center gap-1.5 text-xs font-bold text-[#C93400] dark:text-[#FF9500] cursor-pointer">
               <AlertTriangle className="w-4 h-4" />
               <span>
                 {language === 'ko'
                   ? `종목 데이터 분석 경고 (${detail.warnings.length}건)`
                   : `Data Analysis Warnings (${detail.warnings.length})`}
               </span>
-            </div>
+            </summary>
             {detail.warnings.map((w, idx) => (
               <p key={idx} className="text-xs text-[#86868B] leading-relaxed">
-                • {w}
+                • {getDcfWarningLabel(w, language)}
               </p>
             ))}
-          </div>
+          </details>
         )}
       </div>
 
@@ -556,7 +621,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* KPI 1: Core Status */}
         {(() => {
-          const gradeInfo = getCoreGradeInfo(detail.corePassCount, detail.coreStatus, language);
+          const gradeInfo = getCoreGradeInfo(detail, language);
           return (
             <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 sm:p-5 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
               <span className="text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">
@@ -572,7 +637,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
                 <div className="text-[11px] text-[#86868B] mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between font-mono">
                   <span>{detail.corePassCount} PASS · {detail.coreFailCount} FAIL · {detail.coreNaCount} NA</span>
                   <span className="text-[10px] font-bold">
-                    {language === 'ko' ? '핵심 7원칙' : 'CORE RULES'}
+                    {gradeInfo.passRatioText} {language === 'ko' ? '충족' : 'passed'}
                   </span>
                 </div>
               </div>
@@ -593,7 +658,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
                   {valInfo.label}
                 </span>
                 <div className="text-[11px] text-[#86868B] mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
-                  <span>Owner Earnings DCF</span>
+                  <span>Cash-Flow Proxy DCF</span>
                   <span className="text-[10px] font-mono text-[#0071E3] dark:text-[#2997FF] font-semibold">
                     {detail.valuationStatus}
                   </span>

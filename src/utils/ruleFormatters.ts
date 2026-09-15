@@ -3,6 +3,8 @@ import {
   Currency,
   IndustryType,
   RuleDefinitionDTO,
+  RuleEvaluationDTO,
+  StockSummaryDTO,
   ValuationStatus,
 } from '../types/api';
 import { Language } from '../locales/translations';
@@ -11,6 +13,46 @@ export interface RuleTitleInfo {
   title: string;
   shortTitle: string;
   subtitle: string;
+}
+
+export function getRuleAvailabilityLabel(
+  evaluation: Pick<RuleEvaluationDTO, 'status' | 'reasonCodes'>,
+  language: Language,
+): string {
+  if (evaluation.status !== 'N/A') return evaluation.status;
+  const isKo = language === 'ko';
+  const reasons = evaluation.reasonCodes ?? [];
+  if (reasons.includes('FINANCIAL_SECTOR')) return isKo ? '업종 제외' : 'Sector excluded';
+  if (reasons.includes('INSUFFICIENT_HISTORY')) return isKo ? '이력 부족' : 'Short history';
+  if (reasons.includes('MISSING_DATA')) return isKo ? '자료 부족' : 'Missing data';
+  if (reasons.includes('UNKNOWN_INTEREST_CLASSIFICATION')) return isKo ? '분류 확인 필요' : 'Classification needed';
+  return isKo ? '계산 불가' : 'Not calculable';
+}
+
+export function getRuleWarningLabel(warning: string, language: Language): string {
+  const isKo = language === 'ko';
+  const missingYear = warning.match(/^MISSING_ANNUAL_YEAR:(\d{4})$/);
+  if (missingYear) {
+    return isKo ? `${missingYear[1]}년 연간 재무 이력이 없습니다.` : `Annual financial history is missing for ${missingYear[1]}.`;
+  }
+  const missingField = warning.match(/^MISSING_ANNUAL_FIELD:(\d{4}):([a-z_]+)$/);
+  if (!missingField) return warning;
+  const [, year, field] = missingField;
+  const labels: Record<string, [string, string]> = {
+    net_income_common: ['보통주 귀속 순이익', 'net income attributable to common shareholders'],
+    common_equity: ['보통주 자기자본', 'common equity'],
+    ebit: ['영업이익', 'operating income'],
+    pre_tax_income: ['세전이익', 'pre-tax income'],
+    income_tax_expense: ['법인세 비용', 'income tax expense'],
+    interest_bearing_debt: ['이자발생부채 총액', 'total interest-bearing debt'],
+    cash_and_equivalents: ['현금 및 현금성자산', 'cash and equivalents'],
+    total_liabilities: ['총부채', 'total liabilities'],
+    cfo: ['영업현금흐름', 'operating cash flow'],
+    capex: ['유형·무형자산 투자지출 합계', 'combined tangible and intangible capital expenditure'],
+    diluted_eps: ['희석 EPS', 'diluted EPS'],
+  };
+  const label = labels[field]?.[isKo ? 0 : 1] ?? field;
+  return isKo ? `${year}년 ${label}을 확인할 수 없습니다.` : `${year}: ${label} is unavailable.`;
 }
 
 export function getRuleInfo(
@@ -28,8 +70,8 @@ export function getRuleInfo(
           : 'Sustained Return on Equity (ROE)',
         shortTitle: isKo ? '지속 ROE' : 'Sustained ROE',
         subtitle: isKo
-          ? '5개년 매년 ROE 15% 이상 달성 (초과 자본수익성)'
-          : '5-Year Annual ROE ≥ 15% (Excess Capital Return)',
+          ? '3개년 매년 ROE 10% 이상 달성 (초과 자본수익성)'
+          : '3-Year Annual ROE ≥ 10% (Excess Capital Return)',
       };
     case 'sustained_roic':
       return {
@@ -38,8 +80,8 @@ export function getRuleInfo(
           : 'Sustained Return on Invested Capital (ROIC)',
         shortTitle: isKo ? '투하자본이익률' : 'Sustained ROIC',
         subtitle: isKo
-          ? '5개년 매년 ROIC 10% 이상 달성 (영업자본 효율성)'
-          : '5-Year Annual ROIC ≥ 10% (Operating Efficiency)',
+          ? '3개년 매년 ROIC 10% 이상 달성 (영업자본 효율성)'
+          : '3-Year Annual ROIC ≥ 10% (Operating Efficiency)',
       };
     case 'debt_safety':
       return {
@@ -48,8 +90,8 @@ export function getRuleInfo(
           : 'Conservative Debt Safety & Interest Coverage',
         shortTitle: isKo ? '부채 안전성' : 'Debt Safety',
         subtitle: isKo
-          ? '부채비율 100% 이하 & 이자보상배율 5배 이상'
-          : 'Debt/Equity ≤ 100% & Interest Coverage ≥ 5.0x',
+          ? '부채비율 150% 이하 & 이자보상배율 3배 이상'
+          : 'Debt/Equity ≤ 150% & Interest Coverage ≥ 3.0x',
       };
     case 'retained_value_test':
       return {
@@ -68,8 +110,8 @@ export function getRuleInfo(
           : 'Capital-Light Business (CapEx Efficiency)',
         shortTitle: isKo ? '설비투자 효율성' : 'Capital-Light',
         subtitle: isKo
-          ? '누적 영업현금흐름 대비 설비투자(CapEx) 50% 이하'
-          : '5Y Cumulative CapEx / CFO ≤ 50%',
+          ? '누적 영업현금흐름 대비 설비투자(CapEx) 70% 이하'
+          : '3Y Cumulative CapEx / CFO ≤ 70%',
       };
     case 'proven_earnings_power':
       return {
@@ -78,8 +120,8 @@ export function getRuleInfo(
           : 'Proven Earnings Power (Consecutive Profit)',
         shortTitle: isKo ? '검증된 이익창출력' : 'Proven Earnings',
         subtitle: isKo
-          ? '5개년 전 기간 영업이익(EBIT) 및 순이익 흑자 유지'
-          : 'Positive Operating Profit & Net Income Across All 5 Years',
+          ? '3개년 전 기간 영업이익(EBIT) 및 순이익 흑자 유지'
+          : 'Positive Operating Profit & Net Income Across All 3 Years',
       };
     case 'eps_growth':
       return {
@@ -88,8 +130,8 @@ export function getRuleInfo(
           : 'EPS Compound Growth (CAGR)',
         shortTitle: isKo ? 'EPS 복리성장' : 'EPS Growth',
         subtitle: isKo
-          ? '희석 주당순이익(EPS) 5개년 복리성장률 8% 이상'
-          : '5-Year Diluted EPS CAGR ≥ 8.0%',
+          ? '최근 3개 회계연도 시작·종료 희석 EPS 기준 연환산 성장률 8% 이상'
+          : 'Diluted EPS CAGR ≥ 8% across 3 fiscal years (2 elapsed years)',
       };
     case 'capital_action_flag':
       return {
@@ -108,8 +150,8 @@ export function getRuleInfo(
           : 'Owner Earnings Quality (Cash Conversion)',
         shortTitle: isKo ? '주주이익 품질' : 'OE Quality',
         subtitle: isKo
-          ? '실질 주주이익(OE) 흑자 및 현금전환율 80% 이상'
-          : 'Positive Owner Earnings & Cash Conversion ≥ 80%',
+          ? '실질 주주이익(OE) 흑자 및 현금전환율 60% 이상'
+          : 'Positive Owner Earnings & Cash Conversion ≥ 60%',
       };
     case 'owner_earnings_yield':
       return {
@@ -118,8 +160,8 @@ export function getRuleInfo(
           : 'Owner Earnings Yield Spread vs Risk-Free',
         shortTitle: isKo ? '주주이익 초과수익' : 'Yield Spread',
         subtitle: isKo
-          ? '시가총액 대비 주주이익 수익률이 국채금리 초과'
-          : 'Owner Earnings Yield ≥ Risk-Free Benchmark Rate',
+          ? '시가총액 대비 주주이익 수익률이 국채금리보다 3%p 이상 높음'
+          : 'Owner Earnings Yield ≥ Risk-Free Rate + 3 percentage points',
       };
     case 'owner_earnings_dcf':
       return {
@@ -128,7 +170,7 @@ export function getRuleInfo(
           : '10-Year Owner Earnings DCF Valuation & MoS',
         shortTitle: isKo ? '주주이익 DCF' : 'Owner Earnings DCF',
         subtitle: isKo
-          ? '워런 버핏 방식 현금흐름할인 및 20% 이상 안전마진'
+          ? '투자지출 차감 현금흐름 기반 추정치 · 데이터 검증 후 할인 폭 평가'
           : 'DCF Fair Value with 20%+ Margin of Safety',
       };
     default: {
@@ -187,15 +229,15 @@ export function getMetricLabel(metricId: string, language: Language): string {
 
     // Capital light business
     case 'cumulative_cfo':
-      return isKo ? '5개년 누적 영업현금흐름(CFO)' : '5Y Cumulative CFO';
+      return isKo ? '평가 기간 누적 영업현금흐름(CFO)' : 'Cumulative CFO over the evaluation period';
     case 'cumulative_capex':
-      return isKo ? '5개년 누적 자본적지출(CapEx)' : '5Y Cumulative CapEx';
+      return isKo ? '평가 기간 누적 자본적지출(CapEx)' : 'Cumulative CapEx over the evaluation period';
     case 'capital_intensity':
       return isKo ? '자본집약도 (CapEx/CFO)' : 'Capital Intensity (CapEx/CFO)';
 
     // EPS growth
     case 'eps_cagr':
-      return isKo ? '5개년 EPS 연평균 복리성장률' : '5Y EPS CAGR';
+      return isKo ? '평가 기간 EPS 연평균 복리성장률' : 'EPS CAGR over the evaluation period';
 
     // Capital action
     case 'diluted_share_cagr':
@@ -279,7 +321,7 @@ export function formatCriteria(
     return '';
   }
 
-  return def.defaultThresholds
+  const thresholds = def.defaultThresholds
     .map((th) => {
       const op =
         th.operator === 'GTE'
@@ -304,6 +346,26 @@ export function formatCriteria(
       return `${metricName} ${op} ${valStr}`;
     })
     .join(' · ');
+
+  const isKo = language === 'ko';
+  const years = def.supportedHistoryYears[0];
+  switch (def.ruleId) {
+    case 'sustained_roe':
+    case 'sustained_roic':
+    case 'debt_safety':
+    case 'proven_earnings_power':
+      return `${isKo ? `최근 연속 ${years}개년 매년` : `Every year across ${years} consecutive fiscal years`}: ${thresholds}`;
+    case 'eps_growth':
+      return `${thresholds} · ${isKo ? `시작·종료 EPS > 0, ${years}개 연도 간 경과 ${years - 1}년` : `Start/end EPS > 0; ${years - 1} elapsed years across ${years} observations`}`;
+    case 'capital_light_business':
+      return `${thresholds} · ${isKo ? `${years}개년 누적 CFO > 0` : `${years}-year cumulative CFO > 0`}`;
+    case 'owner_earnings_quality':
+      return `${thresholds} · ${isKo ? '최근·중앙값 주주이익 > 0, 누적 순이익 > 0' : 'Latest and median OE > 0; cumulative net income > 0'}`;
+    case 'retained_value_test':
+      return `${thresholds} · ${isKo ? '동일 기간 BPS 성장률 > 벤치마크 성장률' : 'BVPS CAGR > benchmark CAGR over the same interval'}`;
+    default:
+      return thresholds;
+  }
 }
 
 /**
@@ -358,11 +420,11 @@ export function getValuationStatusInfo(
       };
     case 'WATCH':
       return {
-        label: isKo ? '적정가 부근 (관찰)' : 'Watch (Near Fair Value)',
+        label: isKo ? '추가 검토 필요' : 'Review Required',
         badgeLabel: isKo ? '관찰 필요' : 'Watch',
         desc: isKo
-          ? '현재 주가가 보수적 내재가치 부근에 위치하여 추가 조정 시 매력적입니다.'
-          : 'Market price is near conservative fair value; watch for better margin.',
+          ? '가격 또는 데이터 신뢰도·핵심 규칙에 대한 추가 검토가 필요합니다.'
+          : 'Review price, data quality and core-rule results before interpreting the discount.',
       };
     case 'NO_MARGIN':
       return {
@@ -401,7 +463,7 @@ export function getConfidenceInfo(
     case 'MEDIUM':
       return {
         label: isKo ? '보통 (MEDIUM)' : 'Medium Quality',
-        desc: isKo ? '3개년 이상 데이터 확보 및 기본 검증 통과' : '3-Year Data Available',
+        desc: isKo ? '5개년 계산 결과에 추가 검토 사유가 있습니다.' : 'Five-year estimate with review flags',
       };
     case 'LOW':
     default:
@@ -413,7 +475,7 @@ export function getConfidenceInfo(
 }
 
 export interface CoreGradeInfo {
-  grade: 'S' | 'A' | 'B' | 'C' | 'N/A';
+  grade: 'PASS' | 'FAIL' | 'N/A';
   label: string;
   badgeLabel: string;
   badgeClass: string;
@@ -423,87 +485,53 @@ export interface CoreGradeInfo {
   desc: string;
 }
 
-/**
- * Returns core evaluation grade based on pass count (7 core rules)
- */
+/** The aggregate rule result is authoritative; counts never override failures. */
 export function getCoreGradeInfo(
-  passCount: number,
-  coreStatus: string,
+  stock: Pick<StockSummaryDTO, 'corePassCount' | 'coreFailCount' | 'coreNaCount' | 'coreStatus'>,
   language: Language
 ): CoreGradeInfo {
   const isKo = language === 'ko';
-  if (coreStatus === 'N/A' && passCount === 0) {
-    return {
-      grade: 'N/A',
-      label: isKo ? 'N/A (평가 불가)' : 'N/A (Not Applicable)',
-      badgeLabel: 'N/A',
-      badgeClass:
-        'bg-[#86868B]/10 text-[#86868B] border-[#86868B]/20 dark:bg-white/[0.06] dark:text-[#A1A1A6] dark:border-white/[0.1]',
-      dotClass: 'bg-[#86868B]',
-      textClass: 'text-[#86868B] dark:text-[#A1A1A6]',
-      passRatioText: '0/7',
-      desc: isKo
-        ? '금융업 또는 데이터 부재로 핵심 원칙 평가 불가'
-        : 'Not applicable due to financial sector or missing data',
-    };
-  }
-  if (coreStatus === 'PASS' || passCount === 7) {
-    return {
-      grade: 'S',
-      label: isKo ? 'S등급 (통과)' : 'Grade S (Pass)',
-      badgeLabel: isKo ? 'S등급' : 'Grade S',
-      badgeClass:
-        'bg-[#34C759]/10 text-[#34C759] border-[#34C759]/20 dark:bg-[#34C759]/15 dark:text-[#30D158] dark:border-[#30D158]/25',
-      dotClass: 'bg-[#34C759]',
-      textClass: 'text-[#34C759] dark:text-[#30D158]',
-      passRatioText: `${passCount}/7`,
-      desc: isKo
-        ? '7개 핵심 투자 원칙을 모두 통과한 최우량 기업'
-        : 'Meets all 7 core investment principles',
-    };
-  }
-  if (passCount >= 5) {
-    return {
-      grade: 'A',
-      label: isKo ? 'A등급 (우량)' : 'Grade A (Great)',
-      badgeLabel: isKo ? 'A등급' : 'Grade A',
-      badgeClass:
-        'bg-[#34C759]/10 text-[#34C759] border-[#34C759]/20 dark:bg-[#34C759]/15 dark:text-[#30D158] dark:border-[#30D158]/25',
-      dotClass: 'bg-[#34C759]',
-      textClass: 'text-[#34C759] dark:text-[#30D158]',
-      passRatioText: `${passCount}/7`,
-      desc: isKo
-        ? '5~6개 핵심 지표를 충족한 우량 관심 종목'
-        : 'Meets 5-6 core investment principles',
-    };
-  }
-  if (passCount >= 3) {
-    return {
-      grade: 'B',
-      label: isKo ? 'B등급 (보통)' : 'Grade B (Average)',
-      badgeLabel: isKo ? 'B등급' : 'Grade B',
-      badgeClass:
-        'bg-[#FF9500]/10 text-[#FF9500] border-[#FF9500]/20 dark:bg-[#FF9F0A]/15 dark:text-[#FF9F0A] dark:border-[#FF9F0A]/25',
-      dotClass: 'bg-[#FF9500]',
-      textClass: 'text-[#FF9500] dark:text-[#FF9F0A]',
-      passRatioText: `${passCount}/7`,
-      desc: isKo
-        ? '3~4개 핵심 지표 충족, 추가 관찰 필요'
-        : 'Meets 3-4 core investment principles',
-    };
-  }
+  const { corePassCount: passCount, coreStatus } = stock;
+  const totalCount = passCount + stock.coreFailCount + stock.coreNaCount;
+  const passed = coreStatus === 'PASS';
+  const failed = coreStatus === 'FAIL';
+  const label = passed
+    ? (isKo ? '기준 통과' : 'Criteria Passed')
+    : failed
+      ? (isKo ? '기준 미달' : 'Failed Criteria')
+      : (isKo ? '평가 불가' : 'Incomplete');
   return {
-    grade: 'C',
-    label: isKo ? 'C등급 (미달)' : 'Grade C (Low)',
-    badgeLabel: isKo ? 'C등급' : 'Grade C',
-    badgeClass:
-      'bg-[#86868B]/10 text-[#86868B] border-[#86868B]/20 dark:bg-white/[0.06] dark:text-[#A1A1A6] dark:border-white/[0.1]',
-    dotClass: 'bg-[#86868B]',
-    textClass: 'text-[#86868B] dark:text-[#A1A1A6]',
-    passRatioText: `${passCount}/7`,
-    desc: isKo
-      ? '핵심 투자 기준 충족 미흡 (3개 미만)'
-      : 'Meets fewer than 3 core principles',
+    grade: passed ? 'PASS' : failed ? 'FAIL' : 'N/A',
+    label,
+    badgeLabel: label,
+    badgeClass: passed
+      ? 'bg-[#34C759]/10 text-[#34C759] border-[#34C759]/20'
+      : failed
+        ? 'bg-[#FF3B30]/10 text-[#FF3B30] border-[#FF3B30]/20'
+        : 'bg-[#86868B]/10 text-[#86868B] border-[#86868B]/20',
+    dotClass: passed ? 'bg-[#34C759]' : failed ? 'bg-[#FF3B30]' : 'bg-[#86868B]',
+    textClass: passed ? 'text-[#34C759]' : failed ? 'text-[#FF3B30]' : 'text-[#86868B]',
+    passRatioText: `${passCount}/${totalCount}`,
+    desc: passed
+      ? (isKo ? `${passCount}/${totalCount} 충족. 수익력·부채 안전성 필수 조건과 핵심 통과 기준 충족. 가격 매력도는 DCF에서 별도로 확인하세요.` : `${passCount}/${totalCount} passed. Required earnings and debt safety checks and the core pass threshold are met. Review valuation separately.`)
+      : failed
+        ? (isKo ? `${passCount}/${totalCount} 충족. 필수 규칙 실패 또는 통과 가능 개수 부족으로 기준 미달입니다.` : `${passCount}/${totalCount} passed. A required rule failed or too few rules can pass.`)
+        : (isKo ? `${passCount}/${totalCount} 충족. 이력 부족·결측 또는 업종 특성으로 전체 판정을 할 수 없습니다.` : `${passCount}/${totalCount} passed. History, data or sector applicability prevents a complete assessment.`),
   };
 }
 
+export function getDcfWarningLabel(warning: string, language: Language): string {
+  const labels: Record<string, [string, string]> = {
+    CASH_FLOW_PROXY: ['영업현금흐름에서 유형·무형자산 투자를 차감한 추정 모델입니다. 유지투자, 주식보상, 순차입을 별도로 조정한 가치는 아닙니다.', 'Cash-flow proxy deducting tangible and intangible investment; maintenance investment, stock compensation and net borrowing are not separately adjusted.'],
+    ESTIMATED_CURRENT_SHARES: ['현재 주식 수가 확인되지 않아 연간 평균 주식 수를 사용했습니다. 주당 가치와 시가총액 추정에 오차가 있을 수 있습니다.', 'Current shares are unverified; annual average shares may distort per-share value and estimated market capitalization.'],
+    INCOMPLETE_GROWTH_HISTORY: ['EPS와 주당 현금흐름의 5년 이력이 완전하지 않아 양의 성장률을 적용하지 않았습니다.', 'Incomplete five-year EPS or per-share cash-flow history: no positive growth assumed.'],
+    CORE_RULE_FAIL: ['실패한 핵심 규칙이 있어 가치평가에 추가 검토가 필요합니다.', 'A core rule failed; review the valuation.'],
+    CORE_RULE_NA: ['평가할 수 없는 핵심 규칙이 있습니다.', 'Some core rules could not be evaluated.'],
+    CAPITAL_ACTION_REVIEW: ['주식 수 변동 또는 관련 데이터 부족을 확인하세요.', 'Review changes in shares or missing share data.'],
+    WIDE_VALUATION_RANGE: ['성장률 가정에 따라 추정가치 차이가 큽니다.', 'Valuation is sensitive to growth assumptions.'],
+    NEGATIVE_GROWTH: ['과거 역성장을 반영했습니다.', 'Historical negative growth is reflected.'],
+    ONE_YEAR_HISTORY: ['재무 이력이 1년뿐입니다.', 'Only one year of financial history.'],
+    MARGIN_REQUIRES_REVIEW: ['계산상 할인 폭이 커도 데이터·핵심 규칙 검증이 부족하여 안전마진 통과로 판정하지 않습니다.', 'A calculated discount does not qualify as a margin pass without sufficient data and core-rule validation.'],
+  };
+  return labels[warning]?.[language === 'ko' ? 0 : 1] ?? getRuleWarningLabel(warning, language);
+}

@@ -340,7 +340,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                   </span>
 
                   {(() => {
-                    const gradeInfo = getCoreGradeInfo(stock.corePassCount, stock.coreStatus, language);
+                    const gradeInfo = getCoreGradeInfo(stock, language);
                     return (
                       <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${gradeInfo.textClass}`} title={gradeInfo.desc}>
                         <span className={`w-2 h-2 rounded-full ${gradeInfo.dotClass}`} />
@@ -390,7 +390,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {/* Core Status */}
             {(() => {
-              const gradeInfo = getCoreGradeInfo(stock.corePassCount, stock.coreStatus, language);
+              const gradeInfo = getCoreGradeInfo(stock, language);
               return (
                 <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
                   <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">{t('coreStatusLabel')}</span>
@@ -418,7 +418,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                   {stock.valuationStatus.replace(/_/g, ' ')}
                 </span>
                 <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06]">
-                  DCF Owner Earnings
+                  Cash-Flow Proxy DCF
                 </div>
               </div>
             </div>

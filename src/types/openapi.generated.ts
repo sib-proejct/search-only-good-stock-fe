@@ -203,6 +203,11 @@ export interface components {
         /** CurrentMarketInput */
         CurrentMarketInput: {
             /**
+             * Sharesareestimated
+             * @default true
+             */
+            sharesAreEstimated: boolean;
+            /**
              * Asof
              * Format: date-time
              */

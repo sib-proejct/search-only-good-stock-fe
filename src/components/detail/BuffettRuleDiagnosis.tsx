@@ -5,7 +5,6 @@ import {
   ReasonCode,
   RuleDefinitionDTO,
   RuleEvaluationDTO,
-  RuleStatus,
 } from '../../types/api';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
 import {
@@ -13,6 +12,8 @@ import {
   formatCriteria,
   getMetricLabel,
   getRuleInfo,
+  getRuleWarningLabel,
+  getRuleAvailabilityLabel,
 } from '../../utils/ruleFormatters';
 import {
   ShieldCheck,
@@ -64,7 +65,7 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
 
   const formatMetricValue = (metric: MetricValueDTO): string => {
     if (metric.specialValue === 'INFINITY') {
-      return '∞ (무차입/이자0)';
+      return language === 'ko' ? '∞ (이자 0, EBIT 양수)' : '∞ (zero interest, positive EBIT)';
     }
     if (metric.value === null || metric.value === undefined) {
       return '—';
@@ -95,8 +96,8 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
     }
   };
 
-  const getStatusBadge = (status: RuleStatus) => {
-    switch (status) {
+  const getStatusBadge = (evaluation: RuleEvaluationDTO) => {
+    switch (evaluation.status) {
       case 'PASS':
         return (
           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#34C759] font-mono">
@@ -116,7 +117,7 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
         return (
           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#FF9500] font-mono">
             <AlertCircle className="w-3.5 h-3.5" />
-            N/A
+            {getRuleAvailabilityLabel(evaluation, language)}
           </span>
         );
     }
@@ -124,7 +125,8 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
 
   const passCount = evaluations.filter((e) => e.status === 'PASS').length;
   const failCount = evaluations.filter((e) => e.status === 'FAIL').length;
-  const naCount = evaluations.filter((e) => e.status === 'N/A').length;
+  const excludedCount = evaluations.filter((e) => e.status === 'N/A' && e.reasonCodes.includes('FINANCIAL_SECTOR')).length;
+  const naCount = evaluations.filter((e) => e.status === 'N/A').length - excludedCount;
 
   return (
     <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-6 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col space-y-6 transition-colors duration-300">
@@ -144,29 +146,36 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
                 description: language === 'ko'
                   ? '워런 버핏의 경제적 해자(Moat), 재무 안전성, 소유주 주주이익 원칙을 기반으로 종목을 엄격히 평가하는 진단 모델입니다.'
                   : 'Rigorous 11-pillar evaluation framework based on Warren Buffett economic moats, solvency, and owner earnings.',
-                whyItMatters: language === 'ko'
-                  ? '핵심 7원칙을 모두 통과(PASS)해야만 최종 적합 종목으로 판정되며, 한 가지 원칙이라도 미달하면 보수적으로 걸러냅니다.'
-                  : 'All core 7 rules must be satisfied to earn a PASS rating.',
+                whyItMatters: t('coreAssessmentPolicy'),
               }}
             />
           </div>
           <p className="text-xs text-[#86868B] mt-1 font-normal">
             {language === 'ko'
-              ? '워런 버핏의 경제적 해자 및 재무 안전성 11대 원칙 정밀 진단 결과'
-              : 'Warren Buffett 11-Pillar Economic Moat & Safety Diagnosis Results'}
+              ? '핵심 6개·보조 3개 규칙의 결과입니다. 전체 판정에는 핵심 규칙만 반영합니다.'
+              : 'Results for 6 core and 3 auxiliary rules. Only core rules determine the overall assessment.'}
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#86868B]">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex flex-wrap items-center gap-1.5 text-xs font-mono font-bold text-[#86868B]">
             <span className="text-[#34C759]">{passCount} PASS</span>
             <span>·</span>
             <span className="text-[#FF3B30]">{failCount} FAIL</span>
             <span>·</span>
-            <span>{naCount} N/A</span>
+            <span>{language === 'ko' ? `평가 보류 ${naCount}` : `Unresolved ${naCount}`}</span>
+            {excludedCount > 0 && <><span>·</span><span>{language === 'ko' ? `업종 제외 ${excludedCount}` : `Sector excluded ${excludedCount}`}</span></>}
           </span>
         </div>
       </div>
+
+      {(naCount > 0 || excludedCount > 0) && (
+        <p className="text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
+          {language === 'ko'
+            ? '자료·이력이 부족한 개별 규칙은 평가를 보류합니다. 핵심 규칙은 최근 3개년 자료가 필요하며, ROE·ROIC에는 기초 잔액도 필요합니다. 업종 제외는 해당 규칙이 금융업에 적용되지 않는다는 뜻이며, 금융업은 현재 Core 기준으로 통과할 수 없습니다.'
+            : 'Individual rules remain unresolved when data or history is missing. Core rules require 3 years, plus opening balances for ROE and ROIC. Sector exclusion means the rule does not apply to financial companies, which cannot pass the current Core policy.'}
+        </p>
+      )}
 
       {/* Rules Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -203,7 +212,7 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
                       {categoryLabel}
                     </span>
                   </div>
-                  {getStatusBadge(evalItem.status)}
+                  {getStatusBadge(evalItem)}
                 </div>
 
                 {/* Friendly Title & Subtitle */}
@@ -219,7 +228,7 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
 
                 {/* Criteria */}
                 {criteriaText && (
-                  <div className="mt-2 text-[10px] text-[#6E6E73] dark:text-[#86868B] font-mono truncate" title={criteriaText}>
+                  <div className="mt-2 text-[10px] text-[#6E6E73] dark:text-[#86868B] font-mono leading-relaxed" title={criteriaText}>
                     <span className="font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
                       {language === 'ko' ? '판정 기준' : 'Criteria'}:
                     </span>{' '}
@@ -279,7 +288,7 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
                         className="flex items-start gap-1 text-[10px] text-[#FF9500] leading-tight"
                       >
                         <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
-                        <span>{warn}</span>
+                        <span>{getRuleWarningLabel(warn, language)}</span>
                       </div>
                     ))}
                   </div>

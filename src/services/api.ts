@@ -1,4 +1,5 @@
 import {
+  BatchRunStatusDTO,
   Market,
   RuleListResponse,
   StockDetailDTO,
@@ -105,6 +106,44 @@ export const stockApi = {
       queryString ? `?${queryString}` : ''
     }`;
     const response = await fetch(url, { signal });
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
+
+  async triggerBatchRefresh(signal?: AbortSignal): Promise<BatchRunStatusDTO> {
+    const response = await fetch(`${API_BASE_URL}/api/batch/refresh`, {
+      method: 'POST',
+      signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
+
+  async cancelBatchRefresh(signal?: AbortSignal): Promise<BatchRunStatusDTO> {
+    const response = await fetch(`${API_BASE_URL}/api/batch/cancel`, {
+      method: 'POST',
+      signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
+
+  async getBatchStatus(signal?: AbortSignal): Promise<BatchRunStatusDTO> {
+    const response = await fetch(`${API_BASE_URL}/api/batch/status`, {
+      signal,
+    });
 
     if (!response.ok) {
       throw new Error(await parseErrorMessage(response));

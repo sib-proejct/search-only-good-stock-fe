@@ -17,10 +17,13 @@ import {
   Search,
   Check,
   ChevronRight,
+  RefreshCw,
+  CircleStop,
 } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import { StockDetailDrawer } from '../components/screener/StockDetailDrawer';
 import { StockSort, StockSummaryDTO } from '../types/api';
+import { stockApi } from '../services/api';
 import { getCoreGradeInfo } from '../utils/ruleFormatters';
 
 interface ScreenerPageProps {
@@ -82,6 +85,133 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const [isBatchRefreshing, setIsBatchRefreshing] = useState(false);
+  const [isBatchCancelling, setIsBatchCancelling] = useState(false);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
+  const [batchProgress, setBatchProgress] = useState({ completed: 0, total: 0 });
+
+  // Poll batch status if batch is running on mount or after trigger
+  useEffect(() => {
+    let intervalId: number | null = null;
+
+    const pollStatus = async () => {
+      try {
+        const res = await stockApi.getBatchStatus();
+        setBatchProgress({
+          completed: res.successItems + res.failedItems + res.skippedItems,
+          total: res.totalItems,
+        });
+        if (res.status === 'RUNNING') {
+          setIsBatchRefreshing(true);
+          setIsBatchCancelling(false);
+        } else if (res.status === 'CANCEL_REQUESTED') {
+          setIsBatchRefreshing(true);
+          setIsBatchCancelling(true);
+        } else if (res.status === 'SUCCESS' || res.status === 'PARTIAL_FAILURE') {
+          setIsBatchRefreshing(false);
+          setIsBatchCancelling(false);
+          setRefreshError(null);
+          if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+          }
+          retry();
+        } else if (res.status === 'CANCELLED') {
+          setIsBatchRefreshing(false);
+          setIsBatchCancelling(false);
+          setRefreshError(null);
+          setRefreshMessage(t('refreshCancelled'));
+          if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+          }
+          retry();
+        } else if (res.status === 'FAILED') {
+          setIsBatchRefreshing(false);
+          setIsBatchCancelling(false);
+          setRefreshError(res.errorMessage || t('refreshFailed'));
+          if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+          }
+        }
+      } catch {
+        // network or server error during polling
+      }
+    };
+
+    if (isBatchRefreshing) {
+      intervalId = window.setInterval(pollStatus, 3000);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isBatchRefreshing, retry, t]);
+
+  // Initial status check on mount
+  useEffect(() => {
+    let isMounted = true;
+    stockApi
+      .getBatchStatus()
+      .then((res) => {
+        setBatchProgress({
+          completed: res.successItems + res.failedItems + res.skippedItems,
+          total: res.totalItems,
+        });
+        if (isMounted && (res.status === 'RUNNING' || res.status === 'CANCEL_REQUESTED')) {
+          setIsBatchRefreshing(true);
+          setIsBatchCancelling(res.status === 'CANCEL_REQUESTED');
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleTriggerRefresh = async () => {
+    if (isBatchRefreshing) return;
+    const confirmed = window.confirm(t('confirmRefreshDesc'));
+    if (!confirmed) return;
+
+    try {
+      setIsBatchRefreshing(true);
+      setRefreshError(null);
+      setRefreshMessage(null);
+      setBatchProgress({ completed: 0, total: 0 });
+      await stockApi.triggerBatchRefresh();
+    } catch (err: unknown) {
+      setIsBatchRefreshing(false);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setRefreshError(
+        errMsg.includes('409') || errMsg.includes('already')
+          ? t('batchAlreadyRunning')
+          : t('refreshFailed')
+      );
+    }
+  };
+
+  const handleCancelRefresh = async () => {
+    if (!isBatchRefreshing || isBatchCancelling) return;
+    if (!window.confirm(t('confirmCancelRefresh'))) return;
+
+    try {
+      setIsBatchCancelling(true);
+      setRefreshError(null);
+      setRefreshMessage(null);
+      await stockApi.cancelBatchRefresh();
+    } catch {
+      setIsBatchCancelling(false);
+      setRefreshError(t('cancelRefreshFailed'));
+    }
+  };
+
+  const batchProgressPercent = batchProgress.total
+    ? Math.round((batchProgress.completed / batchProgress.total) * 100)
+    : 0;
 
   // Market Options for Dropdown
   const marketOptions: { id: MarketFilter; label: string; subLabel: string }[] = [
@@ -200,7 +330,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
 
           <div className="pt-3 mt-3 border-t border-black/[0.06] dark:border-white/[0.08]">
             <span className="text-xs font-medium text-[#86868B] truncate block">
-              DCF Owner Earnings Intrinsic Valuation
+              Cash-Flow Proxy DCF Valuation
             </span>
           </div>
         </div>
@@ -208,23 +338,89 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
         {/* Card 3: Data Quality & Date */}
         <div className="md:col-span-3 bg-white dark:bg-[#1C1C1E] rounded-3xl p-5 sm:p-6 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between transition-colors duration-300">
           <div>
-            <span className="text-xs font-medium text-[#86868B] block truncate">
-              {t('loadedAsOfDateLabel')}
-            </span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-[#86868B] block truncate">
+                {t('loadedAsOfDateLabel')}
+              </span>
+              <button
+                onClick={isBatchRefreshing ? handleCancelRefresh : handleTriggerRefresh}
+                disabled={isBatchCancelling}
+                className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full transition-all cursor-pointer border select-none ${
+                  isBatchCancelling
+                    ? 'bg-[#86868B]/10 text-[#86868B] border-[#86868B]/25 cursor-not-allowed'
+                    : isBatchRefreshing
+                    ? 'bg-[#FF3B30]/10 text-[#FF3B30] border-[#FF3B30]/25 hover:bg-[#FF3B30]/15 active:scale-95'
+                    : 'bg-[#F2F4F6] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] border-black/[0.04] dark:border-white/[0.06] hover:bg-[#E5E8EB] dark:hover:bg-[#3A3A3C] shadow-sm active:scale-95'
+                }`}
+                title={t('confirmRefreshTitle')}
+              >
+                {isBatchRefreshing ? (
+                  <CircleStop className={`w-3 h-3 ${isBatchCancelling ? 'animate-pulse' : ''}`} />
+                ) : (
+                  <RefreshCw className="w-3 h-3 text-[#86868B]" />
+                )}
+                <span>
+                  {isBatchCancelling
+                    ? t('cancellingRefresh')
+                    : isBatchRefreshing
+                    ? t('cancelRefresh')
+                    : t('refreshData')}
+                </span>
+              </button>
+            </div>
             <div className="flex items-baseline gap-1.5 mt-2 whitespace-nowrap">
               <span className="text-lg sm:text-xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
                 {latestLoadedDataAsOf?.slice(0, 10) ?? '—'}
               </span>
             </div>
+            {isBatchRefreshing && (
+              <div className="mt-3" aria-live="polite">
+                <div className="mb-1.5 flex items-center justify-between gap-2 text-[11px] font-semibold text-[#0071E3]">
+                  <span>
+                    {batchProgress.total
+                      ? t('refreshProgress', {
+                          completed: batchProgress.completed,
+                          total: batchProgress.total,
+                          percent: batchProgressPercent,
+                        })
+                      : t('preparingRefresh')}
+                  </span>
+                </div>
+                <div
+                  className="h-1.5 overflow-hidden rounded-full bg-[#0071E3]/10"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={batchProgress.total || undefined}
+                  aria-valuenow={batchProgress.total ? batchProgress.completed : undefined}
+                >
+                  <div
+                    className={`h-full rounded-full bg-[#0071E3] transition-[width] duration-500 ${
+                      batchProgress.total ? '' : 'w-1/3 animate-pulse'
+                    }`}
+                    style={batchProgress.total ? { width: `${batchProgressPercent}%` } : undefined}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="pt-3 mt-3 border-t border-black/[0.06] dark:border-white/[0.08]">
+          <div className="pt-3 mt-3 border-t border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between gap-2">
             <span className="text-xs font-medium text-[#86868B] truncate block font-mono">
               {t('loadedSnapshotStatus', {
                 loaded: stocks.length,
                 stale: loadedStaleCount,
               })}
             </span>
+            {refreshError && (
+              <span className="text-[11px] font-semibold text-[#FF3B30] truncate" title={refreshError}>
+                {refreshError}
+              </span>
+            )}
+            {!refreshError && refreshMessage && (
+              <span className="text-[11px] font-semibold text-[#0071E3] truncate" title={refreshMessage}>
+                {refreshMessage}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -411,7 +607,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
           <div className="block md:hidden bg-white dark:bg-[#1C1C1E] rounded-2xl border border-black/[0.06] dark:border-white/[0.08] shadow-sm overflow-hidden divide-y divide-black/[0.04] dark:divide-white/[0.06]">
             {stocks.map((stock, index) => {
               const rank = index + 1;
-              const gradeInfo = getCoreGradeInfo(stock.corePassCount, stock.coreStatus, language);
+              const gradeInfo = getCoreGradeInfo(stock, language);
 
               return (
                 <div
@@ -480,7 +676,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                 <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.06] text-xs">
                   {stocks.map((stock, index) => {
                     const rank = index + 1;
-                    const gradeInfo = getCoreGradeInfo(stock.corePassCount, stock.coreStatus, language);
+                    const gradeInfo = getCoreGradeInfo(stock, language);
 
                     return (
                       <tr

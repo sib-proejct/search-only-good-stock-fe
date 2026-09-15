@@ -16,6 +16,7 @@ import {
   Eye,
 } from 'lucide-react';
 import { HelpPopover } from '../common/HelpPopover';
+import { getDcfWarningLabel } from '../../utils/ruleFormatters';
 import { DCF_GLOSSARY } from '../../utils/glossaryData';
 
 interface DcfValuationCardProps {
@@ -122,14 +123,14 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-[#0071E3] dark:text-[#2997FF]" />
             <h2 className="text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
-              {isKo ? '10개년 주주이익 DCF 내재가치 평가' : t('dcfIntrinsicValue')}
+              {isKo ? '10개년 현금흐름 DCF 추정가치' : t('dcfIntrinsicValue')}
             </h2>
             <HelpPopover content={DCF_GLOSSARY.header(language)} align="left" />
           </div>
           <p className="text-xs text-[#86868B] mt-0.5 font-normal">
             {isKo
-              ? '워런 버핏 10-Year Owner Earnings 할인현금흐름(DCF) 가치평가 모델'
-              : 'Warren Buffett 10-Year Owner Earnings Discounted Cash Flow'}
+              ? '영업현금흐름 − 유형·무형자산 투자 기반 추정 모델'
+              : '10-year cash-flow proxy after tangible and intangible investment'}
           </p>
         </div>
         <div>{getStatusBadge(dcf.status)}</div>
@@ -188,11 +189,14 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
               {formatPercent(dcf.conservativeMarginOfSafety)}
             </div>
             <div className="text-[10px] text-[#86868B] mt-1 font-mono">
-              {dcf.conservativeMarginOfSafety !== null && dcf.conservativeMarginOfSafety >= 0.2
-                ? (isKo ? '안전마진 20%+ 확보 (통과)' : '20%+ Margin Satisfied')
-                : dcf.conservativeMarginOfSafety !== null && dcf.conservativeMarginOfSafety >= 0
-                  ? (isKo ? '적정가 부근 (관찰 필요)' : 'Near Fair Value (Watch)')
-                  : (isKo ? '안전마진 미확보 (고평가)' : 'No Margin (Overvalued)')}
+              {dcf.conservativeMarginOfSafety === null
+                ? (isKo ? '계산 불가' : 'Unavailable')
+                : dcf.status === 'PASS_WITH_MARGIN'
+                  ? (isKo ? '모델 기준 할인 폭 20% 이상' : 'Model discount at least 20%')
+                  : dcf.status === 'WATCH'
+                    ? (isKo ? '가격·데이터 추가 검토 필요' : 'Review price and data')
+                    : (isKo ? '모델 기준 할인 부족' : 'Insufficient model discount')}
+
             </div>
           </div>
         </div>
@@ -308,7 +312,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
             </div>
             {dcf.warnings.map((warn, idx) => (
               <p key={idx} className="text-xs text-[#86868B] leading-relaxed">
-                {warn}
+                {getDcfWarningLabel(warn, language)}
               </p>
             ))}
           </div>
@@ -317,7 +321,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
 
       {/* Footer Info */}
       <div className="pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between text-[11px] text-[#86868B] font-mono">
-        <span>{isKo ? `평가 모델: ${dcf.method} (10개년 DCF)` : `Method: ${dcf.method}`}</span>
+        <span>{isKo ? '현금흐름 대용치 · 10개년 DCF' : 'Cash-flow proxy · 10-year DCF'}</span>
         <span>
           {isKo ? '신뢰도: ' : 'Confidence: '}
           <span
