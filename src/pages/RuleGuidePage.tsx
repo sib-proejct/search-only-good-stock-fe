@@ -324,8 +324,8 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
           : 'EPS available for all 3 consecutive fiscal years, positive start/end EPS, and CAGR ≥ 8% over 2 elapsed years',
       exclusionCondition:
         language === 'ko'
-          ? '계산 가능한 CAGR이 8% 미만이면 FAIL. 필수 자료 부족 또는 시작·종료 EPS가 0 이하면 N/A'
-          : 'FAIL if valid CAGR is below 8%; N/A if required data is missing or start/end EPS is non-positive',
+          ? '계산 가능한 CAGR이 8% 미만이거나 시작·종료 EPS가 0 이하면 FAIL. 필수 자료 부족은 N/A'
+          : 'FAIL if valid CAGR is below 8% or start/end EPS is non-positive; N/A if required data is missing',
       benchmarkStock:
         language === 'ko'
           ? '엔비디아 (NVDA) — 5년 EPS CAGR 40%+ 폭발적 복리 성장'
