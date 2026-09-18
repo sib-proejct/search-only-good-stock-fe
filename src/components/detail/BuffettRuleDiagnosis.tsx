@@ -68,6 +68,9 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
       return language === 'ko' ? '∞ (이자 0, EBIT 양수)' : '∞ (zero interest, positive EBIT)';
     }
     if (metric.value === null || metric.value === undefined) {
+      if (metric.metricId.startsWith('interest_coverage')) {
+        return language === 'ko' ? '미공시 (이자비용 미분리)' : 'Undisclosed';
+      }
       return '—';
     }
     const valNum = typeof metric.value === 'string' ? parseFloat(metric.value) : metric.value;
@@ -265,7 +268,7 @@ export const BuffettRuleDiagnosis: React.FC<BuffettRuleDiagnosisProps> = ({
                 )}
 
                 {/* Reason Codes for N/A */}
-                {evalItem.reasonCodes && evalItem.reasonCodes.length > 0 && (
+                {evalItem.status === 'N/A' && evalItem.reasonCodes && evalItem.reasonCodes.length > 0 && (
                   <div className="pt-1.5 flex flex-wrap gap-2">
                     {evalItem.reasonCodes.map((code, cIdx) => (
                       <div
