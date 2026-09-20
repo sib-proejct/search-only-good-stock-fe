@@ -14,6 +14,41 @@ export interface paths {
         /** Stocks */
         get: operations["stocks_api_admin_stocks_get"];
         put?: never;
+        /** Register Stock */
+        post: operations["register_stock_api_admin_stocks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/stocks/{stock_id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Stock */
+        post: operations["refresh_stock_api_admin_stocks__stock_id__refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/stocks/{stock_id}/refresh/{batch_run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Collection Status */
+        get: operations["collection_status_api_admin_stocks__stock_id__refresh__batch_run_id__get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -329,10 +364,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Trigger Batch Refresh
-         * @description Trigger a live stock refresh batch in the background.
-         */
+        /** Trigger Batch Refresh */
         post: operations["trigger_batch_refresh_api_batch_refresh_post"];
         delete?: never;
         options?: never;
@@ -358,6 +390,26 @@ export interface components {
             market: string;
             /** Currency */
             currency: string;
+            /** Current Price */
+            current_price?: number | null;
+            /** Market Cap */
+            market_cap?: number | null;
+            /**
+             * Collection Status
+             * @default NOT_COLLECTED
+             */
+            collection_status: string;
+            /** Collection Stage */
+            collection_stage?: string | null;
+            /** Collection Error */
+            collection_error?: string | null;
+            /** Batch Run Id */
+            batch_run_id?: number | null;
+            /**
+             * Valuation Status
+             * @default NOT_CALCULATED
+             */
+            valuation_status: string;
         };
         /** AnnualFactData */
         AnnualFactData: {
@@ -410,6 +462,8 @@ export interface components {
             interest_paid_classification?: ("CFO" | "NON_CFO" | "UNKNOWN") | null;
             /** Cfo */
             cfo?: number | string | null;
+            /** Reported Total Capex */
+            reported_total_capex?: number | string | null;
             /** Tangible Capex */
             tangible_capex?: number | string | null;
             /** Intangible Capex */
@@ -519,6 +573,8 @@ export interface components {
             interest_paid_classification?: ("CFO" | "NON_CFO" | "UNKNOWN") | null;
             /** Cfo */
             cfo?: number | string | null;
+            /** Reported Total Capex */
+            reported_total_capex?: number | string | null;
             /** Tangible Capex */
             tangible_capex?: number | string | null;
             /** Intangible Capex */
@@ -637,6 +693,8 @@ export interface components {
             interest_paid_classification?: ("CFO" | "NON_CFO" | "UNKNOWN") | null;
             /** Cfo */
             cfo?: string | null;
+            /** Reported Total Capex */
+            reported_total_capex?: string | null;
             /** Tangible Capex */
             tangible_capex?: string | null;
             /** Intangible Capex */
@@ -823,6 +881,19 @@ export interface components {
          * @enum {string}
          */
         CapitalActionStatus: "REVIEW_DILUTION" | "STABLE" | "REVIEW_BUYBACK_PRICE" | "N/A";
+        /** CollectionStatus */
+        CollectionStatus: {
+            /** Batch Run Id */
+            batch_run_id: number;
+            /** Stock Id */
+            stock_id: number;
+            /** Status */
+            status: string;
+            /** Stage */
+            stage: string;
+            /** Error Detail */
+            error_detail?: string | null;
+        };
         /**
          * Confidence
          * @enum {string}
@@ -1503,6 +1574,12 @@ export interface components {
             /** Offset */
             offset: number;
         };
+        /** StockRegistration */
+        StockRegistration: {
+            market: components["schemas"]["Market"];
+            /** Ticker */
+            ticker: string;
+        };
         /**
          * StockSort
          * @enum {string}
@@ -1572,6 +1649,11 @@ export interface components {
         /** ValuationRequest */
         ValuationRequest: {
             /**
+             * Publish
+             * @default false
+             */
+            publish: boolean;
+            /**
              * As Of
              * Format: date
              */
@@ -1603,6 +1685,11 @@ export interface components {
         };
         /** ValuationResponse */
         ValuationResponse: {
+            /**
+             * Published
+             * @default false
+             */
+            published: boolean;
             options: components["schemas"]["ValuationRequest"];
             /** Annual Oe */
             annual_oe: components["schemas"]["AnnualOe"][];
@@ -1632,6 +1719,7 @@ export interface operations {
         parameters: {
             query?: {
                 search?: string;
+                limit?: number;
             };
             header?: never;
             path?: never;
@@ -1646,6 +1734,102 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminStock"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_stock_api_admin_stocks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StockRegistration"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminStock"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_stock_api_admin_stocks__stock_id__refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stock_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    collection_status_api_admin_stocks__stock_id__refresh__batch_run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stock_id: number;
+                batch_run_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionStatus"];
                 };
             };
             /** @description Validation Error */

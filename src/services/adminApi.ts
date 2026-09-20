@@ -1,4 +1,5 @@
 import type { components } from '../types/openapi.generated';
+import { normalizeScientificNotation } from '../utils/numberFormatters';
 
 export type AdminStock = components['schemas']['AdminStock'];
 export type EditorTable = components['schemas']['EditorTable'];
@@ -39,8 +40,10 @@ export function fieldDisplay(
   value: FieldValue | undefined,
 ): string {
   if (value == null) return '';
-  if (name === 'ten_year_bond_yield') return String(Number(value) * 100);
-  return String(value);
+  if (name === 'ten_year_bond_yield') {
+    return normalizeScientificNotation(Number(value) * 100);
+  }
+  return normalizeScientificNotation(value);
 }
 
 export function fieldValue(field: EditorField, value: string): FieldValue {

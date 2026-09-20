@@ -33,4 +33,7 @@ describe('administrator fact values', () => {
       ),
     ).toEqual({ cfo: null, growth_capex_estimate: '0' });
   });
+  it('normalizes scientific notation in fieldDisplay for inputs', () => {
+    expect(fieldDisplay('cfo', '1.1430100E+11')).toBe('114301000000');
+  });
 });
