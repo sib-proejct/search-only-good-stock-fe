@@ -4,6 +4,8 @@ import { ThemeLanguageProvider, useAppConfig } from './context/ThemeLanguageCont
 import { TopNavBar } from './components/common/TopNavBar';
 import { Sun, Moon, Globe } from 'lucide-react';
 
+const AdminValuationPage = lazy(() => import('./pages/AdminValuationPage').then(module => ({ default: module.AdminValuationPage })));
+
 const ScreenerPage = lazy(() =>
   import('./pages/ScreenerPage').then((module) => ({
     default: module.ScreenerPage,
@@ -54,6 +56,7 @@ function AppContent() {
       <main className="flex-1 w-full pb-16">
         <Suspense fallback={<RouteFallback />}>
           <Routes>
+          <Route path="/admin/valuation" element={<AdminValuationPage />} />
           {/* Screener (Home) */}
           <Route
             path="/"
@@ -122,6 +125,7 @@ function AppContent() {
           {/* Right: Links & Controls on the Same Single Line */}
           <div className="flex flex-wrap items-center gap-5 sm:gap-6">
             <nav className="flex items-center space-x-5 sm:space-x-6 text-[#86868B]">
+              {import.meta.env.DEV && <a href="/admin/valuation">원자료 관리</a>}
               <a href="#privacy" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('privacy')}</a>
               <a href="#terms" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('terms')}</a>
               <a href="#disclosure" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('disclosure')}</a>
