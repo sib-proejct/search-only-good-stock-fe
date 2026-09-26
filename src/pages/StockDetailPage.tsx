@@ -739,6 +739,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
           dcf={detail.dcf}
           currency={detail.currency}
           currentPrice={detail.currentPrice}
+          annualFinancials={detail.annualFinancials}
         />
         <CapitalActionCard
           capitalAction={detail.capitalAction}

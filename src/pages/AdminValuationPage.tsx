@@ -1,4 +1,5 @@
-import { ManagedStockActions } from '../components/admin/ManagedStockActions';
+import { RegisterStockCard, StockDataCollector } from '../components/admin/ManagedStockActions';
+import { ValuationCalculationDetails } from '../components/admin/ValuationCalculationDetails';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -201,7 +202,8 @@ export function AdminValuationPage() {
   const [searchParams] = useSearchParams();
   const [stocks, setStocks] = useState<AdminStockItem[]>([]);
   const [initialStocks, setInitialStocks] = useState<AdminStockItem[]>([]);
-  const [stock, setStock] = useState<AdminStock | null>(null);
+  const [stock, setStock] = useState<AdminStockItem | null>(null);
+  const [latestPrice, setLatestPrice] = useState<number | string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [marketFilter, setMarketFilter] = useState<'ALL' | 'NASDAQ' | 'NYSE' | 'KOSPI' | 'KOSDAQ'>('ALL');
   const [dropdownSearch, setDropdownSearch] = useState('');
@@ -210,6 +212,9 @@ export function AdminValuationPage() {
   const [tables, setTables] = useState<EditorTable[]>([]);
   const [table, setTable] = useState<TableName>('annual_financial_fact');
   const [rows, setRows] = useState<FactRow[]>([]);
+  const [bulkSelectedIds, setBulkSelectedIds] = useState<number[]>([]);
+  const [bulkFieldName, setBulkFieldName] = useState('interest_paid_classification');
+  const [bulkFieldInput, setBulkFieldInput] = useState('CFO');
   const [selected, setSelected] = useState<FactRow | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [original, setOriginal] = useState<Draft>({});
@@ -236,6 +241,8 @@ export function AdminValuationPage() {
   const dirty =
     draft !== null && (selected === null || Object.keys(changes).length > 0);
 
+  const displayPrice = latestPrice ?? stock?.currentPrice ?? stock?.current_price;
+
   const filteredStocks = stocks.filter((s) => {
     if (marketFilter !== 'ALL' && s.market !== marketFilter) return false;
     if (dropdownSearch.trim()) {
@@ -256,9 +263,17 @@ export function AdminValuationPage() {
     setReview(false);
   }, []);
 
-  const pickStock = useCallback((next: AdminStock) => {
+  const resetBulkSelection = useCallback(() => {
+    setBulkSelectedIds([]);
+    setBulkFieldName('interest_paid_classification');
+    setBulkFieldInput('CFO');
+  }, []);
+
+  const pickStock = useCallback((next: AdminStockItem) => {
     setStock(next);
+    setLatestPrice(next.currentPrice ?? next.current_price ?? null);
     setRows([]);
+    resetBulkSelection();
     setLoadingRows(true);
     resetEditor();
     setResult(null);
@@ -268,7 +283,7 @@ export function AdminValuationPage() {
       ...old,
       statement_scope: next.currency === 'USD' ? 'CONSOLIDATED_US_GAAP' : 'CFS',
     }));
-  }, [resetEditor]);
+  }, [resetEditor, resetBulkSelection]);
 
   const reloadManagedStocks = useCallback(async () => {
     const rows = await adminRequest<AdminStock[]>('/stocks?limit=1000');
@@ -285,9 +300,37 @@ export function AdminValuationPage() {
   }, [reloadManagedStocks]);
 
   const onRegistered = useCallback((added: AdminStock) => {
-    pickStock(added);
+    pickStock({ ...added, currentPrice: added.current_price, marketCap: added.market_cap });
     void reloadManagedStocks().catch((e) => setError(e.message));
   }, [pickStock, reloadManagedStocks]);
+
+  useEffect(() => {
+    if (!stock) {
+      setLatestPrice(null);
+      return;
+    }
+    const controller = new AbortController();
+    adminRequest<FactRow[]>(`/facts/market_fact?stock_id=${stock.id}`, {
+      signal: controller.signal,
+    })
+      .then((marketRows) => {
+        if (controller.signal.aborted) return;
+        const priceRow = marketRows.find((r) => 'current_price' in r && r.current_price != null);
+        if (priceRow && 'current_price' in priceRow && priceRow.current_price != null) {
+          const num = typeof priceRow.current_price === 'string' ? parseFloat(priceRow.current_price) : priceRow.current_price;
+          if (!isNaN(num)) {
+            setLatestPrice(num);
+            setStocks((prev) =>
+              prev.map((s) => (s.id === stock.id ? { ...s, currentPrice: num } : s))
+            );
+          }
+        }
+      })
+      .catch(() => {
+        // Silently preserve currentPrice
+      });
+    return () => controller.abort();
+  }, [stock, revision]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -369,8 +412,17 @@ export function AdminValuationPage() {
         { signal: controller.signal },
       )
         .then((fetched) => {
-          const map = new Map<number, AdminStockItem>(initialStocks.map((s) => [s.id, s]));
-          const merged: AdminStockItem[] = fetched.map((s) => map.get(s.id) || s);
+          const map = new Map<number, AdminStockItem>(
+            initialStocks.map((s) => [s.id, s]),
+          );
+          const merged: AdminStockItem[] = fetched.map(
+            (s) =>
+              map.get(s.id) || {
+                ...s,
+                currentPrice: s.current_price,
+                marketCap: s.market_cap,
+              },
+          );
           setStocks(merged);
         })
         .catch((e) => {
@@ -456,6 +508,47 @@ export function AdminValuationPage() {
       setBusy(false);
     }
   }
+  async function saveBulkField() {
+    const selectedRows = rows.filter((row) => bulkSelectedIds.includes(row.id));
+    const bulkField = fields.find((field) => field.name === bulkFieldName);
+    if (selectedRows.length === 0 || !bulkField) return;
+    const bulkValue = fieldValue(bulkField, bulkFieldInput);
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const results = await Promise.allSettled(
+        selectedRows.map((row) =>
+          adminRequest(`/facts/annual_financial_fact/${row.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              expected_updated_at: row.updated_at,
+              [bulkFieldName]: bulkValue,
+            }),
+          }),
+        ),
+      );
+      const savedCount = results.filter((result) => result.status === 'fulfilled').length;
+      const failedCount = results.length - savedCount;
+      resetBulkSelection();
+      setRevision((old) => old + 1);
+      setLoadingRows(true);
+      if (savedCount > 0) {
+        setStale(true);
+        setNotice(
+          `${savedCount}개 연도의 ${getFieldMeta(bulkFieldName).ko}을(를) 일괄 저장했습니다. 계산 버튼으로 결과를 갱신하세요.`,
+        );
+      }
+      if (failedCount > 0) {
+        setError(
+          `${failedCount}개 연도는 다른 수정과 충돌해 저장하지 못했습니다. 다시 조회한 뒤 재시도하세요.`,
+        );
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
   async function calculate() {
     if (!stock) return;
     setBusy(true);
@@ -491,6 +584,10 @@ export function AdminValuationPage() {
       draft?.[field.name] == null ||
       original[field.name] == null,
   );
+  const bulkEditableFields = fields.filter(
+    (field) => !keyFields.annual_financial_fact.includes(field.name),
+  );
+  const bulkField = bulkEditableFields.find((field) => field.name === bulkFieldName);
   return (
     <div className="max-w-[1400px] mx-auto px-6 py-10 space-y-8">
       <header>
@@ -500,7 +597,7 @@ export function AdminValuationPage() {
           기본 10개와 직접 추가한 종목을 관리합니다. 종목별로 자료를 수집하고 확인·수정한 뒤, 계산 및 반영을 누르면 목록과 상세에도 결과가 저장됩니다.
         </p>
       </header>
-      <ManagedStockActions stock={stock} disabled={busy || dirty || collecting} onRegistered={onRegistered} onCollected={onCollected} onCollecting={setCollecting} />
+      <RegisterStockCard disabled={busy || dirty || collecting} onRegistered={onRegistered} />
       {error && (
         <div role="alert" className="rounded-xl bg-red-50 text-red-800 p-4">
           {error}
@@ -523,31 +620,40 @@ export function AdminValuationPage() {
           )}
         </div>
 
-        {/* Stock Selector Dropdown */}
-        <div className="relative inline-block" ref={dropdownRef}>
+        {/* Stock Selector Dropdown & Collection Control */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative inline-block" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             disabled={busy || dirty || collecting}
-            className="h-10 px-4 rounded-xl flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold bg-white dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#2C2C2E] border border-black/15 dark:border-white/20 transition-all cursor-pointer select-none focus:outline-none disabled:opacity-50 min-w-[280px] sm:min-w-[340px]"
+            className="h-10 px-4 rounded-xl flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold bg-white dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#2C2C2E] border border-black/15 dark:border-white/20 transition-all cursor-pointer select-none focus:outline-none disabled:opacity-50 min-w-[420px] sm:min-w-[510px]"
             aria-expanded={isDropdownOpen}
             aria-haspopup="true"
           >
             {stock ? (
               <div className="flex items-center gap-2 truncate">
-                <span className="text-[#86868B] font-mono tabular-nums text-xs">
+                <span className="text-[#86868B] font-mono tabular-nums text-xs shrink-0">
                   {currentIndex >= 0 ? `${currentIndex + 1}/${stocks.length}` : ''}
                 </span>
-                <span className="font-bold font-mono text-blue-600 dark:text-blue-400">
+                <span className="font-bold font-mono text-blue-600 dark:text-blue-400 shrink-0">
                   {stock.ticker}
                 </span>
-                <span className="text-[#86868B]">·</span>
-                <span className="font-normal text-[#1D1D1F] dark:text-[#F5F5F7] truncate max-w-[140px] sm:max-w-[180px]">
+                <span className="text-[#86868B] shrink-0">·</span>
+                <span className="font-normal text-[#1D1D1F] dark:text-[#F5F5F7] truncate max-w-[200px] sm:max-w-[260px]">
                   {stock.name}
                 </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold bg-black/[0.05] dark:bg-white/[0.08] text-[#86868B]">
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold bg-black/[0.05] dark:bg-white/[0.08] text-[#86868B] shrink-0">
                   {stock.market}
                 </span>
+                {displayPrice != null && (
+                  <>
+                    <span className="text-[#86868B] shrink-0">·</span>
+                    <span className="font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums shrink-0">
+                      {formatPrice(displayPrice, stock.currency)}
+                    </span>
+                  </>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-2 text-[#86868B]">
@@ -564,7 +670,7 @@ export function AdminValuationPage() {
 
           {/* Dropdown Menu */}
           {isDropdownOpen && (
-            <div className="absolute left-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-2xl border border-black/[0.08] dark:border-white/[0.12] p-2 z-50 animate-fade-in flex flex-col max-h-[440px]">
+            <div className="absolute left-0 top-full mt-2 w-[420px] sm:w-[510px] bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-2xl border border-black/[0.08] dark:border-white/[0.12] p-2 z-50 animate-fade-in flex flex-col max-h-[440px]">
               {/* Search Input */}
               <div className="relative mb-2">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#86868B] pointer-events-none" />
@@ -647,18 +753,18 @@ export function AdminValuationPage() {
                               </span>
                             </div>
                             <div className="text-[10px] text-[#86868B] mt-0.5 flex items-center gap-1 font-mono">
-                              {s.currentPrice != null && (
+                              {(s.currentPrice ?? s.current_price) != null && (
                                 <>
                                   <span className="tabular-nums">
-                                    {formatPrice(s.currentPrice, s.currency)}
+                                    {formatPrice(s.currentPrice ?? s.current_price, s.currency)}
                                   </span>
                                   <span>·</span>
                                 </>
                               )}
-                              {s.marketCap != null && (
+                              {(s.marketCap ?? s.market_cap) != null && (
                                 <>
                                   <span className="tabular-nums">
-                                    {formatMarketCap(s.marketCap, s.currency)}
+                                    {formatMarketCap(s.marketCap ?? s.market_cap, s.currency)}
                                   </span>
                                   <span>·</span>
                                 </>
@@ -677,6 +783,15 @@ export function AdminValuationPage() {
                 )}
               </div>
             </div>
+          )}
+          </div>
+          {stock && (
+            <StockDataCollector
+              stock={stock}
+              disabled={busy || dirty || collecting}
+              onCollected={onCollected}
+              onCollecting={setCollecting}
+            />
           )}
         </div>
       </section>
@@ -772,7 +887,7 @@ export function AdminValuationPage() {
               </label>
               <label className="text-sm space-y-1 block">
                 <div className="flex justify-between text-xs text-gray-500">
-                  <span>정규화 OE 기간</span>
+                  <span>OE 정규화·성장률 기간</span>
                   <span className="font-mono">Period</span>
                 </div>
                 <select
@@ -817,7 +932,8 @@ export function AdminValuationPage() {
               {options.normalization_method === 'MEAN'
                 ? '선택 기간 OE 합계 ÷ 선택 연수'
                 : 'min(최근 연도 OE, 선택 기간 OE 중앙값)'}{' '}
-              · 총 CAPEX 추정치가 부족하면 공시 유형·무형 취득액 합계 또는 수집된 공시 총액을 사용합니다.
+              · 성장률은 선택한 {options.normalization_years}년간의 EPS·OEPS 변화를 사용하므로 시작 연도를 포함한 {options.normalization_years + 1}개 연간 자료가 필요합니다. 한 지표만 유효하면 해당 성장률과 이력 불완전 경고를 사용합니다.{' '}
+              · 총 CAPEX 추정치가 부족하면 공시 유형·무형 취득액 합계 또는 수집된 공시 총액을 사용하며, 유지보수 모드는 유지보수 추정치 또는 총 CAPEX에서 성장 CAPEX를 차감해 계산합니다.
             </p>
             <button
               className={button}
@@ -860,6 +976,10 @@ export function AdminValuationPage() {
                   {issue}
                 </p>
               ))}
+              <ValuationCalculationDetails
+                result={result}
+                currency={stock.currency}
+              />
               {result.dcf && (
                 <>
                   <div className="grid sm:grid-cols-3 gap-4">
@@ -915,10 +1035,6 @@ export function AdminValuationPage() {
                       ? '계산 불가'
                       : `${(result.dcf.conservativeMarginOfSafety * 100).toFixed(2)}%`}
                   </p>
-                  <p className="text-sm text-amber-600">
-                    {result.dcf.reasonCodes.join(', ')}{' '}
-                    {result.dcf.warnings.join(', ')}
-                  </p>
                 </>
               )}
               <div className="overflow-x-auto">
@@ -957,11 +1073,15 @@ export function AdminValuationPage() {
                                   '유지보수 추정 (Maintenance)',
                                 maintenance_plus_growth:
                                   '유지보수+성장 추정 (Total)',
+                                total_minus_growth:
+                                  '총 CAPEX - 성장 추정 (Maintenance)',
                                 reported_total_capex: '공시 총 CAPEX',
                                 reported_tangible_plus_intangible:
                                   '공시 취득액 합계 (Reported Capex)',
                                 missing_total_capex:
                                   '총 CAPEX 미입력 (Missing)',
+                                missing_maintenance_capex:
+                                  '유지보수 CAPEX 미입력 (Missing)',
                               } as Record<string, string>
                             )[row.capex_source] ?? row.capex_source
                           }
@@ -1028,6 +1148,7 @@ export function AdminValuationPage() {
                     setRows([]);
                     setLoadingRows(true);
                     resetEditor();
+                    resetBulkSelection();
                   }}
                 >
                   <span>{item.ko}</span>
@@ -1077,6 +1198,110 @@ export function AdminValuationPage() {
                 다시 조회
               </button>
             </div>
+            {table === 'annual_financial_fact' && rows.length > 0 && (
+              <div className="rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/60 dark:bg-blue-950/30 p-4 flex flex-wrap items-end gap-3">
+                <label className="text-sm flex items-center gap-2 cursor-pointer self-center">
+                  <input
+                    type="checkbox"
+                    checked={
+                      visibleRows.length > 0 &&
+                      visibleRows.every((row) => bulkSelectedIds.includes(row.id))
+                    }
+                    onChange={(event) => {
+                      const visibleIds = visibleRows.map((row) => row.id);
+                      setBulkSelectedIds((current) =>
+                        event.target.checked
+                          ? [...new Set([...current, ...visibleIds])]
+                          : current.filter((id) => !visibleIds.includes(id)),
+                      );
+                    }}
+                    disabled={busy || dirty || collecting || visibleRows.length === 0}
+                  />
+                  <span>표시된 연도 전체 선택</span>
+                </label>
+                <label className="text-sm space-y-1 min-w-52">
+                  <span className="block text-xs text-gray-600 dark:text-gray-300">
+                    변경할 항목
+                  </span>
+                  <select
+                    className={control}
+                    value={bulkFieldName}
+                    disabled={busy || dirty || collecting}
+                    onChange={(event) => {
+                      const nextField = bulkEditableFields.find(
+                        (field) => field.name === event.target.value,
+                      );
+                      setBulkFieldName(event.target.value);
+                      setBulkFieldInput(
+                        nextField?.name === 'interest_paid_classification' ? 'CFO' : '',
+                      );
+                    }}
+                  >
+                    {bulkEditableFields.map((field) => (
+                      <option key={field.name} value={field.name}>
+                        {getFieldMeta(field.name).ko}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {bulkField && (
+                  <label className="text-sm space-y-1 min-w-52">
+                    <span className="block text-xs text-gray-600 dark:text-gray-300">
+                      적용할 값
+                    </span>
+                    {bulkField.kind === 'select' || bulkField.kind === 'boolean' ? (
+                      <select
+                        className={control}
+                        value={bulkFieldInput}
+                        disabled={busy || dirty || collecting}
+                        onChange={(event) => setBulkFieldInput(event.target.value)}
+                      >
+                        <option value="">값 비우기</option>
+                        {(bulkField.kind === 'boolean'
+                          ? ['true', 'false']
+                          : (bulkField.choices ?? [])
+                        ).map((choice) => (
+                          <option key={choice} value={choice}>
+                            {bulkField.kind === 'boolean'
+                              ? choice === 'true'
+                                ? '예 (True)'
+                                : '아니오 (False)'
+                              : formatChoice(choice)}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        className={control}
+                        type={
+                          bulkField.kind === 'date'
+                            ? 'date'
+                            : bulkField.kind === 'number'
+                              ? 'number'
+                              : 'text'
+                        }
+                        step="any"
+                        placeholder="비우면 값을 삭제합니다"
+                        value={bulkFieldInput}
+                        disabled={busy || dirty || collecting}
+                        onChange={(event) => setBulkFieldInput(event.target.value)}
+                      />
+                    )}
+                  </label>
+                )}
+                <button
+                  type="button"
+                  className={button}
+                  disabled={busy || dirty || collecting || bulkSelectedIds.length === 0}
+                  onClick={() => void saveBulkField()}
+                >
+                  선택한 {bulkSelectedIds.length}개 연도 일괄 저장
+                </button>
+                <p className="w-full text-xs text-gray-500">
+                  빈 값을 적용하면 선택한 연도의 해당 값이 삭제됩니다. 필수 항목이나 서로 의존하는 값은 저장 시 검증됩니다.
+                </p>
+              </div>
+            )}
             {loadingRows ? (
               <p role="status">자료를 불러오는 중…</p>
             ) : (
@@ -1085,26 +1310,47 @@ export function AdminValuationPage() {
                   <p className="p-4">표시할 행이 없습니다.</p>
                 )}
                 {visibleRows.map((row) => (
-                  <button
+                  <div
                     key={row.id}
-                    className={`block w-full p-3 text-left border-b text-sm ${selected?.id === row.id ? 'bg-blue-50 dark:bg-blue-950' : ''}`}
-                    disabled={busy || dirty || collecting}
-                    onClick={() => edit(row)}
+                    className={`flex items-center border-b ${selected?.id === row.id ? 'bg-blue-50 dark:bg-blue-950' : ''}`}
                   >
-                    {keyFields[table]
-                      .filter((key) => key !== 'stock_id')
-                      .map((key) => {
-                        const value = (row as unknown as Draft)[key];
-                        return (
-                          formatChoice(String(value ?? '')) || String(value ?? '미입력')
-                        );
-                      })
-                      .join(' · ')}{' '}
-                    <span className="text-gray-500">
-                      / {row.source_type} · 수정{' '}
-                      {new Date(row.updated_at).toLocaleString()}
-                    </span>
-                  </button>
+                    {table === 'annual_financial_fact' && (
+                      <label className="p-3 pr-1 flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          aria-label={`${String((row as unknown as Draft).fiscal_year)}년 선택`}
+                          checked={bulkSelectedIds.includes(row.id)}
+                          disabled={busy || dirty || collecting}
+                          onChange={(event) =>
+                            setBulkSelectedIds((current) =>
+                              event.target.checked
+                                ? [...current, row.id]
+                                : current.filter((id) => id !== row.id),
+                            )
+                          }
+                        />
+                      </label>
+                    )}
+                    <button
+                      className="block flex-1 p-3 text-left text-sm"
+                      disabled={busy || dirty || collecting}
+                      onClick={() => edit(row)}
+                    >
+                      {keyFields[table]
+                        .filter((key) => key !== 'stock_id')
+                        .map((key) => {
+                          const value = (row as unknown as Draft)[key];
+                          return (
+                            formatChoice(String(value ?? '')) || String(value ?? '미입력')
+                          );
+                        })
+                        .join(' · ')}{' '}
+                      <span className="text-gray-500">
+                        / {row.source_type} · 수정{' '}
+                        {new Date(row.updated_at).toLocaleString()}
+                      </span>
+                    </button>
+                  </div>
                 ))}
               </div>
             )}

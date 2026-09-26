@@ -125,6 +125,7 @@ const TOTAL_MONETARY_FIELDS = new Set([
   'interest_expense',
   'interest_paid',
   'cfo',
+  'reported_total_capex',
   'tangible_capex',
   'intangible_capex',
   'depreciation_ppe',
@@ -200,4 +201,3 @@ export function formatFieldPreview(
 
   return null;
 }
-
