@@ -4,7 +4,7 @@ import { normalizeScientificNotation } from '../utils/numberFormatters';
 export type AdminStock = components['schemas']['AdminStock'];
 export type EditorTable = components['schemas']['EditorTable'];
 export type EditorField = components['schemas']['EditorField'];
-export type ValuationOptions = components['schemas']['ValuationRequest'];
+export type ValuationOptions = components['schemas']['ValuationRequest-Input'];
 export type ValuationResult = components['schemas']['ValuationResponse'];
 export type TableName = EditorTable['table'];
 export type FactRow =

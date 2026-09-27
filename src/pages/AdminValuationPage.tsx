@@ -34,6 +34,11 @@ interface FieldMeta {
   unit?: string;
 }
 
+interface MissingValuationInput {
+  fields: string[];
+  message: string;
+}
+
 const tableLabels: Record<TableName, { ko: string; en: string }> = {
   annual_financial_fact: { ko: '연간 재무', en: 'Annual Financials' },
   share_capital_fact: { ko: '주식수·자본변동', en: 'Share Capital' },
@@ -168,6 +173,53 @@ const fmt = (value: unknown) => {
   return num.toLocaleString('ko-KR', { maximumFractionDigits: 4 });
 };
 
+const isMissing = (value: unknown) => value === null || value === undefined || value === '';
+
+function missingAnnualInputs(
+  row: Draft,
+  capexMode: ValuationOptions['capex_mode'],
+): MissingValuationInput | null {
+  const missing: string[] = [];
+  if (isMissing(row.cfo)) missing.push('cfo');
+
+  const interestScope = row.interest_paid_classification;
+  if (isMissing(interestScope) || interestScope === 'UNKNOWN') {
+    missing.push('interest_paid_classification');
+  } else if (interestScope === 'NON_CFO' && isMissing(row.interest_paid)) {
+    missing.push('interest_paid');
+  }
+
+  const hasReportedCapex = !isMissing(row.reported_total_capex);
+  const hasDetailedCapex =
+    !isMissing(row.tangible_capex) && !isMissing(row.intangible_capex);
+  if (capexMode === 'MAINTENANCE') {
+    const hasMaintenance = !isMissing(row.maintenance_capex_estimate);
+    const canSubtractGrowth =
+      !isMissing(row.growth_capex_estimate) && (hasReportedCapex || hasDetailedCapex);
+    if (!hasMaintenance && !canSubtractGrowth) {
+      missing.push('maintenance_capex_estimate');
+      if (isMissing(row.growth_capex_estimate)) missing.push('growth_capex_estimate');
+      if (!hasReportedCapex && !hasDetailedCapex) {
+        missing.push('reported_total_capex', 'tangible_capex', 'intangible_capex');
+      }
+    }
+  } else {
+    const hasEstimatedTotal =
+      !isMissing(row.maintenance_capex_estimate) &&
+      !isMissing(row.growth_capex_estimate);
+    if (!hasEstimatedTotal && !hasReportedCapex && !hasDetailedCapex) {
+      missing.push('reported_total_capex');
+      if (isMissing(row.tangible_capex)) missing.push('tangible_capex');
+      if (isMissing(row.intangible_capex)) missing.push('intangible_capex');
+    }
+  }
+
+  const fields = [...new Set(missing)];
+  return fields.length
+    ? { fields, message: fields.map((name) => getFieldMeta(name).ko).join(', ') }
+    : null;
+}
+
 export interface AdminStockItem extends AdminStock {
   currentPrice?: number | null;
   marketCap?: number | null;
@@ -232,6 +284,7 @@ export function AdminValuationPage() {
     capex_mode: 'TOTAL',
     normalization_years: 5,
     normalization_method: 'CONSERVATIVE',
+    growth_rate_cap: '0.20',
     statement_scope: 'CFS',
   });
   const [result, setResult] = useState<ValuationResult | null>(null);
@@ -282,6 +335,7 @@ export function AdminValuationPage() {
     setOptions((old) => ({
       ...old,
       statement_scope: next.currency === 'USD' ? 'CONSOLIDATED_US_GAAP' : 'CFS',
+      growth_rate_cap: next.growth_rate_cap ?? '0.20',
     }));
   }, [resetEditor, resetBulkSelection]);
 
@@ -572,17 +626,123 @@ export function AdminValuationPage() {
     setOptions((old) => ({ ...old, ...value }));
     setStale(true);
   };
+
+  const valuationMissingByRow = new Map<number, MissingValuationInput>();
+  const valuationMissingNotices: string[] = [];
+  const cutoff = options.as_of;
+  if (table === 'annual_financial_fact') {
+    const eligibleRows = rows
+      .filter((row) => {
+        const values = row as unknown as Draft;
+        return (
+          values.statement_scope === options.statement_scope &&
+          typeof values.period_end === 'string' &&
+          values.period_end <= cutoff
+        );
+      })
+      .sort(
+        (left, right) =>
+          Number((right as unknown as Draft).fiscal_year) -
+          Number((left as unknown as Draft).fiscal_year),
+      );
+    const latestYear = Math.max(
+      ...eligibleRows.map((row) => Number((row as unknown as Draft).fiscal_year)),
+      0,
+    );
+    const selectedYears = new Set(
+      Array.from(
+        { length: options.normalization_years },
+        (_, index) => latestYear - index,
+      ),
+    );
+    const selectedRows = eligibleRows.filter((row) =>
+      selectedYears.has(Number((row as unknown as Draft).fiscal_year)),
+    );
+    selectedRows.forEach((row) => {
+      const missing = missingAnnualInputs(
+        row as unknown as Draft,
+        options.capex_mode,
+      );
+      if (missing) valuationMissingByRow.set(row.id, missing);
+    });
+    if (selectedRows.length < options.normalization_years) {
+      valuationMissingNotices.push(
+        `${options.statement_scope} 기준 연간 자료가 ${options.normalization_years - selectedRows.length}개 연도 부족합니다.`,
+      );
+    }
+  } else if (table === 'share_capital_fact') {
+    const eligibleRows = rows
+      .filter((row) => String((row as unknown as Draft).as_of ?? '') <= cutoff)
+      .sort((left, right) =>
+        String((right as unknown as Draft).as_of ?? '').localeCompare(
+          String((left as unknown as Draft).as_of ?? ''),
+        ),
+      );
+    const hasShares = eligibleRows.some(
+      (row) => !isMissing((row as unknown as Draft).current_diluted_shares_estimate),
+    );
+    if (!hasShares) {
+      const target = eligibleRows[0];
+      if (target) {
+        valuationMissingByRow.set(target.id, {
+          fields: ['current_diluted_shares_estimate'],
+          message: getFieldMeta('current_diluted_shares_estimate').ko,
+        });
+      } else {
+        valuationMissingNotices.push('계산 기준일 이하의 주식수 행이 필요합니다.');
+      }
+    }
+  } else if (table === 'market_fact' && stock) {
+    const requirements = [
+      {
+        series: `PRICE:${stock.external_id}`,
+        field: 'current_price',
+      },
+      {
+        series: stock.currency === 'KRW' ? 'KR10Y' : 'US10Y',
+        field: 'ten_year_bond_yield',
+      },
+    ];
+    requirements.forEach(({ series, field }) => {
+      const candidates = rows
+        .filter((row) => {
+          const values = row as unknown as Draft;
+          return values.series_key === series && String(values.as_of ?? '') <= cutoff;
+        })
+        .sort((left, right) =>
+          String((right as unknown as Draft).as_of ?? '').localeCompare(
+            String((left as unknown as Draft).as_of ?? ''),
+          ),
+        );
+      if (!candidates.some((row) => !isMissing((row as unknown as Draft)[field]))) {
+        const target = candidates[0];
+        if (target) {
+          const existing = valuationMissingByRow.get(target.id);
+          const nextFields = [...(existing?.fields ?? []), field];
+          valuationMissingByRow.set(target.id, {
+            fields: nextFields,
+            message: nextFields.map((name) => getFieldMeta(name).ko).join(', '),
+          });
+        } else {
+          valuationMissingNotices.push(
+            `${series}: 계산 기준일 이하의 ${getFieldMeta(field).ko} 행이 필요합니다.`,
+          );
+        }
+      }
+    });
+  }
+
   const visibleRows = missingOnly
-    ? rows.filter((row) =>
-        fields.some((field) => (row as unknown as Draft)[field.name] == null),
-      )
+    ? rows.filter((row) => valuationMissingByRow.has(row.id))
     : rows;
+  const activeMissingFields = new Set(
+    selected ? valuationMissingByRow.get(selected.id)?.fields ?? [] : [],
+  );
   const visibleFields = fields.filter(
     (field) =>
       !missingOnly ||
-      field.required ||
-      draft?.[field.name] == null ||
-      original[field.name] == null,
+      keyFields[table].includes(field.name) ||
+      activeMissingFields.has(field.name),
   );
   const bulkEditableFields = fields.filter(
     (field) => !keyFields.annual_financial_fact.includes(field.name),
@@ -825,7 +985,7 @@ export function AdminValuationPage() {
               <h2 className="text-xl font-bold">{stock.name} 계산 조건</h2>
               <span className="text-xs text-gray-600 dark:text-gray-300 font-mono">Valuation Options</span>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-4">
               <label className="text-sm space-y-1 block">
                 <div className="flex justify-between text-xs text-gray-500">
                   <span>계산 기준일</span>
@@ -927,12 +1087,35 @@ export function AdminValuationPage() {
                   <option value="MEAN">기간 평균 (Mean)</option>
                 </select>
               </label>
+              <label className="text-sm space-y-1 block">
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>성장률 상한</span>
+                  <span className="font-mono">Growth Cap</span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    className={`${control} pr-8`}
+                    disabled={busy}
+                    value={Number(options.growth_rate_cap) * 100}
+                    onChange={(e) =>
+                      changeOption({
+                        growth_rate_cap: String(Number(e.target.value) / 100),
+                      })
+                    }
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
+                </div>
+              </label>
             </div>
             <p className="text-sm text-gray-500">
               {options.normalization_method === 'MEAN'
                 ? '선택 기간 OE 합계 ÷ 선택 연수'
                 : 'min(최근 연도 OE, 선택 기간 OE 중앙값)'}{' '}
-              · 성장률은 선택한 {options.normalization_years}년간의 EPS·OEPS 변화를 사용하므로 시작 연도를 포함한 {options.normalization_years + 1}개 연간 자료가 필요합니다. 한 지표만 유효하면 해당 성장률과 이력 불완전 경고를 사용합니다.{' '}
+              · 성장률은 선택한 {options.normalization_years}년간의 EPS·OEPS 변화 중 낮은 값과 기업별 성장률 상한 {Number(options.growth_rate_cap) * 100}% 중 작은 값을 사용합니다. 시작 연도를 포함한 {options.normalization_years + 1}개 연간 자료가 필요하며, 한 지표만 유효하면 해당 성장률과 이력 불완전 경고를 사용합니다.{' '}
               · 총 CAPEX 추정치가 부족하면 공시 유형·무형 취득액 합계 또는 수집된 공시 총액을 사용하며, 유지보수 모드는 유지보수 추정치 또는 총 CAPEX에서 성장 CAPEX를 차감해 계산합니다.
             </p>
             <button
@@ -967,6 +1150,7 @@ export function AdminValuationPage() {
                   ? '기간 평균 (Mean)'
                   : '보수적 기준 (Conservative)'}{' '}
                 ·{' '}
+                성장률 상한 {Number(result.options.growth_rate_cap) * 100}% ·{' '}
                 {result.options.capex_mode === 'TOTAL'
                   ? '유지보수+성장 (Total)'
                   : '유지보수 (Maintenance)'}
@@ -1133,6 +1317,23 @@ export function AdminValuationPage() {
               빈 값은 0과 다릅니다. 희석 요인은 자동 합산하지 않으며 검토한 최종
               희석주식수를 직접 입력합니다.
             </p>
+            {table !== 'dilutive_security_fact' &&
+              (valuationMissingByRow.size > 0 || valuationMissingNotices.length > 0) && (
+                <div className="rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-4 space-y-2">
+                  <p className="font-semibold text-sm text-amber-900 dark:text-amber-200">
+                    계산 필수 입력 확인 · 누락 행 {valuationMissingByRow.size}개
+                  </p>
+                  <p className="text-xs text-amber-800 dark:text-amber-300">
+                    현재 계산 옵션과 기준일에 실제로 필요한 값만 표시합니다. 아래의
+                    주황색 행을 열면 누락 필드가 강조됩니다.
+                  </p>
+                  {valuationMissingNotices.map((message) => (
+                    <p key={message} className="text-sm text-amber-800 dark:text-amber-300">
+                      • {message}
+                    </p>
+                  ))}
+                </div>
+              )}
             <div className="flex flex-wrap gap-2">
               {Object.entries(tableLabels).map(([name, item]) => (
                 <button
@@ -1177,7 +1378,7 @@ export function AdminValuationPage() {
                   checked={missingOnly}
                   onChange={(e) => setMissingOnly(e.target.checked)}
                 />{' '}
-                <span>결측만 보기</span>
+                <span>계산 필수 누락만 보기</span>
               </label>
               <button
                 className={button}
@@ -1307,12 +1508,24 @@ export function AdminValuationPage() {
             ) : (
               <div className="max-h-64 overflow-y-auto border rounded-xl">
                 {visibleRows.length === 0 && (
-                  <p className="p-4">표시할 행이 없습니다.</p>
+                  <p className="p-4">
+                    {missingOnly && valuationMissingNotices.length === 0
+                      ? '현재 행에서 계산을 막는 누락값이 없습니다.'
+                      : '표시할 행이 없습니다.'}
+                  </p>
                 )}
-                {visibleRows.map((row) => (
+                {visibleRows.map((row) => {
+                  const missing = valuationMissingByRow.get(row.id);
+                  return (
                   <div
                     key={row.id}
-                    className={`flex items-center border-b ${selected?.id === row.id ? 'bg-blue-50 dark:bg-blue-950' : ''}`}
+                    className={`flex items-center border-b ${
+                      selected?.id === row.id
+                        ? 'bg-blue-50 dark:bg-blue-950'
+                        : missing
+                          ? 'bg-amber-50/80 dark:bg-amber-950/20'
+                          : ''
+                    }`}
                   >
                     {table === 'annual_financial_fact' && (
                       <label className="p-3 pr-1 flex items-center cursor-pointer">
@@ -1349,9 +1562,22 @@ export function AdminValuationPage() {
                         / {row.source_type} · 수정{' '}
                         {new Date(row.updated_at).toLocaleString()}
                       </span>
+                      {missing && (
+                        <span className="mt-1 flex flex-wrap gap-1" aria-label="계산 필수 누락">
+                          {missing.fields.map((name) => (
+                            <span
+                              key={name}
+                              className="rounded-full bg-amber-200/80 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-900/60 dark:text-amber-200"
+                            >
+                              {getFieldMeta(name).ko}
+                            </span>
+                          ))}
+                        </span>
+                      )}
                     </button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
             {draft && (
@@ -1384,7 +1610,14 @@ export function AdminValuationPage() {
                     const value = fieldDisplay(field.name, draft[field.name]);
                     const meta = getFieldMeta(field.name);
                     return (
-                      <label className="text-sm space-y-1.5 block" key={field.name}>
+                      <label
+                        className={`text-sm space-y-1.5 block rounded-lg ${
+                          activeMissingFields.has(field.name)
+                            ? 'ring-2 ring-amber-400 bg-amber-50 dark:bg-amber-950/30 p-2'
+                            : ''
+                        }`}
+                        key={field.name}
+                      >
                         <div className="flex items-baseline justify-between gap-1">
                           <span className="font-medium text-gray-800 dark:text-gray-200">
                             {meta.ko}
@@ -1395,6 +1628,11 @@ export function AdminValuationPage() {
                             )}
                             {field.required && (
                               <span className="text-blue-600 dark:text-blue-400 ml-1 font-bold">*</span>
+                            )}
+                            {activeMissingFields.has(field.name) && (
+                              <span className="text-xs text-amber-700 dark:text-amber-300 ml-1 font-semibold">
+                                계산 필요
+                              </span>
                             )}
                           </span>
                           {meta.en && (

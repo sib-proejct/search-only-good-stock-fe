@@ -410,6 +410,8 @@ export interface components {
              * @default NOT_CALCULATED
              */
             valuation_status: string;
+            /** Growth Rate Cap */
+            growth_rate_cap?: string | null;
         };
         /** AnnualFactData */
         AnnualFactData: {
@@ -950,6 +952,10 @@ export interface components {
             normalizedOwnerEarnings: number | null;
             /** Normalizedoeps */
             normalizedOeps: number | null;
+            /** Epsgrowth */
+            epsGrowth?: number | null;
+            /** Oepsgrowth */
+            oepsGrowth?: number | null;
             /** Rawgrowth */
             rawGrowth: number | null;
             /** Growthcap */
@@ -1647,7 +1653,7 @@ export interface components {
             ctx?: Record<string, never>;
         };
         /** ValuationRequest */
-        ValuationRequest: {
+        "ValuationRequest-Input": {
             /**
              * Publish
              * @default false
@@ -1682,6 +1688,53 @@ export interface components {
              * @enum {string}
              */
             normalization_method: "CONSERVATIVE" | "MEAN";
+            /**
+             * Growth Rate Cap
+             * @default 0.20
+             */
+            growth_rate_cap: number | string;
+        };
+        /** ValuationRequest */
+        "ValuationRequest-Output": {
+            /**
+             * Publish
+             * @default false
+             */
+            publish: boolean;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /**
+             * Statement Scope
+             * @default CFS
+             * @enum {string}
+             */
+            statement_scope: "CFS" | "OFS" | "CONSOLIDATED_US_GAAP";
+            /**
+             * Capex Mode
+             * @default TOTAL
+             * @enum {string}
+             */
+            capex_mode: "MAINTENANCE" | "TOTAL";
+            /**
+             * Normalization Years
+             * @default 5
+             * @enum {integer}
+             */
+            normalization_years: 1 | 3 | 5;
+            /**
+             * Normalization Method
+             * @default CONSERVATIVE
+             * @enum {string}
+             */
+            normalization_method: "CONSERVATIVE" | "MEAN";
+            /**
+             * Growth Rate Cap
+             * @default 0.20
+             */
+            growth_rate_cap: string;
         };
         /** ValuationResponse */
         ValuationResponse: {
@@ -1690,7 +1743,7 @@ export interface components {
              * @default false
              */
             published: boolean;
-            options: components["schemas"]["ValuationRequest"];
+            options: components["schemas"]["ValuationRequest-Output"];
             /** Annual Oe */
             annual_oe: components["schemas"]["AnnualOe"][];
             dcf?: components["schemas"]["DcfResultDTO"] | null;
@@ -2270,7 +2323,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ValuationRequest"];
+                "application/json": components["schemas"]["ValuationRequest-Input"];
             };
         };
         responses: {

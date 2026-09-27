@@ -15,6 +15,9 @@ interface ValuationCalculationDetailsProps {
 const formatPercent = (value: number | null): string =>
   value === null ? '—' : `${(value * 100).toFixed(2)}%`;
 
+const formatSignedPercent = (value: number): string =>
+  `${value >= 0 ? '+' : ''}${(value * 100).toFixed(2)}%`;
+
 const median = (values: number[]): number | null => {
   if (values.length === 0) return null;
   const sorted = [...values].sort((a, b) => a - b);
@@ -189,7 +192,11 @@ export function ValuationCalculationDetails({
             <h4 className="text-sm font-bold">3. 성장률과 할인율</h4>
             <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 text-xs">
               <dt className="text-gray-500">원성장률</dt>
-              <dd className="font-mono font-bold">{formatPercent(dcf.rawGrowth)}</dd>
+              <dd className="font-mono font-bold">
+                {dcf.epsGrowth != null && dcf.oepsGrowth != null && dcf.rawGrowth !== null
+                  ? `min(${formatSignedPercent(dcf.epsGrowth)}, ${formatSignedPercent(dcf.oepsGrowth)}) = ${formatSignedPercent(dcf.rawGrowth)}`
+                  : formatPercent(dcf.rawGrowth)}
+              </dd>
               <dt className="text-gray-500">성장률 상한</dt>
               <dd className="font-mono font-bold">{formatPercent(dcf.growthCap)}</dd>
               <dt className="text-gray-500">기준 성장률 = min(원성장률, 상한)</dt>
@@ -200,7 +207,8 @@ export function ValuationCalculationDetails({
               <dd className="font-mono font-bold">{formatPercent(dcf.discountRate)}</dd>
             </dl>
             <p className="text-xs text-gray-500 leading-relaxed">
-              원성장률은 유효한 EPS·OEPS 성장률 중 낮은 값을 사용합니다. 할인율은
+              원성장률은 유효한 EPS·OEPS 성장률 중 낮은 값을 사용하고, 기업별로 입력한
+              성장률 상한과 비교해 더 작은 값을 기준 성장률로 적용합니다. 할인율은
               무위험금리와 시장위험 프리미엄을 합산하고 7% 하한 및 부채 안전성
               가산금리를 반영합니다.
             </p>
