@@ -22,6 +22,8 @@ describe('core assessment', () => {
   });
   it('explains estimated shares without exposing a warning code', () => {
     expect(getDcfWarningLabel('ESTIMATED_CURRENT_SHARES', 'ko')).toContain('연간 평균');
+    expect(getDcfWarningLabel('INCOMPLETE_GROWTH_HISTORY', 'ko')).toContain('한쪽 지표');
+    expect(getDcfWarningLabel('INCOMPLETE_GROWTH_HISTORY', 'en')).toContain('available metric');
     expect(getDcfWarningLabel('UNKNOWN_WARNING', 'ko')).toBe('UNKNOWN_WARNING');
   });
 });

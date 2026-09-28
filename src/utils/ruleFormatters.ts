@@ -524,7 +524,7 @@ export function getDcfWarningLabel(warning: string, language: Language): string 
   const labels: Record<string, [string, string]> = {
     CASH_FLOW_PROXY: ['영업현금흐름에서 유형·무형자산 투자를 차감한 추정 모델입니다. 유지투자, 주식보상, 순차입을 별도로 조정한 가치는 아닙니다.', 'Cash-flow proxy deducting tangible and intangible investment; maintenance investment, stock compensation and net borrowing are not separately adjusted.'],
     ESTIMATED_CURRENT_SHARES: ['현재 주식 수가 확인되지 않아 연간 평균 주식 수를 사용했습니다. 주당 가치와 시가총액 추정에 오차가 있을 수 있습니다.', 'Current shares are unverified; annual average shares may distort per-share value and estimated market capitalization.'],
-    INCOMPLETE_GROWTH_HISTORY: ['EPS와 주당 현금흐름의 5년 이력이 완전하지 않아 양의 성장률을 적용하지 않았습니다.', 'Incomplete five-year EPS or per-share cash-flow history: no positive growth assumed.'],
+    INCOMPLETE_GROWTH_HISTORY: ['EPS 또는 OEPS 성장 이력이 완전하지 않아 유효한 한쪽 지표만 성장률에 반영했습니다.', 'Incomplete EPS or OEPS growth history: only the available metric was used.'],
     CORE_RULE_FAIL: ['실패한 핵심 규칙이 있어 가치평가에 추가 검토가 필요합니다.', 'A core rule failed; review the valuation.'],
     CORE_RULE_NA: ['평가할 수 없는 핵심 규칙이 있습니다.', 'Some core rules could not be evaluated.'],
     CAPITAL_ACTION_REVIEW: ['주식 수 변동 또는 관련 데이터 부족을 확인하세요.', 'Review changes in shares or missing share data.'],

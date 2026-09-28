@@ -284,7 +284,9 @@ export function AdminValuationPage() {
     capex_mode: 'TOTAL',
     normalization_years: 5,
     normalization_method: 'CONSERVATIVE',
+    growth_method: 'LOWER_BOUND',
     growth_rate_cap: '0.20',
+    growth_rate_floor: null,
     statement_scope: 'CFS',
   });
   const [result, setResult] = useState<ValuationResult | null>(null);
@@ -336,6 +338,7 @@ export function AdminValuationPage() {
       ...old,
       statement_scope: next.currency === 'USD' ? 'CONSOLIDATED_US_GAAP' : 'CFS',
       growth_rate_cap: next.growth_rate_cap ?? '0.20',
+      growth_rate_floor: next.growth_rate_floor ?? null,
     }));
   }, [resetEditor, resetBulkSelection]);
 
@@ -980,156 +983,239 @@ export function AdminValuationPage() {
       )}
       {stock && (
         <>
-          <section className="rounded-2xl border border-black/10 dark:border-white/15 p-6 space-y-5">
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-xl font-bold">{stock.name} 계산 조건</h2>
-              <span className="text-xs text-gray-600 dark:text-gray-300 font-mono">Valuation Options</span>
+          <section aria-labelledby="valuation-options-heading" className="overflow-hidden rounded-2xl border border-black/10 bg-white dark:border-white/15 dark:bg-[#1C1C1E]">
+            <div className="border-b border-black/5 px-4 py-5 dark:border-white/10 sm:px-6">
+              <p className="mb-1 text-xs font-semibold text-blue-600 dark:text-blue-400">{stock.name} · {stock.ticker}</p>
+              <h2 id="valuation-options-heading" className="text-xl font-bold">계산 조건</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">기준 자료와 산정 방식을 선택한 뒤 내재가치를 계산하세요.</p>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-4">
-              <label className="text-sm space-y-1 block">
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>계산 기준일</span>
-                  <span className="font-mono">As of</span>
+            <div className="grid grid-cols-1 gap-4 p-4 sm:p-6 lg:grid-cols-2">
+              <fieldset className="min-w-0 lg:col-span-2 rounded-xl border border-black/5 bg-[#F5F5F7]/70 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                <legend className="px-1 text-sm font-semibold">기준 정보</legend>
+                <p className="mb-4 text-xs leading-relaxed text-gray-500 dark:text-gray-400">계산에 사용할 날짜와 재무제표를 선택합니다.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <label className="block min-w-0 space-y-2 text-sm">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs font-medium text-gray-600 dark:text-gray-300">
+                      <span>계산 기준일</span>
+                      <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">As of</span>
+                    </div>
+                    <input
+                      type="date"
+                      className={`${control} min-h-11 min-w-0 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                      disabled={busy}
+                      value={options.as_of}
+                      onChange={(e) => changeOption({ as_of: e.target.value })}
+                    />
+                  </label>
+                  <label className="block min-w-0 space-y-2 text-sm">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs font-medium text-gray-600 dark:text-gray-300">
+                      <span>재무제표</span>
+                      <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Scope</span>
+                    </div>
+                    <select
+                      className={`${control} min-h-11 min-w-0 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                      disabled={busy}
+                      value={options.statement_scope}
+                      onChange={(e) =>
+                        changeOption({
+                          statement_scope: e.target
+                            .value as ValuationOptions['statement_scope'],
+                        })
+                      }
+                    >
+                      {(stock.currency === 'USD'
+                        ? ['CONSOLIDATED_US_GAAP', 'OFS']
+                        : ['CFS', 'OFS']
+                      ).map((value) => (
+                        <option key={value} value={value}>
+                          {formatChoice(value)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block min-w-0 space-y-2 text-sm">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs font-medium text-gray-600 dark:text-gray-300">
+                      <span>CAPEX</span>
+                      <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Mode</span>
+                    </div>
+                    <select
+                      className={`${control} min-h-11 min-w-0 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                      disabled={busy}
+                      value={options.capex_mode}
+                      onChange={(e) =>
+                        changeOption({
+                          capex_mode: e.target
+                            .value as ValuationOptions['capex_mode'],
+                        })
+                      }
+                    >
+                      <option value="TOTAL">유지보수 + 성장 (Total)</option>
+                      <option value="MAINTENANCE">유지보수 전용 (Maintenance)</option>
+                    </select>
+                  </label>
                 </div>
-                <input
-                  type="date"
-                  className={control}
-                  disabled={busy}
-                  value={options.as_of}
-                  onChange={(e) => changeOption({ as_of: e.target.value })}
-                />
-              </label>
-              <label className="text-sm space-y-1 block">
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>재무제표</span>
-                  <span className="font-mono">Scope</span>
+              </fieldset>
+              <fieldset className="min-w-0 rounded-xl border border-black/5 bg-[#F5F5F7]/70 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                <legend className="px-1 text-sm font-semibold">OE 정규화</legend>
+                <p className="mb-4 text-xs leading-relaxed text-gray-500 dark:text-gray-400">기간과 방식은 정규화 OE 계산에, 기간은 성장률 산정에도 적용됩니다.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <label className="block min-w-0 space-y-2 text-sm">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs font-medium text-gray-600 dark:text-gray-300">
+                      <span>OE 정규화·성장률 기간</span>
+                      <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Period</span>
+                    </div>
+                    <select
+                      className={`${control} min-h-11 min-w-0 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                      disabled={busy}
+                      value={options.normalization_years}
+                      onChange={(e) =>
+                        changeOption({
+                          normalization_years: Number(e.target.value) as 1 | 2 | 3 | 4 | 5,
+                        })
+                      }
+                    >
+                      {[1, 2, 3, 4, 5].map((value) => (
+                        <option key={value} value={value}>
+                          {value}개년 ({value}Y)
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block min-w-0 space-y-2 text-sm">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs font-medium text-gray-600 dark:text-gray-300">
+                      <span>정규화 OE 방식</span>
+                      <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Method</span>
+                    </div>
+                    <select
+                      className={`${control} min-h-11 min-w-0 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                      disabled={busy}
+                      value={options.normalization_method}
+                      onChange={(e) =>
+                        changeOption({
+                          normalization_method: e.target
+                            .value as ValuationOptions['normalization_method'],
+                        })
+                      }
+                    >
+                      <option value="CONSERVATIVE">보수적 (Conservative)</option>
+                      <option value="MEAN">기간 평균 (Mean)</option>
+                    </select>
+                  </label>
                 </div>
-                <select
-                  className={control}
-                  disabled={busy}
-                  value={options.statement_scope}
-                  onChange={(e) =>
-                    changeOption({
-                      statement_scope: e.target
-                        .value as ValuationOptions['statement_scope'],
-                    })
-                  }
-                >
-                  {(stock.currency === 'USD'
-                    ? ['CONSOLIDATED_US_GAAP', 'OFS']
-                    : ['CFS', 'OFS']
-                  ).map((value) => (
-                    <option key={value} value={value}>
-                      {formatChoice(value)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="text-sm space-y-1 block">
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>CAPEX</span>
-                  <span className="font-mono">Mode</span>
+              </fieldset>
+              <fieldset className="min-w-0 rounded-xl border border-black/5 bg-[#F5F5F7]/70 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                <legend className="px-1 text-sm font-semibold">성장률</legend>
+                <p className="mb-4 text-xs leading-relaxed text-gray-500 dark:text-gray-400">성장률 산정 방식과 적용 가능한 하한·상한을 설정합니다.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <label className="block min-w-0 space-y-2 text-sm">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs font-medium text-gray-600 dark:text-gray-300">
+                      <span>성장률 산정</span>
+                      <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Growth Method</span>
+                    </div>
+                    <select
+                      className={`${control} min-h-11 min-w-0 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                      disabled={busy}
+                      value={options.growth_method}
+                      onChange={(e) =>
+                        changeOption({
+                          growth_method: e.target
+                            .value as ValuationOptions['growth_method'],
+                        })
+                      }
+                    >
+                      <option value="LOWER_BOUND">min(EPS, OEPS)</option>
+                      <option value="OEPS_WEIGHTED">OEPS 중심 (70% OEPS)</option>
+                      <option value="EQUAL_BLEND">균등 혼합 (Equal Blend)</option>
+                    </select>
+                  </label>
+                  <label className="block min-w-0 space-y-2 text-sm">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs font-medium text-gray-600 dark:text-gray-300">
+                      <span>성장률 하한</span>
+                      <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Growth Floor</span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="-99.9"
+                        max={Number(options.growth_rate_cap) * 100}
+                        step="0.1"
+                        placeholder="미적용"
+                        className={`${control} min-h-11 pr-9 tabular-nums focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                        disabled={busy}
+                        value={options.growth_rate_floor == null ? '' : Number(options.growth_rate_floor) * 100}
+                        onChange={(e) =>
+                          changeOption({
+                            growth_rate_floor: e.target.value === '' ? null : String(Number(e.target.value) / 100),
+                          })
+                        }
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
+                    </div>
+                  </label>
+                  <label className="block min-w-0 space-y-2 text-sm">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs font-medium text-gray-600 dark:text-gray-300">
+                      <span>성장률 상한</span>
+                      <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Growth Cap</span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        className={`${control} min-h-11 pr-9 tabular-nums focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                        disabled={busy}
+                        value={Number(options.growth_rate_cap) * 100}
+                        onChange={(e) =>
+                          changeOption({
+                            growth_rate_cap: String(Number(e.target.value) / 100),
+                          })
+                        }
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
+                    </div>
+                  </label>
                 </div>
-                <select
-                  className={control}
-                  disabled={busy}
-                  value={options.capex_mode}
-                  onChange={(e) =>
-                    changeOption({
-                      capex_mode: e.target
-                        .value as ValuationOptions['capex_mode'],
-                    })
-                  }
-                >
-                  <option value="TOTAL">유지보수 + 성장 (Total)</option>
-                  <option value="MAINTENANCE">유지보수 전용 (Maintenance)</option>
-                </select>
-              </label>
-              <label className="text-sm space-y-1 block">
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>OE 정규화·성장률 기간</span>
-                  <span className="font-mono">Period</span>
-                </div>
-                <select
-                  className={control}
-                  disabled={busy}
-                  value={options.normalization_years}
-                  onChange={(e) =>
-                    changeOption({
-                      normalization_years: Number(e.target.value) as 1 | 3 | 5,
-                    })
-                  }
-                >
-                  {[1, 3, 5].map((value) => (
-                    <option key={value} value={value}>
-                      {value}개년 ({value}Y)
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="text-sm space-y-1 block">
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>정규화 OE 방식</span>
-                  <span className="font-mono">Method</span>
-                </div>
-                <select
-                  className={control}
-                  disabled={busy}
-                  value={options.normalization_method}
-                  onChange={(e) =>
-                    changeOption({
-                      normalization_method: e.target
-                        .value as ValuationOptions['normalization_method'],
-                    })
-                  }
-                >
-                  <option value="CONSERVATIVE">보수적 (Conservative)</option>
-                  <option value="MEAN">기간 평균 (Mean)</option>
-                </select>
-              </label>
-              <label className="text-sm space-y-1 block">
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>성장률 상한</span>
-                  <span className="font-mono">Growth Cap</span>
-                </div>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    className={`${control} pr-8`}
-                    disabled={busy}
-                    value={Number(options.growth_rate_cap) * 100}
-                    onChange={(e) =>
-                      changeOption({
-                        growth_rate_cap: String(Number(e.target.value) / 100),
-                      })
-                    }
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
-                </div>
-              </label>
+              </fieldset>
+              <details className="group lg:col-span-2 rounded-xl border border-black/10 px-4 py-3 dark:border-white/10">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 [&::-webkit-details-marker]:hidden">
+                  계산 방식 및 자료 적용 기준
+                  <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 text-gray-500 transition-transform group-open:rotate-180" />
+                </summary>
+                <p className="mt-3 text-sm leading-7 text-gray-600 dark:text-gray-400">
+                  {options.normalization_method === 'MEAN'
+                    ? '선택 기간 OE 합계 ÷ 선택 연수'
+                    : 'min(최근 연도 OE, 선택 기간 OE 중앙값)'}{' '}
+                  · 성장률은 선택한 {options.normalization_years}년간의 EPS·OEPS 변화를{' '}
+                  {options.growth_method === 'LOWER_BOUND'
+                    ? 'min(EPS, OEPS)로 반영합니다.'
+                    : options.growth_method === 'OEPS_WEIGHTED'
+                      ? 'EPS 30%·OEPS 70%로 반영합니다.'
+                      : '각 50%로 반영합니다.'}{' '}
+                  둘 중 하나가 음수이면 min(EPS, OEPS)를 사용하고, 산정값을 성장률 하한{options.growth_rate_floor == null ? '(미적용)' : ` ${Number(options.growth_rate_floor) * 100}%`}과 상한 {Number(options.growth_rate_cap) * 100}% 범위로 제한합니다. 시작 연도를 포함한 {options.normalization_years + 1}개 연간 자료가 필요하며, 한 지표만 유효하면 해당 성장률과 이력 불완전 경고를 사용합니다.{' '}
+                  · 총 CAPEX 추정치가 부족하면 공시 유형·무형 취득액 합계 또는 수집된 공시 총액을 사용하며, 유지보수 모드는 유지보수 추정치 또는 총 CAPEX에서 성장 CAPEX를 차감해 계산합니다.
+                </p>
+              </details>
             </div>
-            <p className="text-sm text-gray-500">
-              {options.normalization_method === 'MEAN'
-                ? '선택 기간 OE 합계 ÷ 선택 연수'
-                : 'min(최근 연도 OE, 선택 기간 OE 중앙값)'}{' '}
-              · 성장률은 선택한 {options.normalization_years}년간의 EPS·OEPS 변화 중 낮은 값과 기업별 성장률 상한 {Number(options.growth_rate_cap) * 100}% 중 작은 값을 사용합니다. 시작 연도를 포함한 {options.normalization_years + 1}개 연간 자료가 필요하며, 한 지표만 유효하면 해당 성장률과 이력 불완전 경고를 사용합니다.{' '}
-              · 총 CAPEX 추정치가 부족하면 공시 유형·무형 취득액 합계 또는 수집된 공시 총액을 사용하며, 유지보수 모드는 유지보수 추정치 또는 총 CAPEX에서 성장 CAPEX를 차감해 계산합니다.
-            </p>
-            <button
-              className={button}
-              disabled={busy || collecting || dirty || !options.as_of}
-              onClick={calculate}
-            >
-              {busy ? '처리 중…' : '계산 및 반영'}
-            </button>
-            {dirty && (
-              <p className="text-amber-600 text-sm">
-                미저장 변경을 저장하거나 취소한 뒤 계산하세요.
+            <div className="flex flex-col gap-3 border-t border-black/5 bg-[#F5F5F7]/60 px-4 py-4 dark:border-white/10 dark:bg-white/[0.02] sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <p role="status" className={`text-xs leading-relaxed ${dirty ? 'text-amber-700 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                {dirty
+                  ? '미저장 변경을 저장하거나 취소한 뒤 계산하세요.'
+                  : collecting
+                    ? '자료 수집이 완료되면 계산할 수 있습니다.'
+                    : !options.as_of
+                      ? '계산 기준일을 선택해주세요.'
+                      : '선택한 조건으로 계산 결과를 반영합니다.'}
               </p>
-            )}
+              <button
+                type="button"
+                className={`${button} min-h-11 w-full shrink-0 font-semibold transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed sm:w-auto`}
+                disabled={busy || collecting || dirty || !options.as_of}
+                onClick={calculate}
+              >
+                {busy ? '처리 중…' : '계산 및 반영'}
+              </button>
+            </div>
           </section>
           {result && (
             <section className="rounded-2xl border border-black/10 dark:border-white/15 p-6 space-y-4">
@@ -1150,7 +1236,14 @@ export function AdminValuationPage() {
                   ? '기간 평균 (Mean)'
                   : '보수적 기준 (Conservative)'}{' '}
                 ·{' '}
+                {result.options.growth_method === 'LOWER_BOUND'
+                  ? 'min(EPS, OEPS)'
+                  : result.options.growth_method === 'OEPS_WEIGHTED'
+                    ? 'OEPS 중심 (70% OEPS)'
+                    : '균등 혼합 (Equal Blend)'}{' '}
+                ·{' '}
                 성장률 상한 {Number(result.options.growth_rate_cap) * 100}% ·{' '}
+                성장률 하한 {result.options.growth_rate_floor == null ? '미적용' : `${Number(result.options.growth_rate_floor) * 100}%`} ·{' '}
                 {result.options.capex_mode === 'TOTAL'
                   ? '유지보수+성장 (Total)'
                   : '유지보수 (Maintenance)'}
@@ -1160,67 +1253,84 @@ export function AdminValuationPage() {
                   {issue}
                 </p>
               ))}
-              <ValuationCalculationDetails
-                result={result}
-                currency={stock.currency}
-              />
               {result.dcf && (
-                <>
-                  <div className="grid sm:grid-cols-3 gap-4">
-                    <p>
-                      Normalized OE
-                      <br />
-                      <strong className="text-lg">
+                <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-4 dark:border-blue-900 dark:bg-blue-950/20 sm:p-5 space-y-4">
+                  <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300">최종 계산 요약</h3>
+                  <dl className="grid gap-3 md:grid-cols-3">
+                    <div className="min-w-0 rounded-xl border border-black/5 bg-white p-4 dark:border-white/10 dark:bg-[#1C1C1E]">
+                      <dt className="text-xs font-medium text-gray-600 dark:text-gray-400">정규화 OE · Normalized OE</dt>
+                      <dd className="mt-2 text-2xl font-bold tracking-tight tabular-nums break-words">
                         {formatMonetaryAmount(result.dcf.normalizedOwnerEarnings, stock.currency)}
-                      </strong>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 block font-mono">
+                      </dd>
+                      <dd className="mt-1 text-xs text-gray-500 dark:text-gray-400 font-mono break-all">
                         {fmt(result.dcf.normalizedOwnerEarnings)} {stock.currency}
-                      </span>
-                    </p>
-                    <p>
-                      OEPS
-                      <br />
-                      <strong className="text-lg">
-                        {formatPerShare(result.dcf.normalizedOeps, stock.currency)}/주
-                      </strong>
-                    </p>
-                    <p>
-                      판정
-                      <br />
-                      <strong className="text-lg">{result.dcf.status}</strong>
-                    </p>
-                  </div>
-                  <div className="grid sm:grid-cols-3 gap-4">
+                      </dd>
+                    </div>
+                    <div className="min-w-0 rounded-xl border border-black/5 bg-white p-4 dark:border-white/10 dark:bg-[#1C1C1E]">
+                      <dt className="text-xs font-medium text-gray-600 dark:text-gray-400">주당 정규화 OE · OEPS</dt>
+                      <dd className="mt-2 text-2xl font-bold tracking-tight tabular-nums break-words">
+                        {formatPerShare(result.dcf.normalizedOeps, stock.currency)}
+                        <span className="ml-1 text-sm font-normal text-gray-500 dark:text-gray-400">/주</span>
+                      </dd>
+                    </div>
+                    <div className={`min-w-0 rounded-xl border p-4 ${
+                      result.dcf.status === 'PASS_WITH_MARGIN'
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200'
+                        : result.dcf.status === 'WATCH' || result.dcf.status === 'NO_MARGIN'
+                          ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200'
+                          : 'border-gray-200 bg-gray-100 text-gray-700 dark:border-gray-700 dark:bg-white/5 dark:text-gray-300'
+                    }`}>
+                      <dt className="text-xs font-medium">최종 판정</dt>
+                      <dd className="mt-2 text-2xl font-bold tracking-tight">
+                        {({
+                          PASS_WITH_MARGIN: '안전마진 충족',
+                          WATCH: '추가 검토',
+                          NO_MARGIN: '안전마진 부족',
+                          'N/A': '계산 불가',
+                        } as Record<string, string>)[result.dcf.status] ?? result.dcf.status}
+                      </dd>
+                      <dd className="mt-1 text-xs font-mono">{result.dcf.status}</dd>
+                    </div>
+                  </dl>
+                  <div className="grid gap-3 md:grid-cols-3">
                     {Object.entries(result.dcf.scenarios ?? {}).map(
                       ([key, scenario]) => (
                         <div
-                          className="bg-gray-100 dark:bg-white/5 p-4 rounded-xl"
+                          className={`min-w-0 rounded-xl border p-4 ${key === 'base'
+                            ? 'border-blue-300 bg-blue-100 text-blue-950 dark:border-blue-700 dark:bg-blue-900/40 dark:text-blue-100'
+                            : 'border-black/5 bg-white dark:border-white/10 dark:bg-[#1C1C1E]'
+                          }`}
                           key={key}
                         >
-                          <p className="text-xs text-gray-600 dark:text-gray-300 font-mono">
-                            {(
-                              {
-                                conservative: '보수적 (Conservative)',
-                                base: '기준 (Base)',
-                                optimistic: '낙관적 (Optimistic)',
-                              } as Record<string, string>
-                            )[key] ?? key}
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h4 className="text-sm font-semibold">
+                              {({ conservative: '보수적', base: '기준', optimistic: '낙관적' } as Record<string, string>)[key] ?? key}
+                            </h4>
+                            {key === 'conservative' && <span className="rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300 px-2 py-0.5 text-[10px] font-medium">안전마진 기준</span>}
+                          </div>
+                          <p className={`mt-3 text-xs ${key === 'base' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-500 dark:text-gray-400'}`}>주당 내재가치</p>
+                          <p className="mt-1 text-3xl font-bold tracking-tight tabular-nums break-words">
+                            {formatPerShare(scenario?.intrinsicValuePerShare, stock.currency)}
+                            <span className={`ml-1 text-sm font-normal ${key === 'base' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-500 dark:text-gray-400'}`}>/주</span>
                           </p>
-                          <strong className="text-xl">
-                            {formatPerShare(scenario?.intrinsicValuePerShare, stock.currency)}/주
-                          </strong>
                         </div>
                       ),
                     )}
                   </div>
-                  <p>
-                    안전마진:{' '}
-                    {result.dcf.conservativeMarginOfSafety == null
-                      ? '계산 불가'
-                      : `${(result.dcf.conservativeMarginOfSafety * 100).toFixed(2)}%`}
-                  </p>
-                </>
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-blue-200 pt-3 dark:border-blue-900">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">보수적 내재가치 기준 안전마진</p>
+                    <strong className="text-2xl tabular-nums tracking-tight">
+                      {result.dcf.conservativeMarginOfSafety == null
+                        ? '계산 불가'
+                        : `${(result.dcf.conservativeMarginOfSafety * 100).toFixed(2)}%`}
+                    </strong>
+                  </div>
+                </div>
               )}
+              <ValuationCalculationDetails
+                result={result}
+                currency={stock.currency}
+              />
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
                   <thead>
@@ -1359,406 +1469,412 @@ export function AdminValuationPage() {
                 </button>
               ))}
             </div>
-            {table === 'market_fact' && (
-              <p className="text-sm text-amber-600">
-                국채·지수는 모든 종목이 공유합니다. 새 공통 시계열은 종목 ID를
-                비우고 US10Y, KR10Y 또는 BENCHMARK:지수명을 입력하세요.
-              </p>
-            )}
-            {table === 'dilutive_security_fact' && (
-              <p className="text-sm text-gray-500">
-                예정 유상증자는 여기에서 관리하며 완료된 증자는
-                ‘주식수·자본변동 (Share Capital)’에 기록합니다.
-              </p>
-            )}
-            <div className="flex gap-5 items-center">
-              <label className="text-sm flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={missingOnly}
-                  onChange={(e) => setMissingOnly(e.target.checked)}
-                />{' '}
-                <span>계산 필수 누락만 보기</span>
-              </label>
-              <button
-                className={button}
-                disabled={busy || dirty || !fields.length}
-                onClick={() => edit(null)}
-              >
-                새 행 추가
-              </button>
-              <button
-                className="text-sm underline"
-                disabled={busy || dirty || collecting}
-                onClick={() => {
-                  setLoadingRows(true);
-                  setRevision((v) => v + 1);
-                  resetEditor();
-                }}
-              >
-                다시 조회
-              </button>
-            </div>
-            {table === 'annual_financial_fact' && rows.length > 0 && (
-              <div className="rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/60 dark:bg-blue-950/30 p-4 flex flex-wrap items-end gap-3">
-                <label className="text-sm flex items-center gap-2 cursor-pointer self-center">
+            <fieldset className="min-w-0 rounded-xl border border-black/5 bg-[#F5F5F7]/70 p-4 space-y-4 dark:border-white/10 dark:bg-white/[0.03]">
+              <legend className="px-1 text-sm font-semibold">
+                {tableLabels[table].ko}
+                <span className="ml-2 text-[10px] font-normal text-gray-500 dark:text-gray-400 font-mono">{tableLabels[table].en}</span>
+              </legend>
+              {table === 'market_fact' && (
+                <p className="text-sm text-amber-600">
+                  국채·지수는 모든 종목이 공유합니다. 새 공통 시계열은 종목 ID를
+                  비우고 US10Y, KR10Y 또는 BENCHMARK:지수명을 입력하세요.
+                </p>
+              )}
+              {table === 'dilutive_security_fact' && (
+                <p className="text-sm text-gray-500">
+                  예정 유상증자는 여기에서 관리하며 완료된 증자는
+                  ‘주식수·자본변동 (Share Capital)’에 기록합니다.
+                </p>
+              )}
+              <div className="flex flex-wrap gap-x-5 gap-y-3 items-center">
+                <label className="text-sm flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={
-                      visibleRows.length > 0 &&
-                      visibleRows.every((row) => bulkSelectedIds.includes(row.id))
-                    }
-                    onChange={(event) => {
-                      const visibleIds = visibleRows.map((row) => row.id);
-                      setBulkSelectedIds((current) =>
-                        event.target.checked
-                          ? [...new Set([...current, ...visibleIds])]
-                          : current.filter((id) => !visibleIds.includes(id)),
-                      );
-                    }}
-                    disabled={busy || dirty || collecting || visibleRows.length === 0}
-                  />
-                  <span>표시된 연도 전체 선택</span>
+                    checked={missingOnly}
+                    onChange={(e) => setMissingOnly(e.target.checked)}
+                  />{' '}
+                  <span>계산 필수 누락만 보기</span>
                 </label>
-                <label className="text-sm space-y-1 min-w-52">
-                  <span className="block text-xs text-gray-600 dark:text-gray-300">
-                    변경할 항목
-                  </span>
-                  <select
-                    className={control}
-                    value={bulkFieldName}
-                    disabled={busy || dirty || collecting}
-                    onChange={(event) => {
-                      const nextField = bulkEditableFields.find(
-                        (field) => field.name === event.target.value,
-                      );
-                      setBulkFieldName(event.target.value);
-                      setBulkFieldInput(
-                        nextField?.name === 'interest_paid_classification' ? 'CFO' : '',
-                      );
-                    }}
-                  >
-                    {bulkEditableFields.map((field) => (
-                      <option key={field.name} value={field.name}>
-                        {getFieldMeta(field.name).ko}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                {bulkField && (
+                <button
+                  className={button}
+                  disabled={busy || dirty || !fields.length}
+                  onClick={() => edit(null)}
+                >
+                  새 행 추가
+                </button>
+                <button
+                  className="text-sm underline"
+                  disabled={busy || dirty || collecting}
+                  onClick={() => {
+                    setLoadingRows(true);
+                    setRevision((v) => v + 1);
+                    resetEditor();
+                  }}
+                >
+                  다시 조회
+                </button>
+              </div>
+              {table === 'annual_financial_fact' && rows.length > 0 && (
+                <div className="rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/60 dark:bg-blue-950/30 p-4 flex flex-wrap items-end gap-3">
+                  <label className="text-sm flex items-center gap-2 cursor-pointer self-center">
+                    <input
+                      type="checkbox"
+                      checked={
+                        visibleRows.length > 0 &&
+                        visibleRows.every((row) => bulkSelectedIds.includes(row.id))
+                      }
+                      onChange={(event) => {
+                        const visibleIds = visibleRows.map((row) => row.id);
+                        setBulkSelectedIds((current) =>
+                          event.target.checked
+                            ? [...new Set([...current, ...visibleIds])]
+                            : current.filter((id) => !visibleIds.includes(id)),
+                        );
+                      }}
+                      disabled={busy || dirty || collecting || visibleRows.length === 0}
+                    />
+                    <span>표시된 연도 전체 선택</span>
+                  </label>
                   <label className="text-sm space-y-1 min-w-52">
                     <span className="block text-xs text-gray-600 dark:text-gray-300">
-                      적용할 값
+                      변경할 항목
                     </span>
-                    {bulkField.kind === 'select' || bulkField.kind === 'boolean' ? (
-                      <select
-                        className={control}
-                        value={bulkFieldInput}
-                        disabled={busy || dirty || collecting}
-                        onChange={(event) => setBulkFieldInput(event.target.value)}
-                      >
-                        <option value="">값 비우기</option>
-                        {(bulkField.kind === 'boolean'
-                          ? ['true', 'false']
-                          : (bulkField.choices ?? [])
-                        ).map((choice) => (
-                          <option key={choice} value={choice}>
-                            {bulkField.kind === 'boolean'
-                              ? choice === 'true'
-                                ? '예 (True)'
-                                : '아니오 (False)'
-                              : formatChoice(choice)}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input
-                        className={control}
-                        type={
-                          bulkField.kind === 'date'
-                            ? 'date'
-                            : bulkField.kind === 'number'
-                              ? 'number'
-                              : 'text'
-                        }
-                        step="any"
-                        placeholder="비우면 값을 삭제합니다"
-                        value={bulkFieldInput}
-                        disabled={busy || dirty || collecting}
-                        onChange={(event) => setBulkFieldInput(event.target.value)}
-                      />
-                    )}
-                  </label>
-                )}
-                <button
-                  type="button"
-                  className={button}
-                  disabled={busy || dirty || collecting || bulkSelectedIds.length === 0}
-                  onClick={() => void saveBulkField()}
-                >
-                  선택한 {bulkSelectedIds.length}개 연도 일괄 저장
-                </button>
-                <p className="w-full text-xs text-gray-500">
-                  빈 값을 적용하면 선택한 연도의 해당 값이 삭제됩니다. 필수 항목이나 서로 의존하는 값은 저장 시 검증됩니다.
-                </p>
-              </div>
-            )}
-            {loadingRows ? (
-              <p role="status">자료를 불러오는 중…</p>
-            ) : (
-              <div className="max-h-64 overflow-y-auto border rounded-xl">
-                {visibleRows.length === 0 && (
-                  <p className="p-4">
-                    {missingOnly && valuationMissingNotices.length === 0
-                      ? '현재 행에서 계산을 막는 누락값이 없습니다.'
-                      : '표시할 행이 없습니다.'}
-                  </p>
-                )}
-                {visibleRows.map((row) => {
-                  const missing = valuationMissingByRow.get(row.id);
-                  return (
-                  <div
-                    key={row.id}
-                    className={`flex items-center border-b ${
-                      selected?.id === row.id
-                        ? 'bg-blue-50 dark:bg-blue-950'
-                        : missing
-                          ? 'bg-amber-50/80 dark:bg-amber-950/20'
-                          : ''
-                    }`}
-                  >
-                    {table === 'annual_financial_fact' && (
-                      <label className="p-3 pr-1 flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          aria-label={`${String((row as unknown as Draft).fiscal_year)}년 선택`}
-                          checked={bulkSelectedIds.includes(row.id)}
-                          disabled={busy || dirty || collecting}
-                          onChange={(event) =>
-                            setBulkSelectedIds((current) =>
-                              event.target.checked
-                                ? [...current, row.id]
-                                : current.filter((id) => id !== row.id),
-                            )
-                          }
-                        />
-                      </label>
-                    )}
-                    <button
-                      className="block flex-1 p-3 text-left text-sm"
+                    <select
+                      className={control}
+                      value={bulkFieldName}
                       disabled={busy || dirty || collecting}
-                      onClick={() => edit(row)}
+                      onChange={(event) => {
+                        const nextField = bulkEditableFields.find(
+                          (field) => field.name === event.target.value,
+                        );
+                        setBulkFieldName(event.target.value);
+                        setBulkFieldInput(
+                          nextField?.name === 'interest_paid_classification' ? 'CFO' : '',
+                        );
+                      }}
                     >
-                      {keyFields[table]
-                        .filter((key) => key !== 'stock_id')
-                        .map((key) => {
-                          const value = (row as unknown as Draft)[key];
-                          return (
-                            formatChoice(String(value ?? '')) || String(value ?? '미입력')
-                          );
-                        })
-                        .join(' · ')}{' '}
-                      <span className="text-gray-500">
-                        / {row.source_type} · 수정{' '}
-                        {new Date(row.updated_at).toLocaleString()}
+                      {bulkEditableFields.map((field) => (
+                        <option key={field.name} value={field.name}>
+                          {getFieldMeta(field.name).ko}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {bulkField && (
+                    <label className="text-sm space-y-1 min-w-52">
+                      <span className="block text-xs text-gray-600 dark:text-gray-300">
+                        적용할 값
                       </span>
-                      {missing && (
-                        <span className="mt-1 flex flex-wrap gap-1" aria-label="계산 필수 누락">
-                          {missing.fields.map((name) => (
-                            <span
-                              key={name}
-                              className="rounded-full bg-amber-200/80 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-900/60 dark:text-amber-200"
-                            >
-                              {getFieldMeta(name).ko}
-                            </span>
+                      {bulkField.kind === 'select' || bulkField.kind === 'boolean' ? (
+                        <select
+                          className={control}
+                          value={bulkFieldInput}
+                          disabled={busy || dirty || collecting}
+                          onChange={(event) => setBulkFieldInput(event.target.value)}
+                        >
+                          <option value="">값 비우기</option>
+                          {(bulkField.kind === 'boolean'
+                            ? ['true', 'false']
+                            : (bulkField.choices ?? [])
+                          ).map((choice) => (
+                            <option key={choice} value={choice}>
+                              {bulkField.kind === 'boolean'
+                                ? choice === 'true'
+                                  ? '예 (True)'
+                                  : '아니오 (False)'
+                                : formatChoice(choice)}
+                            </option>
                           ))}
-                        </span>
+                        </select>
+                      ) : (
+                        <input
+                          className={control}
+                          type={
+                            bulkField.kind === 'date'
+                              ? 'date'
+                              : bulkField.kind === 'number'
+                                ? 'number'
+                                : 'text'
+                          }
+                          step="any"
+                          placeholder="비우면 값을 삭제합니다"
+                          value={bulkFieldInput}
+                          disabled={busy || dirty || collecting}
+                          onChange={(event) => setBulkFieldInput(event.target.value)}
+                        />
                       )}
-                    </button>
-                  </div>
-                  );
-                })}
-              </div>
-            )}
-            {draft && (
-              <form
-                className="rounded-xl border p-5 space-y-5"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setReview(true);
-                }}
-              >
-                <div className="flex justify-between items-center">
-                  <h3 className="font-bold text-base">
-                    {selected ? '기존 행 수정' : '새 행 입력'}
-                  </h3>
+                    </label>
+                  )}
                   <button
                     type="button"
-                    className="text-sm text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 underline"
-                    disabled={busy}
-                    onClick={resetEditor}
+                    className={button}
+                    disabled={busy || dirty || collecting || bulkSelectedIds.length === 0}
+                    onClick={() => void saveBulkField()}
                   >
-                    변경 취소
+                    선택한 {bulkSelectedIds.length}개 연도 일괄 저장
                   </button>
+                  <p className="w-full text-xs text-gray-500">
+                    빈 값을 적용하면 선택한 연도의 해당 값이 삭제됩니다. 필수 항목이나 서로 의존하는 값은 저장 시 검증됩니다.
+                  </p>
                 </div>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {visibleFields.map((field) => {
-                    const disabled =
-                      busy ||
-                      (selected !== null &&
-                        keyFields[table].includes(field.name));
-                    const value = fieldDisplay(field.name, draft[field.name]);
-                    const meta = getFieldMeta(field.name);
+              )}
+              {loadingRows ? (
+                <p role="status">자료를 불러오는 중…</p>
+              ) : (
+                <div className="max-h-64 overflow-y-auto border rounded-xl">
+                  {visibleRows.length === 0 && (
+                    <p className="p-4">
+                      {missingOnly && valuationMissingNotices.length === 0
+                        ? '현재 행에서 계산을 막는 누락값이 없습니다.'
+                        : '표시할 행이 없습니다.'}
+                    </p>
+                  )}
+                  {visibleRows.map((row) => {
+                    const missing = valuationMissingByRow.get(row.id);
                     return (
-                      <label
-                        className={`text-sm space-y-1.5 block rounded-lg ${
-                          activeMissingFields.has(field.name)
-                            ? 'ring-2 ring-amber-400 bg-amber-50 dark:bg-amber-950/30 p-2'
+                    <div
+                      key={row.id}
+                      className={`flex items-center border-b ${
+                        selected?.id === row.id
+                          ? 'bg-blue-50 dark:bg-blue-950'
+                          : missing
+                            ? 'bg-amber-50/80 dark:bg-amber-950/20'
                             : ''
-                        }`}
-                        key={field.name}
-                      >
-                        <div className="flex items-baseline justify-between gap-1">
-                          <span className="font-medium text-gray-800 dark:text-gray-200">
-                            {meta.ko}
-                            {meta.unit && (
-                              <span className="text-xs text-gray-600 dark:text-gray-400 font-normal ml-1">
-                                ({meta.unit})
-                              </span>
-                            )}
-                            {field.required && (
-                              <span className="text-blue-600 dark:text-blue-400 ml-1 font-bold">*</span>
-                            )}
-                            {activeMissingFields.has(field.name) && (
-                              <span className="text-xs text-amber-700 dark:text-amber-300 ml-1 font-semibold">
-                                계산 필요
-                              </span>
-                            )}
-                          </span>
-                          {meta.en && (
-                            <span className="text-[11px] text-gray-600 dark:text-gray-300 font-mono tracking-tight text-right truncate max-w-[50%]">
-                              {meta.en}
-                            </span>
-                          )}
-                        </div>
-                        {field.kind === 'select' || field.kind === 'boolean' ? (
-                          <select
-                            className={control}
-                            disabled={disabled}
-                            required={field.required}
-                            value={value}
-                            onChange={(e) => {
-                              setDraft({
-                                ...draft,
-                                [field.name]: fieldValue(field, e.target.value),
-                              });
-                              setReview(false);
-                            }}
-                          >
-                            <option value="">미입력</option>
-                            {(field.kind === 'boolean'
-                              ? ['true', 'false']
-                              : (field.choices ?? [])
-                            ).map((choice) => (
-                              <option key={choice} value={choice}>
-                                {field.kind === 'boolean'
-                                  ? choice === 'true'
-                                    ? '예 (True)'
-                                    : '아니오 (False)'
-                                  : formatChoice(choice)}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
+                      }`}
+                    >
+                      {table === 'annual_financial_fact' && (
+                        <label className="p-3 pr-1 flex items-center cursor-pointer">
                           <input
-                            className={control}
-                            disabled={disabled}
-                            required={field.required}
-                            type={
-                              field.kind === 'date'
-                                ? 'date'
-                                : field.kind === 'number'
-                                  ? 'number'
-                                  : 'text'
+                            type="checkbox"
+                            aria-label={`${String((row as unknown as Draft).fiscal_year)}년 선택`}
+                            checked={bulkSelectedIds.includes(row.id)}
+                            disabled={busy || dirty || collecting}
+                            onChange={(event) =>
+                              setBulkSelectedIds((current) =>
+                                event.target.checked
+                                  ? [...current, row.id]
+                                  : current.filter((id) => id !== row.id),
+                              )
                             }
-                            step="any"
-                            value={value}
-                            onChange={(e) => {
-                              setDraft({
-                                ...draft,
-                                [field.name]: fieldValue(field, e.target.value),
-                              });
-                              setReview(false);
-                            }}
                           />
+                        </label>
+                      )}
+                      <button
+                        className="block flex-1 p-3 text-left text-sm"
+                        disabled={busy || dirty || collecting}
+                        onClick={() => edit(row)}
+                      >
+                        {keyFields[table]
+                          .filter((key) => key !== 'stock_id')
+                          .map((key) => {
+                            const value = (row as unknown as Draft)[key];
+                            return (
+                              formatChoice(String(value ?? '')) || String(value ?? '미입력')
+                            );
+                          })
+                          .join(' · ')}{' '}
+                        <span className="text-gray-500">
+                          / {row.source_type} · 수정{' '}
+                          {new Date(row.updated_at).toLocaleString()}
+                        </span>
+                        {missing && (
+                          <span className="mt-1 flex flex-wrap gap-1" aria-label="계산 필수 누락">
+                            {missing.fields.map((name) => (
+                              <span
+                                key={name}
+                                className="rounded-full bg-amber-200/80 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-900/60 dark:text-amber-200"
+                              >
+                                {getFieldMeta(name).ko}
+                              </span>
+                            ))}
+                          </span>
                         )}
-                        {field.kind === 'number' && stock && (() => {
-                          const preview = formatFieldPreview(field.name, value, stock.currency);
-                          if (!preview) return null;
-                          return (
-                            <p className="text-xs text-blue-600 dark:text-blue-400 font-mono mt-0.5">
-                              {preview}
-                            </p>
-                          );
-                        })()}
-                      </label>
+                      </button>
+                    </div>
                     );
                   })}
                 </div>
-                <button
-                  className={button}
-                  disabled={busy || !dirty}
-                  type="submit"
+              )}
+              {draft && (
+                <form
+                  className="border-t border-black/10 pt-4 space-y-5 dark:border-white/10"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    setReview(true);
+                  }}
                 >
-                  저장 전 변경 확인
-                </button>
-                {review && (
-                  <div className="bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 rounded-xl p-4 space-y-3">
-                    <h4 className="font-bold text-sm text-blue-950 dark:text-blue-200">저장할 변경</h4>
-                    <ul className="text-sm space-y-1.5 divide-y divide-blue-100 dark:divide-blue-900/50">
-                      {Object.entries(changes).map(([key, value]) => {
-                        const meta = getFieldMeta(key);
-                        return (
-                          <li key={key} className="pt-1.5 flex justify-between items-center text-xs">
-                            <span className="font-medium">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-bold text-base">
+                      {selected ? '기존 행 수정' : '새 행 입력'}
+                    </h3>
+                    <button
+                      type="button"
+                      className="text-sm text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 underline"
+                      disabled={busy}
+                      onClick={resetEditor}
+                    >
+                      변경 취소
+                    </button>
+                  </div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {visibleFields.map((field) => {
+                      const disabled =
+                        busy ||
+                        (selected !== null &&
+                          keyFields[table].includes(field.name));
+                      const value = fieldDisplay(field.name, draft[field.name]);
+                      const meta = getFieldMeta(field.name);
+                      return (
+                        <label
+                          className={`text-sm space-y-1.5 block rounded-lg ${
+                            activeMissingFields.has(field.name)
+                              ? 'ring-2 ring-amber-400 bg-amber-50 dark:bg-amber-950/30 p-2'
+                              : ''
+                          }`}
+                          key={field.name}
+                        >
+                          <div className="flex items-baseline justify-between gap-1">
+                            <span className="font-medium text-gray-800 dark:text-gray-200">
                               {meta.ko}
-                              {meta.en && (
-                                <span className="text-gray-600 dark:text-gray-300 font-mono ml-1.5">
-                                  ({meta.en})
+                              {meta.unit && (
+                                <span className="text-xs text-gray-600 dark:text-gray-400 font-normal ml-1">
+                                  ({meta.unit})
+                                </span>
+                              )}
+                              {field.required && (
+                                <span className="text-blue-600 dark:text-blue-400 ml-1 font-bold">*</span>
+                              )}
+                              {activeMissingFields.has(field.name) && (
+                                <span className="text-xs text-amber-700 dark:text-amber-300 ml-1 font-semibold">
+                                  계산 필요
                                 </span>
                               )}
                             </span>
-                            <span className="font-mono text-right">
-                              <span>{fieldDisplay(key, original[key]) || 'null'}</span> →{' '}
-                              <span className="text-blue-600 dark:text-blue-400 font-semibold">
-                                {fieldDisplay(key, value) || 'null'}
+                            {meta.en && (
+                              <span className="text-[11px] text-gray-600 dark:text-gray-300 font-mono tracking-tight text-right truncate max-w-[50%]">
+                                {meta.en}
                               </span>
-                              {stock && (() => {
-                                const preview = formatFieldPreview(key, value, stock.currency);
-                                if (!preview) return null;
-                                return (
-                                  <span className="block text-[11px] text-gray-500 dark:text-gray-400 font-sans">
-                                    {preview}
-                                  </span>
-                                );
-                              })()}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                    <button
-                      className={button}
-                      type="button"
-                      disabled={busy}
-                      onClick={save}
-                    >
-                      DB에 저장
-                    </button>
+                            )}
+                          </div>
+                          {field.kind === 'select' || field.kind === 'boolean' ? (
+                            <select
+                              className={control}
+                              disabled={disabled}
+                              required={field.required}
+                              value={value}
+                              onChange={(e) => {
+                                setDraft({
+                                  ...draft,
+                                  [field.name]: fieldValue(field, e.target.value),
+                                });
+                                setReview(false);
+                              }}
+                            >
+                              <option value="">미입력</option>
+                              {(field.kind === 'boolean'
+                                ? ['true', 'false']
+                                : (field.choices ?? [])
+                              ).map((choice) => (
+                                <option key={choice} value={choice}>
+                                  {field.kind === 'boolean'
+                                    ? choice === 'true'
+                                      ? '예 (True)'
+                                      : '아니오 (False)'
+                                    : formatChoice(choice)}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              className={control}
+                              disabled={disabled}
+                              required={field.required}
+                              type={
+                                field.kind === 'date'
+                                  ? 'date'
+                                  : field.kind === 'number'
+                                    ? 'number'
+                                    : 'text'
+                              }
+                              step="any"
+                              value={value}
+                              onChange={(e) => {
+                                setDraft({
+                                  ...draft,
+                                  [field.name]: fieldValue(field, e.target.value),
+                                });
+                                setReview(false);
+                              }}
+                            />
+                          )}
+                          {field.kind === 'number' && stock && (() => {
+                            const preview = formatFieldPreview(field.name, value, stock.currency);
+                            if (!preview) return null;
+                            return (
+                              <p className="text-xs text-blue-600 dark:text-blue-400 font-mono mt-0.5">
+                                {preview}
+                              </p>
+                            );
+                          })()}
+                        </label>
+                      );
+                    })}
                   </div>
-                )}
-              </form>
-            )}
+                  <button
+                    className={button}
+                    disabled={busy || !dirty}
+                    type="submit"
+                  >
+                    저장 전 변경 확인
+                  </button>
+                  {review && (
+                    <div className="bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 rounded-xl p-4 space-y-3">
+                      <h4 className="font-bold text-sm text-blue-950 dark:text-blue-200">저장할 변경</h4>
+                      <ul className="text-sm space-y-1.5 divide-y divide-blue-100 dark:divide-blue-900/50">
+                        {Object.entries(changes).map(([key, value]) => {
+                          const meta = getFieldMeta(key);
+                          return (
+                            <li key={key} className="pt-1.5 flex justify-between items-center text-xs">
+                              <span className="font-medium">
+                                {meta.ko}
+                                {meta.en && (
+                                  <span className="text-gray-600 dark:text-gray-300 font-mono ml-1.5">
+                                    ({meta.en})
+                                  </span>
+                                )}
+                              </span>
+                              <span className="font-mono text-right">
+                                <span>{fieldDisplay(key, original[key]) || 'null'}</span> →{' '}
+                                <span className="text-blue-600 dark:text-blue-400 font-semibold">
+                                  {fieldDisplay(key, value) || 'null'}
+                                </span>
+                                {stock && (() => {
+                                  const preview = formatFieldPreview(key, value, stock.currency);
+                                  if (!preview) return null;
+                                  return (
+                                    <span className="block text-[11px] text-gray-500 dark:text-gray-400 font-sans">
+                                      {preview}
+                                    </span>
+                                  );
+                                })()}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <button
+                        className={button}
+                        type="button"
+                        disabled={busy}
+                        onClick={save}
+                      >
+                        DB에 저장
+                      </button>
+                    </div>
+                  )}
+                </form>
+              )}
+            </fieldset>
           </section>
         </>
       )}

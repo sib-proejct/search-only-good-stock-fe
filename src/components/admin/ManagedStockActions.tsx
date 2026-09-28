@@ -46,13 +46,13 @@ export function RegisterStockCard({
   }
 
   return (
-    <section className="rounded-2xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
-      <div className="flex items-baseline justify-between">
-        <h2 className="font-semibold text-base">종목 추가</h2>
-        <span className="text-xs text-gray-500 font-mono">Register Stock</span>
-      </div>
+    <fieldset className="min-w-0 rounded-xl border border-black/5 bg-[#F5F5F7]/70 p-4 space-y-3 dark:border-white/10 dark:bg-white/[0.03]">
+      <legend className="px-1 text-sm font-semibold">
+        종목 추가
+        <span className="ml-2 text-[10px] font-normal text-gray-500 dark:text-gray-400 font-mono">Register Stock</span>
+      </legend>
       <form
-        className="flex flex-wrap gap-3"
+        className="flex flex-wrap items-center gap-3"
         onSubmit={(event) => {
           event.preventDefault();
           void register();
@@ -62,7 +62,7 @@ export function RegisterStockCard({
           aria-label="등록할 시장"
           value={market}
           onChange={(e) => setMarket(e.target.value as Market)}
-          className="rounded-lg border border-black/15 dark:border-white/20 p-2 text-sm dark:bg-[#1C1C1E]"
+          className="min-h-11 rounded-lg border border-black/15 dark:border-white/20 bg-white p-2 text-sm dark:bg-[#1C1C1E]"
           disabled={busy || disabled}
         >
           {(['NASDAQ', 'NYSE', 'KOSPI', 'KOSDAQ'] as const).map((value) => (
@@ -75,13 +75,13 @@ export function RegisterStockCard({
           onChange={(e) => setTicker(e.target.value)}
           placeholder={market.startsWith('KO') ? '005930' : 'AAPL'}
           maxLength={32}
-          className="rounded-lg border border-black/15 dark:border-white/20 p-2 text-sm dark:bg-[#1C1C1E] min-w-[180px]"
+          className="rounded-lg border border-black/15 dark:border-white/20 p-2 text-sm dark:bg-[#1C1C1E] bg-white min-h-11 min-w-0 w-full sm:w-60"
           disabled={busy || disabled}
         />
         <button
           type="submit"
           disabled={busy || disabled || !ticker.trim()}
-          className="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-40 transition-colors cursor-pointer"
+          className="min-h-11 rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-40 transition-colors cursor-pointer"
         >
           {busy ? '처리 중…' : '종목 추가'}
         </button>
@@ -90,7 +90,7 @@ export function RegisterStockCard({
         종목을 등록한 후 아래에서 해당 종목을 선택하고 [선택 종목 자료 수집]을 진행하세요.
       </p>
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-    </section>
+    </fieldset>
   );
 }
 

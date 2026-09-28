@@ -412,6 +412,8 @@ export interface components {
             valuation_status: string;
             /** Growth Rate Cap */
             growth_rate_cap?: string | null;
+            /** Growth Rate Floor */
+            growth_rate_floor?: string | null;
         };
         /** AnnualFactData */
         AnnualFactData: {
@@ -793,6 +795,10 @@ export interface components {
         AnnualOe: {
             /** Fiscal Year */
             fiscal_year: number;
+            /** Diluted Eps */
+            diluted_eps: string | null;
+            /** Diluted Shares */
+            diluted_shares: string | null;
             /** Capex */
             capex: string | null;
             /** Capex Source */
@@ -866,7 +872,7 @@ export interface components {
             category: "REVIEW";
             status: components["schemas"]["CapitalActionStatus"];
             /** Historyyears */
-            historyYears: (5 | 3 | 1) | null;
+            historyYears: (5 | 4 | 3 | 2 | 1) | null;
             /** Periodstart */
             periodStart: string | null;
             /** Periodend */
@@ -947,7 +953,7 @@ export interface components {
              */
             method: "OWNER_EARNINGS_DCF";
             /** Historyyears */
-            historyYears: (5 | 3 | 1) | null;
+            historyYears: (5 | 4 | 3 | 2 | 1) | null;
             /** Normalizedownerearnings */
             normalizedOwnerEarnings: number | null;
             /** Normalizedoeps */
@@ -958,6 +964,8 @@ export interface components {
             oepsGrowth?: number | null;
             /** Rawgrowth */
             rawGrowth: number | null;
+            /** Growthfloor */
+            growthFloor: number | null;
             /** Growthcap */
             growthCap: number | null;
             /** Basegrowth */
@@ -1349,7 +1357,7 @@ export interface components {
             category: "CORE" | "AUXILIARY";
             status: components["schemas"]["RuleStatus"];
             /** Historyyears */
-            historyYears: (5 | 3 | 1) | null;
+            historyYears: (5 | 4 | 3 | 2 | 1) | null;
             /** Periodstart */
             periodStart: string | null;
             /** Periodend */
@@ -1681,7 +1689,7 @@ export interface components {
              * @default 5
              * @enum {integer}
              */
-            normalization_years: 1 | 3 | 5;
+            normalization_years: 1 | 2 | 3 | 4 | 5;
             /**
              * Normalization Method
              * @default CONSERVATIVE
@@ -1689,10 +1697,18 @@ export interface components {
              */
             normalization_method: "CONSERVATIVE" | "MEAN";
             /**
+             * Growth Method
+             * @default LOWER_BOUND
+             * @enum {string}
+             */
+            growth_method: "LOWER_BOUND" | "OEPS_WEIGHTED" | "EQUAL_BLEND";
+            /**
              * Growth Rate Cap
              * @default 0.20
              */
             growth_rate_cap: number | string;
+            /** Growth Rate Floor */
+            growth_rate_floor?: number | string | null;
         };
         /** ValuationRequest */
         "ValuationRequest-Output": {
@@ -1723,7 +1739,7 @@ export interface components {
              * @default 5
              * @enum {integer}
              */
-            normalization_years: 1 | 3 | 5;
+            normalization_years: 1 | 2 | 3 | 4 | 5;
             /**
              * Normalization Method
              * @default CONSERVATIVE
@@ -1731,10 +1747,18 @@ export interface components {
              */
             normalization_method: "CONSERVATIVE" | "MEAN";
             /**
+             * Growth Method
+             * @default LOWER_BOUND
+             * @enum {string}
+             */
+            growth_method: "LOWER_BOUND" | "OEPS_WEIGHTED" | "EQUAL_BLEND";
+            /**
              * Growth Rate Cap
              * @default 0.20
              */
             growth_rate_cap: string;
+            /** Growth Rate Floor */
+            growth_rate_floor?: string | null;
         };
         /** ValuationResponse */
         ValuationResponse: {
