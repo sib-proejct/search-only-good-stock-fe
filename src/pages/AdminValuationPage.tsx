@@ -166,6 +166,65 @@ const control =
 const button =
   'rounded-lg bg-blue-600 text-white px-4 py-2 text-sm disabled:opacity-40';
 const today = () => new Date().toLocaleDateString('en-CA');
+const valuationOptionsStorageKey = (stockId: number) =>
+  `admin-valuation-options:${stockId}`;
+
+function defaultValuationOptions(stock: AdminStockItem): ValuationOptions {
+  return {
+    publish: true,
+    as_of: today(),
+    capex_mode: 'TOTAL',
+    normalization_years: 5,
+    normalization_method: 'CONSERVATIVE',
+    growth_method: 'LOWER_BOUND',
+    growth_rate_cap: stock.growth_rate_cap ?? '0.20',
+    growth_rate_floor: stock.growth_rate_floor ?? null,
+    statement_scope: stock.currency === 'USD' ? 'CONSOLIDATED_US_GAAP' : 'CFS',
+  };
+}
+
+function storedValuationOptions(stock: AdminStockItem): ValuationOptions {
+  const defaults = defaultValuationOptions(stock);
+  try {
+    const raw = localStorage.getItem(valuationOptionsStorageKey(stock.id));
+    if (!raw) return defaults;
+    const stored = JSON.parse(raw) as Partial<ValuationOptions>;
+    const allowedScopes = stock.currency === 'USD'
+      ? ['CONSOLIDATED_US_GAAP', 'OFS']
+      : ['CFS', 'OFS'];
+
+    return {
+      ...defaults,
+      as_of: typeof stored.as_of === 'string' ? stored.as_of : defaults.as_of,
+      statement_scope: allowedScopes.includes(stored.statement_scope ?? '')
+        ? stored.statement_scope!
+        : defaults.statement_scope,
+      capex_mode: ['TOTAL', 'MAINTENANCE'].includes(stored.capex_mode ?? '')
+        ? stored.capex_mode!
+        : defaults.capex_mode,
+      normalization_years: [1, 2, 3, 4, 5].includes(stored.normalization_years ?? 0)
+        ? stored.normalization_years!
+        : defaults.normalization_years,
+      normalization_method: ['CONSERVATIVE', 'MEAN'].includes(stored.normalization_method ?? '')
+        ? stored.normalization_method!
+        : defaults.normalization_method,
+      growth_method: ['LOWER_BOUND', 'OEPS_WEIGHTED', 'EQUAL_BLEND'].includes(stored.growth_method ?? '')
+        ? stored.growth_method!
+        : defaults.growth_method,
+      growth_rate_cap: typeof stored.growth_rate_cap === 'string' || typeof stored.growth_rate_cap === 'number'
+        ? stored.growth_rate_cap
+        : defaults.growth_rate_cap,
+      growth_rate_floor: stored.growth_rate_floor == null
+        || typeof stored.growth_rate_floor === 'string'
+        || typeof stored.growth_rate_floor === 'number'
+        ? stored.growth_rate_floor
+        : defaults.growth_rate_floor,
+    };
+  } catch {
+    return defaults;
+  }
+}
+
 const fmt = (value: unknown) => {
   if (value == null || value === '') return '미입력';
   const num = parseNumeric(value);
@@ -334,13 +393,17 @@ export function AdminValuationPage() {
     setResult(null);
     setError('');
     setNotice('');
-    setOptions((old) => ({
-      ...old,
-      statement_scope: next.currency === 'USD' ? 'CONSOLIDATED_US_GAAP' : 'CFS',
-      growth_rate_cap: next.growth_rate_cap ?? '0.20',
-      growth_rate_floor: next.growth_rate_floor ?? null,
-    }));
+    setOptions(storedValuationOptions(next));
   }, [resetEditor, resetBulkSelection]);
+
+  useEffect(() => {
+    if (!stock) return;
+    try {
+      localStorage.setItem(valuationOptionsStorageKey(stock.id), JSON.stringify(options));
+    } catch {
+      // Storage can be unavailable in private browsing or restricted environments.
+    }
+  }, [options, stock]);
 
   const reloadManagedStocks = useCallback(async () => {
     const rows = await adminRequest<AdminStock[]>('/stocks?limit=1000');
