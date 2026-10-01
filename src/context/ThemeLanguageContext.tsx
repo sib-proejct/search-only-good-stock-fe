@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useState, useEffect } from 'react';
 import { Language, translations } from '../locales/translations';
 
 export type Theme = 'light' | 'dark';
@@ -58,9 +58,9 @@ export const ThemeLanguageProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // Translation helper with param replacement
-  const t = (key: keyof typeof translations['en'], params?: Record<string, string | number>): string => {
+  const t = useCallback((key: keyof typeof translations['en'], params?: Record<string, string | number>): string => {
     const currentDict = translations[language] || translations['en'];
-    let text = (currentDict as any)[key] || (translations['en'] as any)[key] || key;
+    let text: string = currentDict[key] || translations['en'][key] || key;
 
     if (params) {
       Object.entries(params).forEach(([paramKey, paramVal]) => {
@@ -69,7 +69,7 @@ export const ThemeLanguageProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     return text;
-  };
+  }, [language]);
 
   return (
     <ThemeLanguageContext.Provider

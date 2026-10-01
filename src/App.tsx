@@ -1,12 +1,44 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeLanguageProvider, useAppConfig } from './context/ThemeLanguageContext';
 import { TopNavBar } from './components/common/TopNavBar';
-import { ScreenerPage } from './pages/ScreenerPage';
-import { StockDetailPage } from './pages/StockDetailPage';
-import { RuleGuidePage } from './pages/RuleGuidePage';
-import { CommunityPage } from './pages/CommunityPage';
 import { Sun, Moon, Globe } from 'lucide-react';
+
+const AdminValuationPage = lazy(() => import('./pages/AdminValuationPage').then(module => ({ default: module.AdminValuationPage })));
+
+const ScreenerPage = lazy(() =>
+  import('./pages/ScreenerPage').then((module) => ({
+    default: module.ScreenerPage,
+  }))
+);
+const StockDetailPage = lazy(() =>
+  import('./pages/StockDetailPage').then((module) => ({
+    default: module.StockDetailPage,
+  }))
+);
+const RuleGuidePage = lazy(() =>
+  import('./pages/RuleGuidePage').then((module) => ({
+    default: module.RuleGuidePage,
+  }))
+);
+const CommunityPage = lazy(() =>
+  import('./pages/CommunityPage').then((module) => ({
+    default: module.CommunityPage,
+  }))
+);
+const CommunityWritePage = lazy(() =>
+  import('./pages/CommunityWritePage').then((module) => ({
+    default: module.CommunityWritePage,
+  }))
+);
+
+function RouteFallback() {
+  return (
+    <div className="py-24 text-center">
+      <div className="inline-block w-8 h-8 border-2 border-[#0071E3] dark:border-[#2997FF] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function AppContent() {
   const { t, theme, toggleTheme, language, toggleLanguage } = useAppConfig();
@@ -22,7 +54,9 @@ function AppContent() {
 
       {/* 2. Main Body Content with Client-Side Routing */}
       <main className="flex-1 w-full pb-16">
-        <Routes>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+          <Route path="/admin/valuation" element={<AdminValuationPage />} />
           {/* Screener (Home) */}
           <Route
             path="/"
@@ -66,13 +100,18 @@ function AppContent() {
             path="/community"
             element={<CommunityPage />}
           />
+          <Route
+            path="/community/write"
+            element={<CommunityWritePage />}
+          />
 
           {/* Fallback */}
           <Route
             path="*"
             element={<Navigate to="/" replace />}
           />
-        </Routes>
+          </Routes>
+        </Suspense>
       </main>
 
       {/* 3. Apple Minimalist Footer with Inline Controls on a Single Line */}
@@ -86,6 +125,7 @@ function AppContent() {
           {/* Right: Links & Controls on the Same Single Line */}
           <div className="flex flex-wrap items-center gap-5 sm:gap-6">
             <nav className="flex items-center space-x-5 sm:space-x-6 text-[#86868B]">
+              {import.meta.env.DEV && <a href="/admin/valuation">원자료 관리</a>}
               <a href="#privacy" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('privacy')}</a>
               <a href="#terms" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('terms')}</a>
               <a href="#disclosure" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('disclosure')}</a>

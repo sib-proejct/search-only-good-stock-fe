@@ -4,8 +4,7 @@ import {
   MessageSquare, Clock, Calendar,
   ThumbsUp, ThumbsDown, MessageCircle, Share2, Bookmark,
   Plus, Search, CheckCircle2, Tag, ChevronDown, Check,
-  ArrowRight, X, Send, LayoutList, PanelRight,
-  Bold, List, ListOrdered, Heading, Quote, Code, Sparkles, FileText
+  ArrowRight, X, Send, LayoutList, PanelRight
 } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import {
@@ -15,8 +14,10 @@ import {
   Comment
 } from '../types/community';
 import {
-  INITIAL_DISCUSSIONS,
-  TRENDING_TICKERS
+  TRENDING_TICKERS,
+  applyDiscussionVote,
+  getStoredDiscussions,
+  saveDiscussions
 } from '../services/communityData';
 import { CommunityDetailDrawer } from '../components/community/CommunityDetailDrawer';
 import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
@@ -58,7 +59,17 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
   };
 
   // State
-  const [discussions, setDiscussions] = useState<DiscussionPost[]>(INITIAL_DISCUSSIONS);
+  const [discussions, setDiscussions] = useState<DiscussionPost[]>(() => getStoredDiscussions());
+
+  // Re-sync discussions on window focus (e.g. returning from write page)
+  useEffect(() => {
+    const handleFocus = () => {
+      setDiscussions(getStoredDiscussions());
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
   const [activeCategory, setActiveCategory] = useState<DiscussionCategory>('all');
   const [activeSort, setActiveSort] = useState<DiscussionSort>('latest');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -182,31 +193,14 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
     });
   };
 
-  // Modal State
-  const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
-  const [modalTitle, setModalTitle] = useState('');
-  const [modalCategory, setModalCategory] = useState<string>('삼성전자');
-  const [modalTicker, setModalTicker] = useState('');
-  const [modalContent, setModalContent] = useState('');
-
-  // Write Modal Category Combobox State
-  const [modalCategorySearch, setModalCategorySearch] = useState<string>('');
-  const [isModalCategoryOpen, setIsModalCategoryOpen] = useState<boolean>(false);
-  const modalCategoryRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (modalCategoryRef.current && !modalCategoryRef.current.contains(e.target as Node)) {
-        setIsModalCategoryOpen(false);
-      }
-    };
-    if (isModalCategoryOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+  // Navigate to Dedicated Write Page
+  const handleOpenWritePage = () => {
+    if (activeCategory && activeCategory !== 'all') {
+      navigate(`/community/write?category=${encodeURIComponent(activeCategory)}`);
+    } else {
+      navigate('/community/write');
     }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isModalCategoryOpen]);
+  };
 
   // Toast State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -218,39 +212,13 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
 
   // Upvote / Downvote Handler
   const handleVote = (postId: string, type: 'up' | 'down') => {
-    setDiscussions((prev) =>
-      prev.map((post) => {
-        if (post.id !== postId) return post;
-
-        let newUpvotes = post.upvotes;
-        let newDownvotes = post.downvotes;
-        let newVote: 'up' | 'down' | null = type;
-
-        if (post.userVote === type) {
-          newVote = null;
-          if (type === 'up') newUpvotes -= 1;
-          else newDownvotes -= 1;
-        } else if (post.userVote) {
-          if (type === 'up') {
-            newUpvotes += 1;
-            newDownvotes -= 1;
-          } else {
-            newDownvotes += 1;
-            newUpvotes -= 1;
-          }
-        } else {
-          if (type === 'up') newUpvotes += 1;
-          else newDownvotes -= 1;
-        }
-
-        return {
-          ...post,
-          upvotes: newUpvotes,
-          downvotes: newDownvotes,
-          userVote: newVote,
-        };
-      })
-    );
+    setDiscussions((prev) => {
+      const updated = prev.map((post) =>
+        post.id === postId ? applyDiscussionVote(post, type) : post
+      );
+      saveDiscussions(updated);
+      return updated;
+    });
   };
 
   // Bookmark Handler
@@ -268,9 +236,8 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
     });
   };
 
-  // Add Comment Handler
-  const handleAddComment = (postId: string) => {
-    const text = newCommentText[postId]?.trim();
+  const addComment = (postId: string, rawText: string) => {
+    const text = rawText.trim();
     if (!text) return;
 
     const now = new Date();
@@ -279,119 +246,33 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
     const newComment: Comment = {
       id: `c-${Date.now()}`,
       author: {
-        name: '나 (가치투자자)',
+        name: '나',
       },
       createdAt: currentTime,
       content: text,
       likes: 0,
     };
 
-    setDiscussions((prev) =>
-      prev.map((post) => {
+    setDiscussions((prev) => {
+      const updated = prev.map((post) => {
         if (post.id !== postId) return post;
         return {
           ...post,
           commentsCount: post.commentsCount + 1,
           comments: [...(post.comments || []), newComment],
         };
-      })
-    );
+      });
+      saveDiscussions(updated);
+      return updated;
+    });
 
     setNewCommentText((prev) => ({ ...prev, [postId]: '' }));
     showToast('댓글이 등록되었습니다.');
   };
 
-  // Create Post Submit Handler
-  const handleCreatePost = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!modalTitle.trim() || !modalContent.trim()) {
-      showToast('제목과 내용을 입력해주세요.');
-      return;
-    }
-
-    const finalCategory = modalCategory.trim() || '기타';
-    const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-    const newPost: DiscussionPost = {
-      id: `post-${Date.now()}`,
-      title: modalTitle.trim(),
-      category: finalCategory,
-      author: {
-        name: '나 (가치투자자)',
-        isVerified: false,
-      },
-      createdAt: currentTime,
-      ticker: modalTicker.trim().toUpperCase() || undefined,
-      stockPassStatus: 'pass',
-      buffettScore: 100,
-      snippet: modalContent.trim().slice(0, 160) + '...',
-      content: modalContent.trim(),
-      upvotes: 1,
-      downvotes: 0,
-      userVote: 'up',
-      commentsCount: 0,
-      viewsCount: 1,
-      comments: [],
-    };
-
-    setDiscussions([newPost, ...discussions]);
-    setIsWriteModalOpen(false);
-    setModalTitle('');
-    setModalContent('');
-    setModalTicker('');
-    setModalCategorySearch('');
-    showToast('새 내재가치 분석 글이 게시되었습니다!');
-  };
-
-  const insertMarkdownSymbol = (prefix: string, suffix: string = '') => {
-    const textarea = document.getElementById('community-write-textarea') as HTMLTextAreaElement | null;
-    if (!textarea) {
-      setModalContent((prev) => prev + `${prefix}텍스트${suffix}`);
-      return;
-    }
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = modalContent.substring(start, end) || '텍스트';
-    const replacement = `${prefix}${selectedText}${suffix}`;
-
-    const newContent = modalContent.substring(0, start) + replacement + modalContent.substring(end);
-    setModalContent(newContent);
-
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + prefix.length, start + prefix.length + selectedText.length);
-    }, 0);
-  };
-
-  const applyTemplate = (type: 'dcf' | 'moat') => {
-    let templateText = '';
-    if (type === 'dcf') {
-      templateText = `### 1. DCF 및 Owner Earnings 핵심 가정
-- **정상화 FCF / 주주이익**: 
-- **할인율 (WACC)**: 
-- **영구 성장률 (Terminal Growth Rate)**: 
-
-### 2. 적정 내재가치 및 보수적 안전마진 (Margin of Safety)
-1. **추정 주당 적정가치**: 
-2. **요구 안전마진 (예: 25%) 적용 매수가**: 
-3. **결론 및 관전 포인트**: `;
-    } else {
-      templateText = `### 1. 경제적 해자 (Economic Moat) 진단
-- **가격결정력 (Pricing Power)**: 
-- **네트워크 효과 / 전환비용**: 
-- **5개년 평균 ROE 및 ROIC**: 
-
-### 2. 1달러 유보이익 테스트 및 자본배치
-- **유보이익 $1당 창출된 시장가치 증분**: 
-- **자사주 매입 및 소각 현황**: 
-
-### 3. 하방 위험 및 안전마진 평가
-- **리스크 요인**: 
-- **보수적 안전마진 밴드**: `;
-    }
-    setModalContent((prev) => (prev.trim() ? prev + '\n\n' + templateText : templateText));
+  // Add Comment Handler
+  const handleAddComment = (postId: string) => {
+    addComment(postId, newCommentText[postId] || '');
   };
 
   // Filter & Sort logic
@@ -455,7 +336,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
 
       {/* Search, Sort & Stock Category Controls Bar */}
       <div className="cq-controls-wrapper w-full space-y-2.5">
-        <div className="cq-top-controls flex flex-wrap items-center justify-between gap-2.5 bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-xl p-2 sm:p-2.5 rounded-2xl border border-black/[0.06] dark:border-white/[0.08] shadow-xs">
+        <div className="cq-top-controls flex flex-wrap items-center justify-between gap-2.5 bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-xl p-2 sm:p-2.5 rounded-2xl border border-black/[0.06] dark:border-white/[0.08] shadow-sm">
           
           {/* Left Group: Searchable Stock Tag Combobox (Far Left) & Sort Tabs */}
           <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -467,7 +348,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                   setIsCategoryDropdownOpen(!isCategoryDropdownOpen);
                   setCategorySearchTerm('');
                 }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border shadow-2xs ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border shadow-sm ${
                   activeCategory !== 'all'
                     ? 'bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] border-[#0071E3]/30 dark:border-[#2997FF]/40 font-bold'
                     : 'bg-black/[0.04] dark:bg-white/[0.05] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] border-transparent'
@@ -533,7 +414,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                       }}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all cursor-pointer text-left ${
                         activeCategory === 'all'
-                          ? 'bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] font-bold shadow-xs'
+                          ? 'bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] font-bold shadow-sm'
                           : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-[#1D1D1F] dark:text-[#F5F5F7]'
                       }`}
                     >
@@ -562,7 +443,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                             }}
                             className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all cursor-pointer text-left ${
                               isSelected
-                                ? 'bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] font-bold shadow-xs'
+                                ? 'bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] font-bold shadow-sm'
                                 : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-[#1D1D1F] dark:text-[#F5F5F7]'
                             }`}
                           >
@@ -623,7 +504,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                     key={s.id}
                     onClick={() => setActiveSort(s.id)}
                     className={`shrink-0 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${isActive
-                      ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-xs font-bold'
+                      ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-sm font-bold'
                       : 'text-[#86868B] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                       }`}
                   >
@@ -685,7 +566,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
             </div>
 
             <button
-              onClick={() => setIsWriteModalOpen(true)}
+              onClick={handleOpenWritePage}
               className="px-3.5 py-1.5 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#0071E3] dark:hover:bg-[#2997FF] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -707,7 +588,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
             </div>
             <button
               onClick={() => setActiveCategory('all')}
-              className="text-xs font-bold text-[#0071E3] dark:text-[#2997FF] hover:underline flex items-center gap-1 cursor-pointer bg-white dark:bg-[#1C1C1E] px-2.5 py-1 rounded-lg border border-[#0071E3]/20 dark:border-[#2997FF]/30 shadow-2xs"
+              className="text-xs font-bold text-[#0071E3] dark:text-[#2997FF] hover:underline flex items-center gap-1 cursor-pointer bg-white dark:bg-[#1C1C1E] px-2.5 py-1 rounded-lg border border-[#0071E3]/20 dark:border-[#2997FF]/30 shadow-sm"
             >
               <span>전체 보기</span>
               <X className="w-3 h-3" />
@@ -728,12 +609,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
               이 종목의 첫 번째 Owner Earnings DCF 내재가치 분석 글을 게시해보세요!
             </p>
             <button
-              onClick={() => {
-                if (activeCategory !== 'all') {
-                  setModalCategory(activeCategory);
-                }
-                setIsWriteModalOpen(true);
-              }}
+              onClick={handleOpenWritePage}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0071E3] text-white text-xs font-bold hover:bg-[#0077ED] dark:hover:bg-[#2997FF] transition-all cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -1062,280 +938,6 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
         )}
       </div>
 
-      {/* Create New Discussion Modal with Searchable Stock Combobox */}
-      {isWriteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-xl rounded-2xl p-6 shadow-2xl border border-black/[0.08] dark:border-white/[0.12] space-y-5 animate-scale-up">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-[#0071E3] dark:text-[#2997FF]" />
-                <h3 className="text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7]">
-                  {t('writeModalTitle')}
-                </h3>
-              </div>
-              <button
-                onClick={() => setIsWriteModalOpen(false)}
-                className="p-1 rounded-full text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreatePost} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Searchable Combobox for Modal Category */}
-                <div className="relative" ref={modalCategoryRef}>
-                  <label className="block font-bold text-[#1D1D1F] dark:text-[#F5F5F7] mb-1">
-                    {t('categorySelect')}
-                  </label>
-                  
-                  <div
-                    onClick={() => setIsModalCategoryOpen(!isModalCategoryOpen)}
-                    className="w-full flex items-center justify-between bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] p-2.5 rounded-xl border border-black/[0.06] dark:border-white/[0.1] cursor-pointer"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <Tag className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />
-                      <span className="font-semibold">{modalCategory || t('selectStockPromptCategory')}</span>
-                    </div>
-                    <ChevronDown className="w-3.5 h-3.5 text-[#86868B]" />
-                  </div>
-
-                  {/* Modal Category Autocomplete Dropdown */}
-                  {isModalCategoryOpen && (
-                    <div className="absolute left-0 top-full mt-1.5 w-full bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-black/[0.08] dark:border-white/[0.12] p-2.5 z-50 animate-fade-in space-y-2">
-                      <div className="relative">
-                        <input
-                          type="text"
-                          autoFocus
-                          value={modalCategorySearch}
-                          onChange={(e) => setModalCategorySearch(e.target.value)}
-                          placeholder="종목명 검색 또는 직접 입력..."
-                          className="w-full bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] text-xs pl-8 pr-3 py-2 rounded-xl border border-black/[0.06] dark:border-white/[0.08] focus:outline-none focus:border-[#0071E3] dark:focus:border-[#2997FF] font-medium placeholder-[#86868B]"
-                        />
-                        <Search className="w-3.5 h-3.5 text-[#86868B] absolute left-2.5 top-1/2 -translate-y-1/2" />
-                      </div>
-
-                      <div className="max-h-48 overflow-y-auto space-y-1 custom-scrollbar text-xs">
-                        {allStockCategoryOptions
-                          .filter(
-                            (opt) =>
-                              !modalCategorySearch.trim() ||
-                              opt.name.toLowerCase().includes(modalCategorySearch.toLowerCase()) ||
-                              (opt.ticker && opt.ticker.toLowerCase().includes(modalCategorySearch.toLowerCase()))
-                          )
-                          .map((opt) => {
-                            const isSelected = modalCategory.toLowerCase() === opt.name.toLowerCase();
-                            return (
-                              <button
-                                key={opt.name}
-                                type="button"
-                                onClick={() => {
-                                  setModalCategory(opt.name);
-                                  if (opt.ticker && !modalTicker) {
-                                    setModalTicker(opt.ticker);
-                                  }
-                                  setIsModalCategoryOpen(false);
-                                  setModalCategorySearch('');
-                                }}
-                                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left cursor-pointer transition-colors ${
-                                  isSelected
-                                    ? 'bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] font-bold'
-                                    : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-[#1D1D1F] dark:text-[#F5F5F7]'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <span className="font-semibold">{opt.name}</span>
-                                  {opt.ticker && (
-                                    <span className="font-mono text-[10px] text-[#86868B] bg-black/[0.04] dark:bg-white/[0.08] px-1.5 py-0.5 rounded shrink-0">
-                                      {opt.ticker.replace('.KS', '')}
-                                    </span>
-                                  )}
-                                </div>
-                                {isSelected && (
-                                  <Check className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />
-                                )}
-                              </button>
-                            );
-                          })}
-
-                        {modalCategorySearch.trim() && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setModalCategory(modalCategorySearch.trim());
-                              setIsModalCategoryOpen(false);
-                              setModalCategorySearch('');
-                            }}
-                            className="w-full px-3 py-2 text-left text-xs font-bold text-[#0071E3] dark:text-[#2997FF] hover:bg-[#0071E3]/10 rounded-xl cursor-pointer flex items-center gap-1.5"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>'{modalCategorySearch.trim()}' (직접 입력 등록)</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block font-bold text-[#1D1D1F] dark:text-[#F5F5F7] mb-1">
-                    {t('tickerTagLabel')}
-                  </label>
-                  <input
-                    type="text"
-                    value={modalTicker}
-                    onChange={(e) => setModalTicker(e.target.value)}
-                    placeholder="예: AAPL, 005930.KS"
-                    className="w-full bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] p-2.5 rounded-xl border border-black/[0.06] dark:border-white/[0.1] focus:outline-none focus:border-[#0071E3] dark:focus:border-[#2997FF] uppercase placeholder-[#86868B]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-[#1D1D1F] dark:text-[#F5F5F7] mb-1">
-                  내재가치 분석 제목
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={modalTitle}
-                  onChange={(e) => setModalTitle(e.target.value)}
-                  placeholder={t('titlePlaceholder')}
-                  className="w-full bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] p-2.5 rounded-xl border border-black/[0.06] dark:border-white/[0.1] focus:outline-none focus:border-[#0071E3] dark:focus:border-[#2997FF] placeholder-[#86868B]"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
-                  <label className="block font-bold text-[#1D1D1F] dark:text-[#F5F5F7] text-xs sm:text-sm">
-                    내재가치 분석 본문
-                  </label>
-
-                  {/* Quick Formatting Toolbar & Preset Guides */}
-                  <div className="flex items-center gap-1 flex-wrap text-xs">
-                    <button
-                      type="button"
-                      onClick={() => insertMarkdownSymbol('**', '**')}
-                      className="p-1.5 rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/10 dark:hover:bg-white/15 border border-black/[0.06] dark:border-white/[0.1] transition-colors cursor-pointer"
-                      title="굵게 (**텍스트**)"
-                    >
-                      <Bold className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertMarkdownSymbol('### ')}
-                      className="p-1.5 rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/10 dark:hover:bg-white/15 border border-black/[0.06] dark:border-white/[0.1] transition-colors cursor-pointer"
-                      title="제목 (### 제목)"
-                    >
-                      <Heading className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertMarkdownSymbol('- ')}
-                      className="p-1.5 rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/10 dark:hover:bg-white/15 border border-black/[0.06] dark:border-white/[0.1] transition-colors cursor-pointer"
-                      title="불릿 리스트 (- 항목)"
-                    >
-                      <List className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertMarkdownSymbol('1. ')}
-                      className="p-1.5 rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/10 dark:hover:bg-white/15 border border-black/[0.06] dark:border-white/[0.1] transition-colors cursor-pointer"
-                      title="번호 리스트 (1. 항목)"
-                    >
-                      <ListOrdered className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertMarkdownSymbol('> ')}
-                      className="p-1.5 rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/10 dark:hover:bg-white/15 border border-black/[0.06] dark:border-white/[0.1] transition-colors cursor-pointer"
-                      title="인용구 (> 내용)"
-                    >
-                      <Quote className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => insertMarkdownSymbol('`', '`')}
-                      className="p-1.5 rounded-lg bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/10 dark:hover:bg-white/15 border border-black/[0.06] dark:border-white/[0.1] transition-colors cursor-pointer"
-                      title="코드 (`코드`)"
-                    >
-                      <Code className="w-3.5 h-3.5" />
-                    </button>
-
-                    <div className="w-px h-4 bg-black/10 dark:bg-white/15 mx-0.5" />
-
-                    {/* Template Guides */}
-                    <button
-                      type="button"
-                      onClick={() => applyTemplate('dcf')}
-                      className="px-2 py-1 rounded-lg bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF] hover:bg-[#0071E3]/20 border border-[#0071E3]/20 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
-                      title="DCF 내재가치 분석 양식 불러오기"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>{t('dcfTemplate')}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => applyTemplate('moat')}
-                      className="px-2 py-1 rounded-lg bg-black/[0.05] dark:bg-white/[0.08] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-black/[0.1] dark:hover:bg-white/[0.15] border border-black/[0.06] dark:border-white/[0.1] text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
-                      title="경제적 해자 및 안전마진 양식 불러오기"
-                    >
-                      <FileText className="w-3 h-3" />
-                      <span>{t('moatTemplate')}</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Always Side-by-side Split View Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <textarea
-                      id="community-write-textarea"
-                      required
-                      rows={7}
-                      value={modalContent}
-                      onChange={(e) => setModalContent(e.target.value)}
-                      placeholder={t('contentPlaceholder')}
-                      className="w-full h-full min-h-[170px] bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] p-3 rounded-xl border border-black/[0.06] dark:border-white/[0.1] focus:outline-none focus:border-[#0071E3] dark:focus:border-[#2997FF] resize-none leading-relaxed placeholder-[#86868B] text-xs sm:text-sm font-medium"
-                    />
-                  </div>
-                  <div className="w-full h-full min-h-[170px] max-h-[280px] sm:max-h-none overflow-y-auto bg-[#F5F5F7] dark:bg-[#2C2C2E] p-3.5 rounded-xl border border-black/[0.06] dark:border-white/[0.1] space-y-1">
-                    <div className="text-[11px] font-bold text-[#86868B] pb-1 border-b border-black/[0.04] dark:border-white/[0.06] mb-2 flex items-center justify-between">
-                      <span>실시간 마크다운 미리보기</span>
-                      <span className="text-[10px] font-normal text-[#0071E3] dark:text-[#2997FF]">Live</span>
-                    </div>
-                    {modalContent.trim() ? (
-                      <MarkdownRenderer content={modalContent} />
-                    ) : (
-                      <p className="text-xs text-[#86868B] italic pt-2">
-                        왼쪽 입력창에 내용을 작성하면 이곳에 실시간 서식이 적용되어 표시됩니다.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsWriteModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-[#86868B] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] font-semibold cursor-pointer"
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#0071E3] dark:hover:bg-[#2997FF] text-white font-semibold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{t('submitPost')}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Community Post Detail Slide-over Panel (Side Panel View Mode) */}
       <CommunityDetailDrawer
         post={discussions.find((p) => p.id === selectedPanelPostId) || null}
@@ -1348,31 +950,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
         onVote={handleVote}
         onToggleBookmark={handleToggleBookmark}
         isBookmarked={selectedPanelPostId ? bookmarkedIds.has(selectedPanelPostId) : false}
-        onAddComment={(postId, commentText) => {
-          setNewCommentText((prev) => ({ ...prev, [postId]: commentText }));
-          const text = commentText.trim();
-          if (!text) return;
-          const now = new Date();
-          const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-          const newComment: Comment = {
-            id: `c-${Date.now()}`,
-            author: { name: '나 (가치투자자)' },
-            createdAt: currentTime,
-            content: text,
-            likes: 0,
-          };
-          setDiscussions((prev) =>
-            prev.map((post) => {
-              if (post.id !== postId) return post;
-              return {
-                ...post,
-                commentsCount: post.commentsCount + 1,
-                comments: [...(post.comments || []), newComment],
-              };
-            })
-          );
-          showToast('댓글이 등록되었습니다.');
-        }}
+        onAddComment={addComment}
         onSelectStock={handleStockClick}
         showToast={showToast}
       />

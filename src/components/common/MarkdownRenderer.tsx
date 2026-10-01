@@ -189,7 +189,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
         elements.push(
           <blockquote
             key={`bq-${index}`}
-            className="border-l-3 border-[#0071E3] dark:border-[#2997FF] pl-3 py-1 my-1.5 text-[#6E6E73] dark:text-[#A1A1A6] italic bg-black/[0.02] dark:bg-white/[0.02] rounded-r-lg"
+            className="border-l-[3px] border-[#0071E3] dark:border-[#2997FF] pl-3 py-1 my-1.5 text-[#6E6E73] dark:text-[#A1A1A6] italic bg-black/[0.02] dark:bg-white/[0.02] rounded-r-lg"
           >
             {renderInline(line.slice(2))}
           </blockquote>

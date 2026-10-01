@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  AnnualFinancialDTO,
   Currency,
   DcfResultDTO,
   ReasonCode,
@@ -14,23 +15,28 @@ import {
   AlertCircle,
   XCircle,
   Eye,
+  ChevronDown,
 } from 'lucide-react';
 import { HelpPopover } from '../common/HelpPopover';
+import { getDcfWarningLabel } from '../../utils/ruleFormatters';
 import { DCF_GLOSSARY } from '../../utils/glossaryData';
 
 interface DcfValuationCardProps {
   dcf: DcfResultDTO;
   currency: Currency;
   currentPrice: number | null;
+  annualFinancials: AnnualFinancialDTO[];
 }
 
 export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
   dcf,
   currency,
   currentPrice,
+  annualFinancials,
 }) => {
   const { t, language } = useAppConfig();
   const isKo = language === 'ko';
+  const [isCalculationOpen, setIsCalculationOpen] = React.useState(false);
 
   const formatPrice = (val: number | string | null): string => {
     if (val === null || val === undefined) return '—';
@@ -52,6 +58,46 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
     const pct = num * 100;
     return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
   };
+
+  const formatAmount = (val: number | null): string => {
+    if (val === null || !Number.isFinite(val)) return '—';
+    const abs = Math.abs(val);
+    if (currency === 'USD') {
+      if (abs >= 1_000_000_000_000) return `$${(val / 1_000_000_000_000).toFixed(2)}T`;
+      if (abs >= 1_000_000_000) return `$${(val / 1_000_000_000).toFixed(2)}B`;
+      if (abs >= 1_000_000) return `$${(val / 1_000_000).toFixed(2)}M`;
+      return `$${val.toLocaleString()}`;
+    }
+    if (abs >= 1_000_000_000_000) return `${(val / 1_000_000_000_000).toFixed(2)}조원`;
+    if (abs >= 100_000_000) return `${(val / 100_000_000).toFixed(1)}억원`;
+    return `${Math.round(val).toLocaleString()}원`;
+  };
+
+  const ownerEarningsRows = [...annualFinancials]
+    .filter((financial) => financial.cfo !== null && financial.capex !== null)
+    .sort((a, b) => b.fiscalYear - a.fiscalYear)
+    .slice(0, dcf.historyYears ?? 0)
+    .sort((a, b) => a.fiscalYear - b.fiscalYear)
+    .map((financial) => {
+      const cfo = Number(financial.cfo);
+      const capex = Number(financial.capex);
+      const interestPaid = financial.interestPaid === null ? null : Number(financial.interestPaid);
+      const adjustedCfo =
+        financial.interestPaidClassification === 'NON_CFO' && interestPaid !== null
+          ? cfo - interestPaid
+          : cfo;
+      return {
+        fiscalYear: financial.fiscalYear,
+        adjustedCfo,
+        capex,
+        ownerEarnings: adjustedCfo - capex,
+      };
+    });
+
+  const hasNonPositiveOwnerEarnings =
+    dcf.reasonCodes.includes('NON_POSITIVE_DENOMINATOR') &&
+    dcf.normalizedOwnerEarnings !== null &&
+    dcf.normalizedOwnerEarnings <= 0;
 
   const getStatusBadge = (status: ValuationStatus) => {
     switch (status) {
@@ -96,7 +142,11 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
       case 'INSUFFICIENT_HISTORY':
         return t('reasonInsufficientHistory');
       case 'NON_POSITIVE_DENOMINATOR':
-        return t('reasonNonPositiveDenominator');
+        return hasNonPositiveOwnerEarnings
+          ? (isKo
+              ? '정규화 Owner Earnings가 0 이하라 DCF를 계산하지 않았습니다.'
+              : 'DCF was not calculated because normalized Owner Earnings are zero or negative.')
+          : t('reasonNonPositiveDenominator');
       case 'INVALID_TAX_RATE':
         return t('reasonInvalidTaxRate');
       case 'NON_POSITIVE_START_VALUE':
@@ -122,14 +172,14 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-[#0071E3] dark:text-[#2997FF]" />
             <h2 className="text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
-              {isKo ? '10개년 주주이익 DCF 내재가치 평가' : t('dcfIntrinsicValue')}
+              {isKo ? '10개년 현금흐름 DCF 추정가치' : t('dcfIntrinsicValue')}
             </h2>
             <HelpPopover content={DCF_GLOSSARY.header(language)} align="left" />
           </div>
           <p className="text-xs text-[#86868B] mt-0.5 font-normal">
             {isKo
-              ? '워런 버핏 10-Year Owner Earnings 할인현금흐름(DCF) 가치평가 모델'
-              : 'Warren Buffett 10-Year Owner Earnings Discounted Cash Flow'}
+              ? '영업현금흐름 − 유형·무형자산 투자 기반 추정 모델'
+              : '10-year cash-flow proxy after tangible and intangible investment'}
           </p>
         </div>
         <div>{getStatusBadge(dcf.status)}</div>
@@ -188,11 +238,14 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
               {formatPercent(dcf.conservativeMarginOfSafety)}
             </div>
             <div className="text-[10px] text-[#86868B] mt-1 font-mono">
-              {dcf.conservativeMarginOfSafety !== null && dcf.conservativeMarginOfSafety >= 0.2
-                ? (isKo ? '안전마진 20%+ 확보 (통과)' : '20%+ Margin Satisfied')
-                : dcf.conservativeMarginOfSafety !== null && dcf.conservativeMarginOfSafety >= 0
-                  ? (isKo ? '적정가 부근 (관찰 필요)' : 'Near Fair Value (Watch)')
-                  : (isKo ? '안전마진 미확보 (고평가)' : 'No Margin (Overvalued)')}
+              {dcf.conservativeMarginOfSafety === null
+                ? (isKo ? '계산 불가' : 'Unavailable')
+                : dcf.status === 'PASS_WITH_MARGIN'
+                  ? (isKo ? '모델 기준 할인 폭 20% 이상' : 'Model discount at least 20%')
+                  : dcf.status === 'WATCH'
+                    ? (isKo ? '가격·데이터 추가 검토 필요' : 'Review price and data')
+                    : (isKo ? '모델 기준 할인 부족' : 'Insufficient model discount')}
+
             </div>
           </div>
         </div>
@@ -212,7 +265,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
 
             <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
               {/* Conservative */}
-              <div className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.06] shadow-2xs">
+              <div className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.06] shadow-sm">
                 <div className="text-[10px] sm:text-[11px] font-semibold text-[#86868B]">
                   {isKo ? '보수적 (Conservative)' : 'Conservative'}
                 </div>
@@ -225,7 +278,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
               </div>
 
               {/* Base */}
-              <div className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#0071E3]/20 shadow-2xs">
+              <div className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#0071E3]/20 shadow-sm">
                 <div className="text-[10px] sm:text-[11px] font-bold text-[#0071E3] dark:text-[#2997FF]">
                   {isKo ? '기본 (Base)' : 'Base'}
                 </div>
@@ -238,7 +291,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
               </div>
 
               {/* Optimistic */}
-              <div className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.06] shadow-2xs">
+              <div className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.06] shadow-sm">
                 <div className="text-[10px] sm:text-[11px] font-semibold text-[#86868B]">
                   {isKo ? '낙관적 (Optimistic)' : 'Optimistic'}
                 </div>
@@ -272,10 +325,94 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
         ) : (
           <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.06] text-xs text-[#86868B] space-y-2">
             <p>
-              {isKo
-                ? '해당 종목은 금융업종이거나 필수 데이터가 부족하여 Owner Earnings DCF 밸류에이션 산출 대상에서 제외되었습니다.'
-                : 'Owner Earnings DCF valuation is not applicable for this stock due to industry classification or missing inputs.'}
+              {hasNonPositiveOwnerEarnings
+                ? (isKo
+                    ? '정규화 Owner Earnings가 0 이하이므로 현재 현금흐름으로는 의미 있는 DCF 내재가치를 계산할 수 없습니다.'
+                    : 'A meaningful DCF intrinsic value cannot be calculated because normalized Owner Earnings are zero or negative.')
+                : (isKo
+                    ? '해당 종목은 업종 특성 또는 필수 데이터 부족으로 Owner Earnings DCF 산출 대상에서 제외되었습니다.'
+                    : 'Owner Earnings DCF is not applicable due to industry classification or missing inputs.')}
             </p>
+          </div>
+        )}
+
+        {/* Owner Earnings calculation details */}
+        {ownerEarningsRows.length > 0 && (
+          <div className="rounded-2xl border border-black/[0.06] dark:border-white/[0.08] overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setIsCalculationOpen((open) => !open)}
+              aria-expanded={isCalculationOpen}
+              className="w-full p-4 flex items-center justify-between gap-3 text-left bg-[#FBFBFD] dark:bg-[#252528]/50 hover:bg-[#F5F5F7] dark:hover:bg-[#2C2C2E] transition-colors"
+            >
+              <div>
+                <span className="text-xs font-bold text-[#1D1D1F] dark:text-[#F5F5F7] block">
+                  {isKo ? 'Owner Earnings 계산 근거' : 'Owner Earnings calculation'}
+                </span>
+                <span className="text-[11px] text-[#86868B] mt-0.5 block">
+                  {isKo
+                    ? `정규화 Owner Earnings ${formatAmount(dcf.normalizedOwnerEarnings)}`
+                    : `Normalized Owner Earnings ${formatAmount(dcf.normalizedOwnerEarnings)}`}
+                </span>
+              </div>
+              <ChevronDown
+                className={`w-4 h-4 shrink-0 text-[#86868B] transition-transform ${isCalculationOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {isCalculationOpen && (
+              <div className="p-4 space-y-4 bg-white dark:bg-[#1C1C1E] border-t border-black/[0.04] dark:border-white/[0.06]">
+                <div className="text-xs text-[#86868B] leading-relaxed">
+                  <span className="font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
+                    Owner Earnings = {isKo ? '조정 영업현금흐름(CFO) − CAPEX' : 'Adjusted CFO − CAPEX'}
+                  </span>
+                  <p className="mt-1">
+                    {isKo
+                      ? `최근 ${ownerEarningsRows.length}개년 값을 정규화해 DCF의 출발값으로 사용합니다.`
+                      : `The latest ${ownerEarningsRows.length} annual values are normalized as the DCF starting point.`}
+                  </p>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[11px] font-mono tabular-nums">
+                    <thead>
+                      <tr className="text-[#86868B] border-b border-black/[0.06] dark:border-white/[0.08]">
+                        <th className="py-2 pr-3 text-left font-semibold">{isKo ? '연도' : 'Year'}</th>
+                        <th className="py-2 px-3 text-right font-semibold">{isKo ? '조정 CFO' : 'Adjusted CFO'}</th>
+                        <th className="py-2 px-3 text-right font-semibold">CAPEX</th>
+                        <th className="py-2 pl-3 text-right font-semibold">Owner Earnings</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-black/[0.03] dark:divide-white/[0.04]">
+                      {ownerEarningsRows.map((row) => (
+                        <tr key={row.fiscalYear}>
+                          <td className="py-2.5 pr-3 font-bold text-[#1D1D1F] dark:text-[#F5F5F7]">
+                            {row.fiscalYear}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-[#0071E3] dark:text-[#2997FF]">
+                            {formatAmount(row.adjustedCfo)}
+                          </td>
+                          <td className="py-2.5 px-3 text-right text-[#86868B]">
+                            {formatAmount(row.capex)}
+                          </td>
+                          <td className={`py-2.5 pl-3 text-right font-bold ${row.ownerEarnings < 0 ? 'text-[#FF3B30]' : 'text-[#34C759]'}`}>
+                            {formatAmount(row.ownerEarnings)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {hasNonPositiveOwnerEarnings && (
+                  <div className="p-3 rounded-xl bg-[#FF9500]/10 border border-[#FF9500]/20 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
+                    {isKo
+                      ? '영업현금흐름이 음수인 상태에서 CAPEX를 추가로 차감해 정규화 Owner Earnings가 음수가 되었습니다. 금융 계열사나 대규모 투자를 포함한 기업은 연결 현금흐름과 전체 CAPEX 기준 평가가 보수적으로 나타날 수 있습니다.'
+                      : 'Normalized Owner Earnings are negative because CAPEX is deducted from already-negative operating cash flow. For companies with financing subsidiaries or large investments, consolidated cash flow and total CAPEX can produce a conservative result.'}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -283,7 +420,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
         {dcf.reasonCodes && dcf.reasonCodes.length > 0 && (
           <div className="space-y-1.5">
             <span className="text-[11px] text-[#86868B] font-semibold block">
-              {isKo ? '평가 사유 코드:' : 'Reason Codes:'}
+              {isKo ? '계산 제외 사유:' : 'Why calculation was excluded:'}
             </span>
             <div className="flex flex-wrap gap-2">
               {dcf.reasonCodes.map((code, idx) => (
@@ -308,7 +445,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
             </div>
             {dcf.warnings.map((warn, idx) => (
               <p key={idx} className="text-xs text-[#86868B] leading-relaxed">
-                {warn}
+                {getDcfWarningLabel(warn, language)}
               </p>
             ))}
           </div>
@@ -317,7 +454,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
 
       {/* Footer Info */}
       <div className="pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between text-[11px] text-[#86868B] font-mono">
-        <span>{isKo ? `평가 모델: ${dcf.method} (10개년 DCF)` : `Method: ${dcf.method}`}</span>
+        <span>{isKo ? '현금흐름 대용치 · 10개년 DCF' : 'Cash-flow proxy · 10-year DCF'}</span>
         <span>
           {isKo ? '신뢰도: ' : 'Confidence: '}
           <span

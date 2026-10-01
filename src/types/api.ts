@@ -15,6 +15,7 @@ export type CapitalActionStatus = Schemas['CapitalActionStatus'];
 export type ValuationStatus = Schemas['ValuationStatus'];
 export type Confidence = Schemas['Confidence'];
 export type CoreStatus = Schemas['CoreStatus'];
+export type CoreGradeFilter = Schemas['CoreGradeFilter'];
 export type RuleDefinitionCategory = Schemas['RuleDefinitionCategory'];
 export type Applicability = Schemas['Applicability'];
 export type ReasonCode = Schemas['ReasonCode'];
@@ -46,3 +47,15 @@ export type ReadinessResponse = Schemas['ReadinessResponse'];
 export type StockListQuery = NonNullable<
   operations['list_stocks_api_stocks_get']['parameters']['query']
 >;
+
+export interface BatchRunStatusDTO {
+  batchRunId?: number | null;
+  status: 'IDLE' | 'RUNNING' | 'CANCEL_REQUESTED' | 'SUCCESS' | 'PARTIAL_FAILURE' | 'FAILED' | 'CANCELLED';
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  totalItems: number;
+  successItems: number;
+  failedItems: number;
+  skippedItems: number;
+  errorMessage?: string | null;
+}

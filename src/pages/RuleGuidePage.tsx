@@ -36,15 +36,15 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
       ruleId: 'sustained_roe',
       categoryId: 'CORE' as RuleDefinitionCategory,
       category: language === 'ko' ? '초과 자본이익률' : 'Capital Efficiency',
-      targetHurdle: 'ROE ≥ 15.0%',
+      targetHurdle: 'ROE ≥ 10.0%',
       applicability:
         language === 'ko'
           ? '전체 기업 (금융업 포함)'
           : 'All Enterprises (Inc. Financials)',
       historyYears:
         language === 'ko'
-          ? '최근 5년 (부족 시 3년 → 1년)'
-          : '5-Year (3Y/1Y fallback)',
+          ? '최근 연속 3년 필수 (결측 시 평가 불가)'
+          : 'Three complete years required',
       title:
         language === 'ko'
           ? '지속 가능한 자기자본이익률 (Sustained ROE)'
@@ -66,15 +66,15 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
           : 'Identifies enterprises generating sustained economic profits above their cost of capital rather than superficial asset size growth.',
       formula:
         'ROE_t = 지배주주 귀속 당기순이익_t ÷ 평균 보통주자본_t  |  평균 보통주자본 = (기초 + 기말) ÷ 2',
-      conditionText: '5-Year Consecutive ROE ≥ 15.0%',
+      conditionText: '3-Year Consecutive ROE ≥ 10.0%',
       passCondition:
         language === 'ko'
-          ? '평가 기간의 모든 연도에서 ROE 15.0% 이상 유지 (경기 하강기에도 두 자릿수 수익성 보존)'
-          : 'ROE ≥ 15.0% maintained across every single evaluated year without exception',
+          ? '평가 기간의 모든 연도에서 ROE 10.0% 이상 유지 (경기 하강기에도 두 자릿수 수익성 보존)'
+          : 'ROE ≥ 10.0% maintained across every single evaluated year without exception',
       exclusionCondition:
         language === 'ko'
-          ? '계산 가능한 연도 중 단 한 해라도 ROE 15.0% 미만으로 자본 효율이 떨어지는 저효율 기업 배제'
-          : 'Enterprises dropping below 15.0% ROE in any evaluated year are immediately excluded',
+          ? '계산 가능한 연도 중 단 한 해라도 ROE 10.0% 미만으로 자본 효율이 떨어지는 저효율 기업 배제'
+          : 'Enterprises dropping below 10.0% ROE in any evaluated year are immediately excluded',
       benchmarkStock:
         language === 'ko'
           ? '애플 (AAPL) — 5년 평균 ROE 140%+ 지속 유지'
@@ -94,8 +94,8 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
           : 'Non-Financial Only (Financials N/A)',
       historyYears:
         language === 'ko'
-          ? '최근 5년 (부족 시 3년 → 1년)'
-          : '5-Year (3Y/1Y fallback)',
+          ? '최근 연속 3년 필수 (결측 시 평가 불가)'
+          : 'Three complete years required',
       title:
         language === 'ko'
           ? '지속 가능한 투하자본이익률 (Sustained ROIC)'
@@ -117,7 +117,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
           : 'Evaluates operating efficiency on capital deployed in the core business, independent of capital structure and leverage.',
       formula:
         'NOPAT = EBIT × (1 - 유효세율)  |  IC = 보통주자본 + 이자발생부채 - 현금  |  ROIC = NOPAT ÷ 평균 IC',
-      conditionText: '5-Year Consecutive ROIC ≥ 10.0%',
+      conditionText: '3-Year Consecutive ROIC ≥ 10.0%',
       passCondition:
         language === 'ko'
           ? '평가 기간의 모든 연도에서 ROIC 10.0% 이상 유지 (비금융 일반기업)'
@@ -138,15 +138,15 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
       categoryId: 'CORE' as RuleDefinitionCategory,
       category:
         language === 'ko' ? '재무 요새 & 부채 안전성' : 'Solvency Fortress',
-      targetHurdle: '총부채비율 ≤ 100% · 이자보상배율 ≥ 5.0x',
+      targetHurdle: '총부채비율 ≤ 150% · 이자보상배율 ≥ 3.0x',
       applicability:
         language === 'ko'
           ? '비금융 일반기업 (금융업 N/A)'
           : 'Non-Financial Only (Financials N/A)',
       historyYears:
         language === 'ko'
-          ? '최근 5년 (부족 시 3년 → 1년)'
-          : '5-Year (3Y/1Y fallback)',
+          ? '최근 연속 3년 필수 (결측 시 평가 불가)'
+          : 'Three complete years required',
       title:
         language === 'ko'
           ? '건전한 부채 및 이자보상 안전성 (Debt Safety)'
@@ -165,16 +165,16 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
           ? '단기 이익을 부풀리는 무분별한 차입금 레버리지를 배제하고, 고금리와 경기 침체 충격에도 자력 생존 가능한 무차입/저부채 요새 기업을 선별합니다.'
           : 'Eliminates fragile over-leveraged companies, favoring fortress balance sheets capable of enduring severe recessions.',
       formula:
-        '총부채비율 = 총부채 ÷ 자기자본 × 100  |  이자보상배율 = EBIT ÷ |이자비용| (무이자 시 무한대 통과)',
-      conditionText: 'Debt/Equity ≤ 100.0% AND Interest Coverage ≥ 5.0x',
+        '총부채비율 = 총부채 ÷ 자기자본 × 100  |  이자보상배율 = EBIT ÷ |이자비용| (이자 0 및 EBIT 양수일 때 무한대)',
+      conditionText: 'Debt/Equity ≤ 150.0% AND Interest Coverage ≥ 3.0x',
       passCondition:
         language === 'ko'
-          ? '평가 기간 모든 연도에서 총부채비율 100% 이하 및 이자보상배율 5.0배 이상 충족'
-          : 'Total Debt/Equity ≤ 100% and Interest Coverage ≥ 5.0x in all evaluated years',
+          ? '평가 기간 모든 연도에서 총부채비율 150% 이하 및 이자보상배율 3.0배 이상 충족'
+          : 'Total Debt/Equity ≤ 150% and Interest Coverage ≥ 3.0x in all evaluated years',
       exclusionCondition:
         language === 'ko'
-          ? '부채비율 100% 초과 또는 영업이익으로 이자를 감당하기 어려운(5배 미만) 취약 기업 배제'
-          : 'Enterprises with heavy debt burdens or interest coverage under 5.0x are excluded',
+          ? '부채비율 150% 초과 또는 영업이익으로 이자를 감당하기 어려운(3배 미만) 취약 기업 배제'
+          : 'Enterprises with heavy debt burdens or interest coverage under 3.0x are excluded',
       benchmarkStock:
         language === 'ko'
           ? '알파벳 (GOOGL) — 부채비율 ~10%, $100B+ 규모의 압도적 순현금 요새'
@@ -184,18 +184,18 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
       id: 4,
       num: '04',
       ruleId: 'capital_light_business',
-      categoryId: 'CORE' as RuleDefinitionCategory,
+      categoryId: 'AUXILIARY' as RuleDefinitionCategory,
       category:
         language === 'ko' ? '저자본 고현금창출' : 'Capital-Light Cash Engine',
-      targetHurdle: '자본집약도 (CapEx / CFO) ≤ 50.0%',
+      targetHurdle: '자본집약도 (CapEx / CFO) ≤ 70.0%',
       applicability:
         language === 'ko'
           ? '비금융 일반기업 (금융업 N/A)'
           : 'Non-Financial Only (Financials N/A)',
       historyYears:
         language === 'ko'
-          ? '최근 5년 (부족 시 3년 → 1년)'
-          : '5-Year (3Y/1Y fallback)',
+          ? '최근 연속 3년 필수 (결측 시 평가 불가)'
+          : 'Three complete years required',
       title:
         language === 'ko'
           ? '저자본 고현금창출 기업 (Capital-Light Business)'
@@ -216,16 +216,16 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
           ? '벌어들인 영업현금의 대부분을 설비 유지(CapEx)에 다시 쏟아붓지 않고도 주주 잉여현금흐름으로 남기는 복리 성장 기업을 선별합니다.'
           : 'Filters for businesses requiring minimal capital reinvestment to maintain their competitive moat, maximizing free cash to owners.',
       formula:
-        'Capital Intensity = 5개년 누적 |CapEx| ÷ 5개년 누적 CFO (누적 CFO > 0 필수)',
-      conditionText: '5-Year Cumulative CapEx ÷ CFO ≤ 50.0%',
+        'Capital Intensity = 3개년 누적 |CapEx| ÷ 3개년 누적 CFO (누적 CFO > 0 필수)',
+      conditionText: '3-Year Cumulative CapEx ÷ CFO ≤ 70.0%',
       passCondition:
         language === 'ko'
-          ? '누적 영업현금흐름(CFO) > 0 이며 누적 자본집약도 50.0% 이하 달성'
-          : '5Y Cumulative CFO > 0 and Capital Intensity (CapEx / CFO) ≤ 50.0%',
+          ? '누적 영업현금흐름(CFO) > 0 이며 누적 자본집약도 70.0% 이하 달성'
+          : '3Y Cumulative CFO > 0 and Capital Intensity (CapEx / CFO) ≤ 70.0%',
       exclusionCondition:
         language === 'ko'
-          ? '벌어들인 현금의 50% 이상을 시설 유지보수에 재투자해야 하는 중후장대 설비 집약적 기업 배제'
-          : 'Capital-heavy businesses consuming over 50% of operating cash flow in CapEx',
+          ? '벌어들인 현금의 70% 이상을 시설 유지보수에 재투자해야 하는 중후장대 설비 집약적 기업 배제'
+          : 'Capital-heavy businesses consuming over 70% of operating cash flow in CapEx',
       benchmarkStock:
         language === 'ko'
           ? '마이크로소프트 (MSFT) — 자본집약도 35% 미만 고수익 소프트웨어/클라우드 엔진'
@@ -245,8 +245,8 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
           : 'All Enterprises (Inc. Financials)',
       historyYears:
         language === 'ko'
-          ? '최근 5년 (부족 시 3년 → 1년)'
-          : '5-Year (3Y/1Y fallback)',
+          ? '최근 연속 3년 필수 (결측 시 평가 불가)'
+          : 'Three complete years required',
       title:
         language === 'ko'
           ? '입증된 이익 지속성 (Proven Earnings Power)'
@@ -268,7 +268,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
           : 'Eliminates speculative pre-profit stories, focusing exclusively on enterprises with verified multi-year operating profitability.',
       formula:
         '모든 평가 연도 t에 대해: EBIT_t > 0 AND 지배주주 귀속 순이익_t > 0',
-      conditionText: '5-Year Consecutive EBIT > 0 AND Net Income > 0',
+      conditionText: '3-Year Consecutive EBIT > 0 AND Net Income > 0',
       passCondition:
         language === 'ko'
           ? '평가 기간 모든 연도에서 영업이익(EBIT)과 당기순이익이 흑자(> 0)'
@@ -296,8 +296,8 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
           : 'All Enterprises (Inc. Financials)',
       historyYears:
         language === 'ko'
-          ? '최근 5년 (부족 시 3년 → 1년)'
-          : '5-Year (3Y/1Y fallback)',
+          ? '최근 연속 3년 필수 (결측 시 평가 불가)'
+          : 'Three complete years required',
       title:
         language === 'ko'
           ? '주당순이익 복리 성장률 (EPS Growth)'
@@ -313,19 +313,19 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
         language === 'ko' ? '주주서한 (2장 투자)' : 'Shareholder Letter',
       purpose:
         language === 'ko'
-          ? '증자나 M&A로 외형만 불리는 기업을 제외하고, 기존 보통주 주주 1주당 귀속되는 실질 이익이 인플레이션을 넘어 복리로 성장하는 기업을 선별합니다.'
-          : 'Filters for durable compounders whose diluted earnings per share steadily outpace inflation over 5-year horizons.',
+          ? '최근 3개 회계연도의 시작·종료 희석 EPS로 주당 이익의 연환산 성장률을 확인합니다. 매년 증가를 보장하지 않으며, 자사주 매입·일회성 이익·낮은 시작 EPS의 영향을 수익력·현금품질 규칙과 함께 검토합니다.'
+          : 'Measures annualized diluted EPS growth across 3 fiscal years. It does not guarantee yearly growth; review buybacks, one-off gains and a low starting EPS alongside earnings power and cash quality.',
       formula:
-        'EPS CAGR = (종료 희석 EPS ÷ 시작 희석 EPS)^(1/n) - 1  (시작 & 종료 EPS > 0)',
-      conditionText: '5-Year Diluted EPS CAGR ≥ 8.0%',
+        'EPS CAGR = (종료 희석 EPS ÷ 시작 희석 EPS)^(1/2) - 1  (3개 연도 관측치, 시작 & 종료 EPS > 0)',
+      conditionText: 'Diluted EPS CAGR ≥ 8% (3 fiscal years, 2 elapsed years)',
       passCondition:
         language === 'ko'
-          ? '시작 및 종료 희석 EPS가 모두 양수이며 5개년 연평균 복리 성장률 8.0% 이상 달성'
-          : '5-Year Diluted EPS CAGR ≥ 8.0% with positive base and terminal EPS values',
+          ? '최근 연속 3개 회계연도 EPS가 모두 존재하고, 시작·종료 EPS > 0이며 경과 2년 CAGR ≥ 8%'
+          : 'EPS available for all 3 consecutive fiscal years, positive start/end EPS, and CAGR ≥ 8% over 2 elapsed years',
       exclusionCondition:
         language === 'ko'
-          ? '5년 EPS CAGR 8.0% 미만 정체 기업 또는 순손실/역성장 기업 배제'
-          : 'Sub-8% compounding speed or deteriorating per-share earning power',
+          ? '계산 가능한 CAGR이 8% 미만이거나 시작·종료 EPS가 0 이하면 FAIL. 필수 자료 부족은 N/A'
+          : 'FAIL if valid CAGR is below 8% or start/end EPS is non-positive; N/A if required data is missing',
       benchmarkStock:
         language === 'ko'
           ? '엔비디아 (NVDA) — 5년 EPS CAGR 40%+ 폭발적 복리 성장'
@@ -340,15 +340,15 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
         language === 'ko'
           ? '주주이익 현금 전환 품질'
           : 'Owner Earnings Cash Quality',
-      targetHurdle: 'Cash Conversion (ΣOE / ΣNet Income) ≥ 80.0%',
+      targetHurdle: 'Cash Conversion (ΣOE / ΣNet Income) ≥ 60.0%',
       applicability:
         language === 'ko'
           ? '비금융 일반기업 (금융업 N/A)'
           : 'Non-Financial Only (Financials N/A)',
       historyYears:
         language === 'ko'
-          ? '최근 5년 (부족 시 3년 → 1년)'
-          : '5-Year (3Y/1Y fallback)',
+          ? '최근 연속 3년 필수 (결측 시 평가 불가)'
+          : 'Three complete years required',
       title:
         language === 'ko'
           ? '주주이익 현금 전환 품질 (Owner Earnings Quality)'
@@ -370,15 +370,15 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
           : 'Eliminates cosmetic accounting profits by verifying that reported net income translates into real owner cash flow after all maintenance CapEx.',
       formula:
         'Adjusted CFO = CFO - 이자지급액  |  OE Proxy = Adjusted CFO - |CapEx|  |  Conversion = ΣOE ÷ Σ순이익',
-      conditionText: 'Owner Earnings Proxy > 0 AND Cash Conversion ≥ 80.0%',
+      conditionText: 'Owner Earnings Proxy > 0 AND Cash Conversion ≥ 60.0%',
       passCondition:
         language === 'ko'
-          ? '최근 및 기간 중앙값 주주이익 > 0 이며 누적 순이익 대비 주주이익 전환율 80.0% 이상'
-          : 'Median & Recent Owner Earnings > 0 and 5Y Cumulative Cash Conversion ≥ 80.0%',
+          ? '최근 및 기간 중앙값 주주이익 > 0 이며 누적 순이익 대비 주주이익 전환율 60.0% 이상'
+          : 'Median & Recent Owner Earnings > 0 and 3Y Cumulative Cash Conversion ≥ 60.0%',
       exclusionCondition:
         language === 'ko'
-          ? '장부상 흑자이나 CapEx 차감 후 실질 잉여현금이 순이익의 80%에 미달하거나 음수인 기업 배제'
-          : 'Weak cash realization (< 80%) or negative owner earnings proxy after CapEx',
+          ? '장부상 흑자이나 CapEx 차감 후 실질 잉여현금이 순이익의 60%에 미달하거나 음수인 기업 배제'
+          : 'Weak cash realization (< 60%) or negative owner earnings proxy after CapEx',
       benchmarkStock:
         language === 'ko'
           ? '애플 (AAPL) — 주주이익 전환율 100%+ 달성 (회계이익을 상회하는 막강한 현금창출)'
@@ -505,8 +505,8 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
           : 'All Enterprises (Inc. Financials)',
       historyYears:
         language === 'ko'
-          ? '최근 5년 (부족 시 3년 → 1년)'
-          : '5-Year (3Y/1Y fallback)',
+          ? '최근 연속 5년 필수 (결측 시 평가 불가)'
+          : 'Five complete years required',
       title:
         language === 'ko'
           ? '주주이익 수익률 스프레드 (1차 가격 매력도)'
@@ -557,8 +557,8 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
           : 'Non-Financial Only (Financials N/A)',
       historyYears:
         language === 'ko'
-          ? '최근 5년 (부족 시 3년 → 1년)'
-          : '5-Year (3Y/1Y fallback)',
+          ? '최근 연속 5년 필수 (결측 시 평가 불가)'
+          : 'Five complete years required',
       title:
         language === 'ko'
           ? '주주이익 기반 10년 DCF 내재가치 & 안전마진'
@@ -576,7 +576,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
           : 'Shareholder Letter (Owner Earnings DCF)',
       purpose:
         language === 'ko'
-          ? '1~10번 품질 규칙 통과 결과를 토대로 성장률 상한(Growth Cap: 10%/5%/3%)과 할인율(Discount Rate)을 자동 산출하고, 10년 보수적 DCF 모델을 통해 적정 매수 가격 범위와 20% 안전마진을 판정합니다.'
+          ? '품질 규칙에 따라 성장률 상한(10%/5%/3%)과 할인율을 정하고 현금흐름 대용치를 할인합니다. 현재 주식 수가 추정치이거나 핵심 규칙 검증이 부족하면 계산상 할인 폭이 20% 이상이어도 관찰 대상으로 표시합니다.'
           : 'Synthesizes quality rule outcomes into a growth cap and discount rate, projecting a 10-year conservative DCF intrinsic value range with a 20% margin of safety.',
       formula:
         'OEPS_t = OEPS × (1+g)^t  |  PV = Σ[OEPS_t / (1+r)^t] + Terminal Value / (1+r)^10  |  Margin = (Value - Price) ÷ Value',
@@ -584,7 +584,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
         'Current Price ≤ Conservative Intrinsic Value × 0.80 (20%+ Margin)',
       passCondition:
         language === 'ko'
-          ? 'PASS_WITH_MARGIN: 현재가가 보수적 추정 내재가치 대비 20.0% 이상 할인된 가격에 거래'
+          ? 'PASS_WITH_MARGIN: 핵심 전체 통과·LOW가 아닌 신뢰도·보수적 추정가치 대비 20.0% 이상 할인'
           : 'PASS_WITH_MARGIN: Stock price trades at a ≥ 20.0% discount to conservative DCF intrinsic value',
       exclusionCondition:
         language === 'ko'
@@ -816,7 +816,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                 setSelectedCategory('ALL');
               }}
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeGuide === 'buffett'
-                ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-xs'
+                ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-sm'
                 : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                 }`}
             >
@@ -828,7 +828,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                 setSelectedCategory('ALL');
               }}
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeGuide === 'lynch'
-                ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-xs'
+                ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] shadow-sm'
                 : 'text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                 }`}
             >
@@ -861,7 +861,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
           </div>
           <div className="w-px h-6 bg-black/[0.08] dark:bg-white/[0.1]" />
           <div>
-            <span className="text-[#86868B] block text-[11px]">스크리너 통과율</span>
+            <span className="text-[#86868B] block text-[11px]">{activeGuide === 'buffett' ? (language === 'ko' ? '필요 통과 개수' : 'Required passes') : '스크리너 통과율'}</span>
             <span className="text-sm sm:text-base font-bold text-[#34C759]">
               {activeGuide === 'buffett'
                 ? t('corePassRate')
@@ -876,6 +876,12 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
             </span>
           </div>
         </div>
+
+        {activeGuide === 'buffett' && (
+          <p className="text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
+            {t('coreAssessmentPolicy')}
+          </p>
+        )}
 
         {/* Category Filter Pills (Buffett Guide Only) */}
         {activeGuide === 'buffett' && (
@@ -892,7 +898,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer border ${isSelected
-                      ? 'bg-[#1D1D1F] dark:bg-[#F5F5F7] text-white dark:text-[#1D1D1F] border-transparent shadow-xs'
+                      ? 'bg-[#1D1D1F] dark:bg-[#F5F5F7] text-white dark:text-[#1D1D1F] border-transparent shadow-sm'
                       : 'bg-[#F5F5F7] dark:bg-[#1C1C1E] text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] border-black/[0.04] dark:border-white/[0.08]'
                       }`}
                   >
@@ -1022,7 +1028,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                 </div>
 
                 {/* Formula Block */}
-                <div className="w-full max-w-4xl rounded-2xl bg-[#FBFBFD] dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] p-4 sm:p-5 space-y-3.5 shadow-xs transition-colors">
+                <div className="w-full max-w-4xl rounded-2xl bg-[#FBFBFD] dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] p-4 sm:p-5 space-y-3.5 shadow-sm transition-colors">
                   <div className="flex items-center justify-between gap-4 text-xs text-[#86868B]">
                     <div className="flex items-center gap-1.5 font-semibold uppercase tracking-wider text-[#1D1D1F] dark:text-[#F5F5F7]">
                       <Calculator className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />
@@ -1130,7 +1136,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
                 </div>
 
                 {/* Formula Block */}
-                <div className="w-full max-w-4xl rounded-2xl bg-[#FBFBFD] dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] p-4 sm:p-5 space-y-3.5 shadow-xs transition-colors">
+                <div className="w-full max-w-4xl rounded-2xl bg-[#FBFBFD] dark:bg-[#161618] border border-black/[0.06] dark:border-white/[0.08] p-4 sm:p-5 space-y-3.5 shadow-sm transition-colors">
                   <div className="flex items-center justify-between gap-4 text-xs text-[#86868B]">
                     <div className="flex items-center gap-1.5 font-semibold uppercase tracking-wider text-[#1D1D1F] dark:text-[#F5F5F7]">
                       <Calculator className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />

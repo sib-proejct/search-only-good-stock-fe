@@ -193,7 +193,7 @@ export const RuleMathFormula: React.FC<RuleMathFormulaProps> = ({ ruleId, langua
               />
             </div>
             <div className="font-serif font-normal text-[#3A3A3C] dark:text-[#D1D1D6]">
-              ∀ t ∈ &#123;1..5&#125; : ROE<sub className="text-[0.8em]">t</sub> ≥ 15.0%
+              ∀ t ∈ &#123;1..3&#125; : ROE<sub className="text-[0.8em]">t</sub> ≥ 10.0%
             </div>
           </div>
         </div>
@@ -282,7 +282,7 @@ export const RuleMathFormula: React.FC<RuleMathFormulaProps> = ({ ruleId, langua
               <MathOp>×</MathOp>
               <MathNum>100</MathNum>
               <MathOp>≤</MathOp>
-              <MathNum>100.0%</MathNum>
+              <MathNum>150.0%</MathNum>
             </span>
           </div>
 
@@ -305,9 +305,9 @@ export const RuleMathFormula: React.FC<RuleMathFormulaProps> = ({ ruleId, langua
                 }
               />
               <MathOp>≥</MathOp>
-              <MathNum>5.0x</MathNum>
+              <MathNum>3.0x</MathNum>
               <span className="text-[11px] text-[#86868B] ml-2 font-sans">
-                {isKo ? '(무이자 부채 시 ∞ 통과)' : '(Zero interest expense = ∞ PASS)'}
+                {isKo ? '(이자 0, EBIT 양수일 때 ∞)' : '(Zero interest and positive EBIT = ∞)'}
               </span>
             </span>
           </div>
@@ -328,7 +328,7 @@ export const RuleMathFormula: React.FC<RuleMathFormulaProps> = ({ ruleId, langua
               <MathFraction
                 num={
                   <span className="inline-flex items-center">
-                    <MathSigma top="5" bottom="t=1" />
+                    <MathSigma top="3" bottom="t=1" />
                     <span>|</span>
                     <MathVar>CapEx</MathVar>
                     <MathSub>t</MathSub>
@@ -337,7 +337,7 @@ export const RuleMathFormula: React.FC<RuleMathFormulaProps> = ({ ruleId, langua
                 }
                 den={
                   <span className="inline-flex items-center">
-                    <MathSigma top="5" bottom="t=1" />
+                    <MathSigma top="3" bottom="t=1" />
                     <MathVar>CFO</MathVar>
                     <MathSub>t</MathSub>
                   </span>
@@ -346,21 +346,21 @@ export const RuleMathFormula: React.FC<RuleMathFormulaProps> = ({ ruleId, langua
               <MathOp>×</MathOp>
               <MathNum>100</MathNum>
               <MathOp>≤</MathOp>
-              <MathNum>50.0%</MathNum>
+              <MathNum>70.0%</MathNum>
             </span>
           </div>
 
           <div className="pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center gap-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6]">
             <span className="text-[#86868B] font-sans font-normal">{isKo ? '필수 조건:' : 'Constraint:'}</span>
             <span className="inline-flex items-center">
-              <MathSigma top="5" bottom="t=1" />
+              <MathSigma top="3" bottom="t=1" />
               <MathVar>CFO</MathVar>
               <MathSub>t</MathSub>
               <MathOp>&gt;</MathOp>
               <MathNum>0</MathNum>
             </span>
             <span className="text-[#86868B] font-sans">
-              ({isKo ? '5개년 누적 영업현금흐름 흑자' : '5Y Cumulative CFO must be positive'})
+              ({isKo ? '3개년 누적 영업현금흐름 흑자' : '3Y Cumulative CFO must be positive'})
             </span>
           </div>
         </div>
@@ -374,7 +374,7 @@ export const RuleMathFormula: React.FC<RuleMathFormulaProps> = ({ ruleId, langua
               {isKo ? '[다년간 흑자 조건]' : '[Profitability Criteria]'}:
             </span>
             <span className="inline-flex items-center flex-wrap gap-2">
-              <span className="font-serif italic font-normal">∀ t ∈ &#123;1, 2, 3, 4, 5&#125; :</span>
+              <span className="font-serif italic font-normal">∀ t ∈ &#123;1, 2, 3&#125; :</span>
               <span className="inline-flex items-center pl-2.5 border-l-2 border-black/[0.15] dark:border-white/[0.2] flex-col items-start gap-1">
                 <span className="inline-flex items-center">
                   <MathVar>EBIT</MathVar>
@@ -406,16 +406,16 @@ export const RuleMathFormula: React.FC<RuleMathFormulaProps> = ({ ruleId, langua
             </span>
             <span className="inline-flex items-center flex-wrap">
               <MathVar>EPS CAGR</MathVar>
-              <MathSub>5Y</MathSub>
+              <MathSub>3Y</MathSub>
               <MathOp>=</MathOp>
               <MathParens>
                 <MathFraction
                   num={<span><MathVar>Diluted EPS</MathVar><MathSub>{isKo ? '최근' : 'recent'}</MathSub></span>}
-                  den={<span><MathVar>Diluted EPS</MathVar><MathSub>{isKo ? '5년전' : '5Y ago'}</MathSub></span>}
+                  den={<span><MathVar>Diluted EPS</MathVar><MathSub>{isKo ? '2년전' : '2Y ago'}</MathSub></span>}
                 />
               </MathParens>
               <MathSup>
-                <MathFraction num="1" den="5" />
+                <MathFraction num="1" den="2" />
               </MathSup>
               <MathOp>-</MathOp>
               <MathNum>1</MathNum>
@@ -426,7 +426,7 @@ export const RuleMathFormula: React.FC<RuleMathFormulaProps> = ({ ruleId, langua
 
           <div className="pt-2 border-t border-black/[0.04] dark:border-white/[0.06] text-xs text-[#86868B] font-sans">
             {isKo
-              ? '※ 시작 시점(5년 전) 및 종료 시점(최근) 희석 EPS가 모두 양수(> 0)인 경우에만 산출 유효'
+              ? '※ 시작 시점(3개 연도 관측치의 2년 전) 및 종료 시점(최근) 희석 EPS가 모두 양수(> 0)인 경우에만 산출 유효'
               : '※ Valid only when both base and terminal diluted EPS values are strictly positive (> 0)'}
           </div>
         </div>
@@ -446,14 +446,14 @@ export const RuleMathFormula: React.FC<RuleMathFormulaProps> = ({ ruleId, langua
               <MathFraction
                 num={
                   <span className="inline-flex items-center">
-                    <MathSigma top="5" bottom="t=1" />
+                    <MathSigma top="3" bottom="t=1" />
                     <MathVar>OE Proxy</MathVar>
                     <MathSub>t</MathSub>
                   </span>
                 }
                 den={
                   <span className="inline-flex items-center">
-                    <MathSigma top="5" bottom="t=1" />
+                    <MathSigma top="3" bottom="t=1" />
                     <MathText>{isKo ? '순이익' : 'Net Income'}</MathText>
                     <MathSub>t</MathSub>
                   </span>
@@ -462,7 +462,7 @@ export const RuleMathFormula: React.FC<RuleMathFormulaProps> = ({ ruleId, langua
               <MathOp>×</MathOp>
               <MathNum>100</MathNum>
               <MathOp>≥</MathOp>
-              <MathNum>80.0%</MathNum>
+              <MathNum>60.0%</MathNum>
             </span>
           </div>
 
@@ -476,7 +476,7 @@ export const RuleMathFormula: React.FC<RuleMathFormulaProps> = ({ ruleId, langua
               <MathVar>CFO</MathVar>
               <MathSub>t</MathSub>
               <MathOp>-</MathOp>
-              <MathText>{isKo ? '이자지급액' : 'Interest Paid'}</MathText>
+              <MathText>{isKo ? '재무활동 분류 시 이자지급액, 영업활동 분류 시 0' : 'Interest paid if financing; 0 if operating'}</MathText>
               <MathSub>t</MathSub>
             </div>
             <div className="flex items-center flex-wrap gap-1">

@@ -1,17 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StockSummaryDTO, StockDetailDTO, ReasonCode } from '../../types/api';
+import { StockSummaryDTO, StockDetailDTO, ReasonCode, Market } from '../../types/api';
 import { stockApi } from '../../services/api';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
-import { getMetricLabel, getRuleInfo } from '../../utils/ruleFormatters';
+import { getMetricLabel, getRuleInfo, getCoreGradeInfo } from '../../utils/ruleFormatters';
 import {
   X,
   ChevronLeft,
   ChevronRight,
   ArrowUpRight,
   Calendar,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
   ShieldCheck,
   TrendingUp,
   AlertTriangle,
@@ -22,9 +19,9 @@ interface StockDetailDrawerProps {
   stock: StockSummaryDTO | null;
   isOpen: boolean;
   onClose: () => void;
-  onNavigateToFullDetail: (ticker: string) => void;
+  onNavigateToFullDetail: (ticker: string, market: Market) => void;
   stockList: StockSummaryDTO[];
-  onSelectStock: (ticker: string) => void;
+  onSelectStock: (stock: StockSummaryDTO) => void;
 }
 
 export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
@@ -92,7 +89,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
     setDetailLoading(true);
 
     stockApi
-      .getStockDetail(stock.ticker)
+      .getStockDetail(stock.ticker, undefined, stock.market)
       .then((data) => {
         if (!isCancelled) {
           setDetail(data);
@@ -156,20 +153,20 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
 
   // Find index of current stock in the active list
   const currentIndex = stock
-    ? stockList.findIndex((s) => s.id === stock.id || s.ticker === stock.ticker)
+    ? stockList.findIndex((candidate) => candidate.id === stock.id)
     : -1;
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex >= 0 && currentIndex < stockList.length - 1;
 
   const handlePrevStock = useCallback(() => {
     if (hasPrev && currentIndex > 0) {
-      onSelectStock(stockList[currentIndex - 1].ticker);
+      onSelectStock(stockList[currentIndex - 1]);
     }
   }, [hasPrev, currentIndex, stockList, onSelectStock]);
 
   const handleNextStock = useCallback(() => {
     if (hasNext && currentIndex < stockList.length - 1) {
-      onSelectStock(stockList[currentIndex + 1].ticker);
+      onSelectStock(stockList[currentIndex + 1]);
     }
   }, [hasNext, currentIndex, stockList, onSelectStock]);
 
@@ -309,7 +306,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
           {/* Right: Full detail page shortcut & Close button */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => onNavigateToFullDetail(stock.ticker)}
+              onClick={() => onNavigateToFullDetail(stock.ticker, stock.market)}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] bg-[#0071E3]/10 dark:bg-[#2997FF]/15 hover:bg-[#0071E3]/20 rounded-full transition-all cursor-pointer"
               title={t('viewFullAnalysis')}
             >
@@ -342,24 +339,15 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                     {stock.ticker}
                   </span>
 
-                  {stock.coreStatus === 'PASS' && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#34C759]">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>{t('pass')}</span>
-                    </span>
-                  )}
-                  {stock.coreStatus === 'FAIL' && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FF3B30]">
-                      <XCircle className="w-3.5 h-3.5" />
-                      <span>{t('fail')}</span>
-                    </span>
-                  )}
-                  {stock.coreStatus === 'N/A' && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FF9500]">
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      <span>{t('na')}</span>
-                    </span>
-                  )}
+                  {(() => {
+                    const gradeInfo = getCoreGradeInfo(stock, language);
+                    return (
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${gradeInfo.textClass}`} title={gradeInfo.desc}>
+                        <span className={`w-2 h-2 rounded-full ${gradeInfo.dotClass}`} />
+                        <span>{gradeInfo.label}</span>
+                      </span>
+                    );
+                  })()}
 
                   <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#86868B]">
                     <Calendar className="w-3 h-3 text-[#86868B]" />
@@ -401,22 +389,26 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
           {/* 2. Key KPI Strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {/* Core Status */}
-            <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
-              <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">{t('coreStatusLabel')}</span>
-              <div className="mt-2">
-                <span className={`text-xl sm:text-2xl font-bold font-mono tracking-tight block ${stock.coreStatus === 'PASS' ? 'text-[#34C759]' : stock.coreStatus === 'FAIL' ? 'text-[#FF3B30]' : 'text-[#86868B]'
-                  }`}>
-                  {stock.coreStatus}
-                </span>
-                <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06] font-mono tabular-nums">
-                  <span className="font-semibold text-[#34C759]">{stock.corePassCount}P</span>
-                  <span className="text-[#86868B] dark:text-[#636366] mx-1">/</span>
-                  <span className="font-semibold text-[#FF3B30]">{stock.coreFailCount}F</span>
-                  <span className="text-[#86868B] dark:text-[#636366] mx-1">/</span>
-                  <span className="font-semibold text-[#FF9500]">{stock.coreNaCount}NA</span>
+            {(() => {
+              const gradeInfo = getCoreGradeInfo(stock, language);
+              return (
+                <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
+                  <span className="text-[10px] sm:text-[11px] text-[#86868B] font-medium uppercase tracking-wider block">{t('coreStatusLabel')}</span>
+                  <div className="mt-2">
+                    <span className={`text-lg sm:text-xl font-bold tracking-tight block ${gradeInfo.textClass}`} title={gradeInfo.desc}>
+                      {gradeInfo.label}
+                    </span>
+                    <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06] font-mono tabular-nums">
+                      <span className="font-semibold text-[#34C759]">{stock.corePassCount}P</span>
+                      <span className="text-[#86868B] dark:text-[#636366] mx-1">/</span>
+                      <span className="font-semibold text-[#FF3B30]">{stock.coreFailCount}F</span>
+                      <span className="text-[#86868B] dark:text-[#636366] mx-1">/</span>
+                      <span className="font-semibold text-[#FF9500]">{stock.coreNaCount}NA</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Valuation Status */}
             <div className="bg-white dark:bg-[#1C1C1E] rounded-2xl p-4 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between">
@@ -426,7 +418,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                   {stock.valuationStatus.replace(/_/g, ' ')}
                 </span>
                 <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06]">
-                  DCF Owner Earnings
+                  Cash-Flow Proxy DCF
                 </div>
               </div>
             </div>
@@ -493,7 +485,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                   return (
                     <div
                       key={evalItem.ruleId}
-                      className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-xs flex flex-col justify-between space-y-2"
+                      className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between space-y-2"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-bold text-[#1D1D1F] dark:text-[#F5F5F7] truncate" title={ruleInfo.title}>
@@ -593,7 +585,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
           </button>
 
           <button
-            onClick={() => onNavigateToFullDetail(stock.ticker)}
+            onClick={() => onNavigateToFullDetail(stock.ticker, stock.market)}
             className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-bold text-white bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#2997FF] dark:hover:bg-[#0071E3] shadow-sm hover:shadow transition-all cursor-pointer"
           >
             <span>{t('viewFullAnalysis')}</span>

@@ -1,11 +1,13 @@
 import {
+  BatchRunStatusDTO,
+  Market,
   RuleListResponse,
   StockDetailDTO,
   StockListQuery,
   StockListResponse,
 } from '../types/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
 async function parseErrorMessage(response: Response): Promise<string> {
   const errorBody = await response.json().catch(() => null);
@@ -25,10 +27,7 @@ async function parseErrorMessage(response: Response): Promise<string> {
 
 export const stockApi = {
   async getRules(signal?: AbortSignal): Promise<RuleListResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/rules`, {
-      headers: { 'Content-Type': 'application/json' },
-      signal,
-    });
+    const response = await fetch(`${API_BASE_URL}/api/rules`, { signal });
 
     if (!response.ok) {
       throw new Error(await parseErrorMessage(response));
@@ -78,10 +77,7 @@ export const stockApi = {
       ? `${API_BASE_URL}/api/stocks?${queryString}`
       : `${API_BASE_URL}/api/stocks`;
 
-    const response = await fetch(url, {
-      headers: { 'Content-Type': 'application/json' },
-      signal,
-    });
+    const response = await fetch(url, { signal });
 
     if (!response.ok) {
       throw new Error(await parseErrorMessage(response));
@@ -92,7 +88,8 @@ export const stockApi = {
 
   async getStockDetail(
     ticker: string,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    market?: Market
   ): Promise<StockDetailDTO> {
     const trimmedTicker = ticker?.trim();
     if (!trimmedTicker) {
@@ -100,13 +97,53 @@ export const stockApi = {
     }
 
     const encodedTicker = encodeURIComponent(trimmedTicker);
-    const response = await fetch(
-      `${API_BASE_URL}/api/stocks/${encodedTicker}`,
-      {
-        headers: { 'Content-Type': 'application/json' },
-        signal,
-      }
-    );
+    const params = new URLSearchParams();
+    if (market) {
+      params.set('market', market);
+    }
+    const queryString = params.toString();
+    const url = `${API_BASE_URL}/api/stocks/${encodedTicker}${
+      queryString ? `?${queryString}` : ''
+    }`;
+    const response = await fetch(url, { signal });
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
+
+  async triggerBatchRefresh(signal?: AbortSignal): Promise<BatchRunStatusDTO> {
+    const response = await fetch(`${API_BASE_URL}/api/batch/refresh`, {
+      method: 'POST',
+      signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
+
+  async cancelBatchRefresh(signal?: AbortSignal): Promise<BatchRunStatusDTO> {
+    const response = await fetch(`${API_BASE_URL}/api/batch/cancel`, {
+      method: 'POST',
+      signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
+
+  async getBatchStatus(signal?: AbortSignal): Promise<BatchRunStatusDTO> {
+    const response = await fetch(`${API_BASE_URL}/api/batch/status`, {
+      signal,
+    });
 
     if (!response.ok) {
       throw new Error(await parseErrorMessage(response));

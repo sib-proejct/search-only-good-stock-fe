@@ -4,6 +4,232 @@
  */
 
 export interface paths {
+    "/api/admin/stocks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stocks */
+        get: operations["stocks_api_admin_stocks_get"];
+        put?: never;
+        /** Register Stock */
+        post: operations["register_stock_api_admin_stocks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/stocks/{stock_id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Stock */
+        post: operations["refresh_stock_api_admin_stocks__stock_id__refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/stocks/{stock_id}/refresh/{batch_run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Collection Status */
+        get: operations["collection_status_api_admin_stocks__stock_id__refresh__batch_run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/editor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Editor */
+        get: operations["editor_api_admin_editor_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/facts/annual_financial_fact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Annual Financial Fact */
+        get: operations["list_annual_financial_fact_api_admin_facts_annual_financial_fact_get"];
+        put?: never;
+        /** Create Annual Financial Fact */
+        post: operations["create_annual_financial_fact_api_admin_facts_annual_financial_fact_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/facts/annual_financial_fact/{row_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Annual Financial Fact */
+        patch: operations["patch_annual_financial_fact_api_admin_facts_annual_financial_fact__row_id__patch"];
+        trace?: never;
+    };
+    "/api/admin/facts/share_capital_fact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Share Capital Fact */
+        get: operations["list_share_capital_fact_api_admin_facts_share_capital_fact_get"];
+        put?: never;
+        /** Create Share Capital Fact */
+        post: operations["create_share_capital_fact_api_admin_facts_share_capital_fact_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/facts/share_capital_fact/{row_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Share Capital Fact */
+        patch: operations["patch_share_capital_fact_api_admin_facts_share_capital_fact__row_id__patch"];
+        trace?: never;
+    };
+    "/api/admin/facts/dilutive_security_fact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Dilutive Security Fact */
+        get: operations["list_dilutive_security_fact_api_admin_facts_dilutive_security_fact_get"];
+        put?: never;
+        /** Create Dilutive Security Fact */
+        post: operations["create_dilutive_security_fact_api_admin_facts_dilutive_security_fact_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/facts/dilutive_security_fact/{row_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Dilutive Security Fact */
+        patch: operations["patch_dilutive_security_fact_api_admin_facts_dilutive_security_fact__row_id__patch"];
+        trace?: never;
+    };
+    "/api/admin/facts/market_fact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Market Fact */
+        get: operations["list_market_fact_api_admin_facts_market_fact_get"];
+        put?: never;
+        /** Create Market Fact */
+        post: operations["create_market_fact_api_admin_facts_market_fact_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/facts/market_fact/{row_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Market Fact */
+        patch: operations["patch_market_fact_api_admin_facts_market_fact__row_id__patch"];
+        trace?: never;
+    };
+    "/api/admin/stocks/{stock_id}/valuation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Valuation */
+        post: operations["valuation_api_admin_stocks__stock_id__valuation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -89,10 +315,443 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/batch/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Batch Status
+         * @description Get the current execution state or latest result of the stock refresh batch.
+         */
+        get: operations["get_batch_status_api_batch_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/batch/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Batch Refresh
+         * @description Request a graceful stop after the current stock finishes.
+         */
+        post: operations["cancel_batch_refresh_api_batch_cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/batch/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Trigger Batch Refresh */
+        post: operations["trigger_batch_refresh_api_batch_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AdminStock */
+        AdminStock: {
+            /** Id */
+            id: number;
+            /** External Id */
+            external_id: string;
+            /** Ticker */
+            ticker: string;
+            /** Name */
+            name: string;
+            /** Market */
+            market: string;
+            /** Currency */
+            currency: string;
+            /** Current Price */
+            current_price?: number | null;
+            /** Market Cap */
+            market_cap?: number | null;
+            /**
+             * Collection Status
+             * @default NOT_COLLECTED
+             */
+            collection_status: string;
+            /** Collection Stage */
+            collection_stage?: string | null;
+            /** Collection Error */
+            collection_error?: string | null;
+            /** Batch Run Id */
+            batch_run_id?: number | null;
+            /**
+             * Valuation Status
+             * @default NOT_CALCULATED
+             */
+            valuation_status: string;
+            /** Growth Rate Cap */
+            growth_rate_cap?: string | null;
+            /** Growth Rate Floor */
+            growth_rate_floor?: string | null;
+        };
+        /** AnnualFactData */
+        AnnualFactData: {
+            /** Provider */
+            provider?: string | null;
+            /** Document Key */
+            document_key?: string | null;
+            /** Stock Id */
+            stock_id: number;
+            /** Fiscal Year */
+            fiscal_year: number;
+            /**
+             * Statement Scope
+             * @enum {string}
+             */
+            statement_scope: "CFS" | "OFS" | "CONSOLIDATED_US_GAAP";
+            /** Period Start */
+            period_start?: string | null;
+            /**
+             * Period End
+             * Format: date
+             */
+            period_end: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "KRW" | "USD";
+            /** Net Income Common */
+            net_income_common?: number | string | null;
+            /** Ebit */
+            ebit?: number | string | null;
+            /** Pre Tax Income */
+            pre_tax_income?: number | string | null;
+            /** Income Tax Expense */
+            income_tax_expense?: number | string | null;
+            /** Common Equity */
+            common_equity?: number | string | null;
+            /** Interest Bearing Debt */
+            interest_bearing_debt?: number | string | null;
+            /** Cash And Equivalents */
+            cash_and_equivalents?: number | string | null;
+            /** Total Liabilities */
+            total_liabilities?: number | string | null;
+            /** Interest Expense */
+            interest_expense?: number | string | null;
+            /** Interest Paid */
+            interest_paid?: number | string | null;
+            /** Interest Paid Classification */
+            interest_paid_classification?: ("CFO" | "NON_CFO" | "UNKNOWN") | null;
+            /** Cfo */
+            cfo?: number | string | null;
+            /** Reported Total Capex */
+            reported_total_capex?: number | string | null;
+            /** Tangible Capex */
+            tangible_capex?: number | string | null;
+            /** Intangible Capex */
+            intangible_capex?: number | string | null;
+            /** Diluted Eps */
+            diluted_eps?: number | string | null;
+            /** Diluted Shares */
+            diluted_shares?: number | string | null;
+            /** Depreciation Ppe */
+            depreciation_ppe?: number | string | null;
+            /** Share Based Compensation */
+            share_based_compensation?: number | string | null;
+            /** Amortization Intangibles */
+            amortization_intangibles?: number | string | null;
+            /** Depreciation Right Of Use */
+            depreciation_right_of_use?: number | string | null;
+            /** Impairment Loss */
+            impairment_loss?: number | string | null;
+            /** Provision Expense */
+            provision_expense?: number | string | null;
+            /** Deferred Tax Expense */
+            deferred_tax_expense?: number | string | null;
+            /** Unrealized Financial Loss */
+            unrealized_financial_loss?: number | string | null;
+            /** Equity Method Income */
+            equity_method_income?: number | string | null;
+            /** Unrealized Fx Gain */
+            unrealized_fx_gain?: number | string | null;
+            /** Unrealized Financial Gain */
+            unrealized_financial_gain?: number | string | null;
+            /** Impairment Reversal */
+            impairment_reversal?: number | string | null;
+            /** Provision Reversal */
+            provision_reversal?: number | string | null;
+            /** Deferred Tax Benefit */
+            deferred_tax_benefit?: number | string | null;
+            /** Gain On Ppe Disposal */
+            gain_on_ppe_disposal?: number | string | null;
+            /** Receivables Increase */
+            receivables_increase?: number | string | null;
+            /** Inventory Increase */
+            inventory_increase?: number | string | null;
+            /** Payables Increase */
+            payables_increase?: number | string | null;
+            /** Maintenance Capex Estimate */
+            maintenance_capex_estimate?: number | string | null;
+            /** Growth Capex Estimate */
+            growth_capex_estimate?: number | string | null;
+            /** Filed At */
+            filed_at?: string | null;
+            /** Is Amended */
+            is_amended?: boolean | null;
+        };
+        /** AnnualFactDataPatch */
+        AnnualFactDataPatch: {
+            /**
+             * Expected Updated At
+             * Format: date-time
+             */
+            expected_updated_at: string;
+            /** Provider */
+            provider?: string | null;
+            /** Document Key */
+            document_key?: string | null;
+            /** Stock Id */
+            stock_id?: number;
+            /** Fiscal Year */
+            fiscal_year?: number;
+            /**
+             * Statement Scope
+             * @enum {string}
+             */
+            statement_scope?: "CFS" | "OFS" | "CONSOLIDATED_US_GAAP";
+            /** Period Start */
+            period_start?: string | null;
+            /**
+             * Period End
+             * Format: date
+             */
+            period_end?: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency?: "KRW" | "USD";
+            /** Net Income Common */
+            net_income_common?: number | string | null;
+            /** Ebit */
+            ebit?: number | string | null;
+            /** Pre Tax Income */
+            pre_tax_income?: number | string | null;
+            /** Income Tax Expense */
+            income_tax_expense?: number | string | null;
+            /** Common Equity */
+            common_equity?: number | string | null;
+            /** Interest Bearing Debt */
+            interest_bearing_debt?: number | string | null;
+            /** Cash And Equivalents */
+            cash_and_equivalents?: number | string | null;
+            /** Total Liabilities */
+            total_liabilities?: number | string | null;
+            /** Interest Expense */
+            interest_expense?: number | string | null;
+            /** Interest Paid */
+            interest_paid?: number | string | null;
+            /** Interest Paid Classification */
+            interest_paid_classification?: ("CFO" | "NON_CFO" | "UNKNOWN") | null;
+            /** Cfo */
+            cfo?: number | string | null;
+            /** Reported Total Capex */
+            reported_total_capex?: number | string | null;
+            /** Tangible Capex */
+            tangible_capex?: number | string | null;
+            /** Intangible Capex */
+            intangible_capex?: number | string | null;
+            /** Diluted Eps */
+            diluted_eps?: number | string | null;
+            /** Diluted Shares */
+            diluted_shares?: number | string | null;
+            /** Depreciation Ppe */
+            depreciation_ppe?: number | string | null;
+            /** Share Based Compensation */
+            share_based_compensation?: number | string | null;
+            /** Amortization Intangibles */
+            amortization_intangibles?: number | string | null;
+            /** Depreciation Right Of Use */
+            depreciation_right_of_use?: number | string | null;
+            /** Impairment Loss */
+            impairment_loss?: number | string | null;
+            /** Provision Expense */
+            provision_expense?: number | string | null;
+            /** Deferred Tax Expense */
+            deferred_tax_expense?: number | string | null;
+            /** Unrealized Financial Loss */
+            unrealized_financial_loss?: number | string | null;
+            /** Equity Method Income */
+            equity_method_income?: number | string | null;
+            /** Unrealized Fx Gain */
+            unrealized_fx_gain?: number | string | null;
+            /** Unrealized Financial Gain */
+            unrealized_financial_gain?: number | string | null;
+            /** Impairment Reversal */
+            impairment_reversal?: number | string | null;
+            /** Provision Reversal */
+            provision_reversal?: number | string | null;
+            /** Deferred Tax Benefit */
+            deferred_tax_benefit?: number | string | null;
+            /** Gain On Ppe Disposal */
+            gain_on_ppe_disposal?: number | string | null;
+            /** Receivables Increase */
+            receivables_increase?: number | string | null;
+            /** Inventory Increase */
+            inventory_increase?: number | string | null;
+            /** Payables Increase */
+            payables_increase?: number | string | null;
+            /** Maintenance Capex Estimate */
+            maintenance_capex_estimate?: number | string | null;
+            /** Growth Capex Estimate */
+            growth_capex_estimate?: number | string | null;
+            /** Filed At */
+            filed_at?: string | null;
+            /** Is Amended */
+            is_amended?: boolean | null;
+        };
+        /** AnnualFactDataRead */
+        AnnualFactDataRead: {
+            /** Id */
+            id: number;
+            /** Source Type */
+            source_type: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Provider */
+            provider?: string | null;
+            /** Document Key */
+            document_key?: string | null;
+            /** Stock Id */
+            stock_id: number;
+            /** Fiscal Year */
+            fiscal_year: number;
+            /**
+             * Statement Scope
+             * @enum {string}
+             */
+            statement_scope: "CFS" | "OFS" | "CONSOLIDATED_US_GAAP";
+            /** Period Start */
+            period_start?: string | null;
+            /**
+             * Period End
+             * Format: date
+             */
+            period_end: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "KRW" | "USD";
+            /** Net Income Common */
+            net_income_common?: string | null;
+            /** Ebit */
+            ebit?: string | null;
+            /** Pre Tax Income */
+            pre_tax_income?: string | null;
+            /** Income Tax Expense */
+            income_tax_expense?: string | null;
+            /** Common Equity */
+            common_equity?: string | null;
+            /** Interest Bearing Debt */
+            interest_bearing_debt?: string | null;
+            /** Cash And Equivalents */
+            cash_and_equivalents?: string | null;
+            /** Total Liabilities */
+            total_liabilities?: string | null;
+            /** Interest Expense */
+            interest_expense?: string | null;
+            /** Interest Paid */
+            interest_paid?: string | null;
+            /** Interest Paid Classification */
+            interest_paid_classification?: ("CFO" | "NON_CFO" | "UNKNOWN") | null;
+            /** Cfo */
+            cfo?: string | null;
+            /** Reported Total Capex */
+            reported_total_capex?: string | null;
+            /** Tangible Capex */
+            tangible_capex?: string | null;
+            /** Intangible Capex */
+            intangible_capex?: string | null;
+            /** Diluted Eps */
+            diluted_eps?: string | null;
+            /** Diluted Shares */
+            diluted_shares?: string | null;
+            /** Depreciation Ppe */
+            depreciation_ppe?: string | null;
+            /** Share Based Compensation */
+            share_based_compensation?: string | null;
+            /** Amortization Intangibles */
+            amortization_intangibles?: string | null;
+            /** Depreciation Right Of Use */
+            depreciation_right_of_use?: string | null;
+            /** Impairment Loss */
+            impairment_loss?: string | null;
+            /** Provision Expense */
+            provision_expense?: string | null;
+            /** Deferred Tax Expense */
+            deferred_tax_expense?: string | null;
+            /** Unrealized Financial Loss */
+            unrealized_financial_loss?: string | null;
+            /** Equity Method Income */
+            equity_method_income?: string | null;
+            /** Unrealized Fx Gain */
+            unrealized_fx_gain?: string | null;
+            /** Unrealized Financial Gain */
+            unrealized_financial_gain?: string | null;
+            /** Impairment Reversal */
+            impairment_reversal?: string | null;
+            /** Provision Reversal */
+            provision_reversal?: string | null;
+            /** Deferred Tax Benefit */
+            deferred_tax_benefit?: string | null;
+            /** Gain On Ppe Disposal */
+            gain_on_ppe_disposal?: string | null;
+            /** Receivables Increase */
+            receivables_increase?: string | null;
+            /** Inventory Increase */
+            inventory_increase?: string | null;
+            /** Payables Increase */
+            payables_increase?: string | null;
+            /** Maintenance Capex Estimate */
+            maintenance_capex_estimate?: string | null;
+            /** Growth Capex Estimate */
+            growth_capex_estimate?: string | null;
+            /** Filed At */
+            filed_at?: string | null;
+            /** Is Amended */
+            is_amended?: boolean | null;
+        };
         /** AnnualFinancialInput */
         AnnualFinancialInput: {
             /** Fiscalyear */
@@ -132,11 +791,61 @@ export interface components {
             /** Dilutedshares */
             dilutedShares: string | null;
         };
+        /** AnnualOe */
+        AnnualOe: {
+            /** Fiscal Year */
+            fiscal_year: number;
+            /** Diluted Eps */
+            diluted_eps: string | null;
+            /** Diluted Shares */
+            diluted_shares: string | null;
+            /** Capex */
+            capex: string | null;
+            /** Capex Source */
+            capex_source: string;
+            /** Owner Earnings */
+            owner_earnings: string | null;
+            /** Selected */
+            selected: boolean;
+        };
         /**
          * Applicability
          * @enum {string}
          */
         Applicability: "ALL" | "NON_FINANCIAL";
+        /** BatchRunStatusDTO */
+        BatchRunStatusDTO: {
+            /** Batchrunid */
+            batchRunId?: number | null;
+            /** Status */
+            status: string;
+            /** Startedat */
+            startedAt?: string | null;
+            /** Finishedat */
+            finishedAt?: string | null;
+            /**
+             * Totalitems
+             * @default 0
+             */
+            totalItems: number;
+            /**
+             * Successitems
+             * @default 0
+             */
+            successItems: number;
+            /**
+             * Faileditems
+             * @default 0
+             */
+            failedItems: number;
+            /**
+             * Skippeditems
+             * @default 0
+             */
+            skippedItems: number;
+            /** Errormessage */
+            errorMessage?: string | null;
+        };
         /** BenchmarkPointInput */
         BenchmarkPointInput: {
             /**
@@ -163,7 +872,7 @@ export interface components {
             category: "REVIEW";
             status: components["schemas"]["CapitalActionStatus"];
             /** Historyyears */
-            historyYears: (5 | 3 | 1) | null;
+            historyYears: (5 | 4 | 3 | 2 | 1) | null;
             /** Periodstart */
             periodStart: string | null;
             /** Periodend */
@@ -180,11 +889,29 @@ export interface components {
          * @enum {string}
          */
         CapitalActionStatus: "REVIEW_DILUTION" | "STABLE" | "REVIEW_BUYBACK_PRICE" | "N/A";
+        /** CollectionStatus */
+        CollectionStatus: {
+            /** Batch Run Id */
+            batch_run_id: number;
+            /** Stock Id */
+            stock_id: number;
+            /** Status */
+            status: string;
+            /** Stage */
+            stage: string;
+            /** Error Detail */
+            error_detail?: string | null;
+        };
         /**
          * Confidence
          * @enum {string}
          */
         Confidence: "HIGH" | "MEDIUM" | "LOW";
+        /**
+         * CoreGradeFilter
+         * @enum {string}
+         */
+        CoreGradeFilter: "PASS" | "HOLD" | "FAIL" | "N/A";
         /**
          * CoreStatus
          * @enum {string}
@@ -197,6 +924,11 @@ export interface components {
         Currency: "USD" | "KRW";
         /** CurrentMarketInput */
         CurrentMarketInput: {
+            /**
+             * Sharesareestimated
+             * @default true
+             */
+            sharesAreEstimated: boolean;
             /**
              * Asof
              * Format: date-time
@@ -221,13 +953,19 @@ export interface components {
              */
             method: "OWNER_EARNINGS_DCF";
             /** Historyyears */
-            historyYears: (5 | 3 | 1) | null;
+            historyYears: (5 | 4 | 3 | 2 | 1) | null;
             /** Normalizedownerearnings */
             normalizedOwnerEarnings: number | null;
             /** Normalizedoeps */
             normalizedOeps: number | null;
+            /** Epsgrowth */
+            epsGrowth?: number | null;
+            /** Oepsgrowth */
+            oepsGrowth?: number | null;
             /** Rawgrowth */
             rawGrowth: number | null;
+            /** Growthfloor */
+            growthFloor: number | null;
             /** Growthcap */
             growthCap: number | null;
             /** Basegrowth */
@@ -260,6 +998,154 @@ export interface components {
             base: components["schemas"]["DcfScenarioDTO"];
             optimistic: components["schemas"]["DcfScenarioDTO"];
         };
+        /** DilutiveFactData */
+        DilutiveFactData: {
+            /** Provider */
+            provider?: string | null;
+            /** Document Key */
+            document_key?: string | null;
+            /** Stock Id */
+            stock_id: number;
+            /** Security Key */
+            security_key: string;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /**
+             * Security Type
+             * @enum {string}
+             */
+            security_type: "OPTION" | "RESTRICTED_STOCK" | "RSU" | "CB" | "CPS" | "BW" | "WARRANT" | "RIGHTS_ISSUE";
+            /** Quantity */
+            quantity?: number | string | null;
+            /** Potential Shares */
+            potential_shares?: number | string | null;
+            /** Exercise Or Conversion Price */
+            exercise_or_conversion_price?: number | string | null;
+            /** Price Currency */
+            price_currency?: ("KRW" | "USD") | null;
+            /** Exercisable From */
+            exercisable_from?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Conditions */
+            conditions?: string | null;
+        };
+        /** DilutiveFactDataPatch */
+        DilutiveFactDataPatch: {
+            /**
+             * Expected Updated At
+             * Format: date-time
+             */
+            expected_updated_at: string;
+            /** Provider */
+            provider?: string | null;
+            /** Document Key */
+            document_key?: string | null;
+            /** Stock Id */
+            stock_id?: number;
+            /** Security Key */
+            security_key?: string;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of?: string;
+            /**
+             * Security Type
+             * @enum {string}
+             */
+            security_type?: "OPTION" | "RESTRICTED_STOCK" | "RSU" | "CB" | "CPS" | "BW" | "WARRANT" | "RIGHTS_ISSUE";
+            /** Quantity */
+            quantity?: number | string | null;
+            /** Potential Shares */
+            potential_shares?: number | string | null;
+            /** Exercise Or Conversion Price */
+            exercise_or_conversion_price?: number | string | null;
+            /** Price Currency */
+            price_currency?: ("KRW" | "USD") | null;
+            /** Exercisable From */
+            exercisable_from?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Conditions */
+            conditions?: string | null;
+        };
+        /** DilutiveFactDataRead */
+        DilutiveFactDataRead: {
+            /** Id */
+            id: number;
+            /** Source Type */
+            source_type: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Provider */
+            provider?: string | null;
+            /** Document Key */
+            document_key?: string | null;
+            /** Stock Id */
+            stock_id: number;
+            /** Security Key */
+            security_key: string;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /**
+             * Security Type
+             * @enum {string}
+             */
+            security_type: "OPTION" | "RESTRICTED_STOCK" | "RSU" | "CB" | "CPS" | "BW" | "WARRANT" | "RIGHTS_ISSUE";
+            /** Quantity */
+            quantity?: string | null;
+            /** Potential Shares */
+            potential_shares?: string | null;
+            /** Exercise Or Conversion Price */
+            exercise_or_conversion_price?: string | null;
+            /** Price Currency */
+            price_currency?: ("KRW" | "USD") | null;
+            /** Exercisable From */
+            exercisable_from?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Conditions */
+            conditions?: string | null;
+        };
+        /** EditorField */
+        EditorField: {
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "text" | "number" | "date" | "boolean" | "select";
+            /** Required */
+            required: boolean;
+            /** Choices */
+            choices?: string[];
+        };
+        /** EditorTable */
+        EditorTable: {
+            /**
+             * Table
+             * @enum {string}
+             */
+            table: "annual_financial_fact" | "share_capital_fact" | "dilutive_security_fact" | "market_fact";
+            /** Fields */
+            fields: components["schemas"]["EditorField"][];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -289,6 +1175,103 @@ export interface components {
          * @enum {string}
          */
         Market: "NASDAQ" | "NYSE" | "KOSPI" | "KOSDAQ";
+        /** MarketFactData */
+        MarketFactData: {
+            /** Provider */
+            provider?: string | null;
+            /** Document Key */
+            document_key?: string | null;
+            /** Stock Id */
+            stock_id?: number | null;
+            /** Series Key */
+            series_key: string;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Currency */
+            currency?: ("KRW" | "USD") | null;
+            /** Current Price */
+            current_price?: number | string | null;
+            /** Observed Market Cap */
+            observed_market_cap?: number | string | null;
+            /** Ten Year Bond Yield */
+            ten_year_bond_yield?: number | string | null;
+            /** Benchmark Index Value */
+            benchmark_index_value?: number | string | null;
+        };
+        /** MarketFactDataPatch */
+        MarketFactDataPatch: {
+            /**
+             * Expected Updated At
+             * Format: date-time
+             */
+            expected_updated_at: string;
+            /** Provider */
+            provider?: string | null;
+            /** Document Key */
+            document_key?: string | null;
+            /** Stock Id */
+            stock_id?: number | null;
+            /** Series Key */
+            series_key?: string;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of?: string;
+            /** Currency */
+            currency?: ("KRW" | "USD") | null;
+            /** Current Price */
+            current_price?: number | string | null;
+            /** Observed Market Cap */
+            observed_market_cap?: number | string | null;
+            /** Ten Year Bond Yield */
+            ten_year_bond_yield?: number | string | null;
+            /** Benchmark Index Value */
+            benchmark_index_value?: number | string | null;
+        };
+        /** MarketFactDataRead */
+        MarketFactDataRead: {
+            /** Id */
+            id: number;
+            /** Source Type */
+            source_type: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Provider */
+            provider?: string | null;
+            /** Document Key */
+            document_key?: string | null;
+            /** Stock Id */
+            stock_id?: number | null;
+            /** Series Key */
+            series_key: string;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Currency */
+            currency?: ("KRW" | "USD") | null;
+            /** Current Price */
+            current_price?: string | null;
+            /** Observed Market Cap */
+            observed_market_cap?: string | null;
+            /** Ten Year Bond Yield */
+            ten_year_bond_yield?: string | null;
+            /** Benchmark Index Value */
+            benchmark_index_value?: string | null;
+        };
         /**
          * MetricUnit
          * @enum {string}
@@ -374,7 +1357,7 @@ export interface components {
             category: "CORE" | "AUXILIARY";
             status: components["schemas"]["RuleStatus"];
             /** Historyyears */
-            historyYears: (5 | 3 | 1) | null;
+            historyYears: (5 | 4 | 3 | 2 | 1) | null;
             /** Periodstart */
             periodStart: string | null;
             /** Periodend */
@@ -404,6 +1387,121 @@ export interface components {
             /** Value */
             value: number;
             unit: components["schemas"]["MetricUnit"];
+        };
+        /** ShareFactData */
+        ShareFactData: {
+            /** Provider */
+            provider?: string | null;
+            /** Document Key */
+            document_key?: string | null;
+            /** Stock Id */
+            stock_id: number;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Record Key */
+            record_key: string;
+            /** Outstanding Shares */
+            outstanding_shares?: number | string | null;
+            /** Issued Shares */
+            issued_shares?: number | string | null;
+            /** Authorized Shares */
+            authorized_shares?: number | string | null;
+            /** Treasury Shares */
+            treasury_shares?: number | string | null;
+            /** Current Diluted Shares Estimate */
+            current_diluted_shares_estimate?: number | string | null;
+            /** Event Type */
+            event_type?: ("SPLIT" | "REVERSE_SPLIT" | "RIGHTS_ISSUE" | "BUYBACK" | "CANCELLATION") | null;
+            /** Event Shares */
+            event_shares?: number | string | null;
+            /** Split Ratio */
+            split_ratio?: number | string | null;
+        };
+        /** ShareFactDataPatch */
+        ShareFactDataPatch: {
+            /**
+             * Expected Updated At
+             * Format: date-time
+             */
+            expected_updated_at: string;
+            /** Provider */
+            provider?: string | null;
+            /** Document Key */
+            document_key?: string | null;
+            /** Stock Id */
+            stock_id?: number;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of?: string;
+            /** Record Key */
+            record_key?: string;
+            /** Outstanding Shares */
+            outstanding_shares?: number | string | null;
+            /** Issued Shares */
+            issued_shares?: number | string | null;
+            /** Authorized Shares */
+            authorized_shares?: number | string | null;
+            /** Treasury Shares */
+            treasury_shares?: number | string | null;
+            /** Current Diluted Shares Estimate */
+            current_diluted_shares_estimate?: number | string | null;
+            /** Event Type */
+            event_type?: ("SPLIT" | "REVERSE_SPLIT" | "RIGHTS_ISSUE" | "BUYBACK" | "CANCELLATION") | null;
+            /** Event Shares */
+            event_shares?: number | string | null;
+            /** Split Ratio */
+            split_ratio?: number | string | null;
+        };
+        /** ShareFactDataRead */
+        ShareFactDataRead: {
+            /** Id */
+            id: number;
+            /** Source Type */
+            source_type: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Provider */
+            provider?: string | null;
+            /** Document Key */
+            document_key?: string | null;
+            /** Stock Id */
+            stock_id: number;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Record Key */
+            record_key: string;
+            /** Outstanding Shares */
+            outstanding_shares?: string | null;
+            /** Issued Shares */
+            issued_shares?: string | null;
+            /** Authorized Shares */
+            authorized_shares?: string | null;
+            /** Treasury Shares */
+            treasury_shares?: string | null;
+            /** Current Diluted Shares Estimate */
+            current_diluted_shares_estimate?: string | null;
+            /** Event Type */
+            event_type?: ("SPLIT" | "REVERSE_SPLIT" | "RIGHTS_ISSUE" | "BUYBACK" | "CANCELLATION") | null;
+            /** Event Shares */
+            event_shares?: string | null;
+            /** Split Ratio */
+            split_ratio?: string | null;
         };
         /**
          * SortOrder
@@ -490,6 +1588,12 @@ export interface components {
             /** Offset */
             offset: number;
         };
+        /** StockRegistration */
+        StockRegistration: {
+            market: components["schemas"]["Market"];
+            /** Ticker */
+            ticker: string;
+        };
         /**
          * StockSort
          * @enum {string}
@@ -556,6 +1660,124 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /** ValuationRequest */
+        "ValuationRequest-Input": {
+            /**
+             * Publish
+             * @default false
+             */
+            publish: boolean;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /**
+             * Statement Scope
+             * @default CFS
+             * @enum {string}
+             */
+            statement_scope: "CFS" | "OFS" | "CONSOLIDATED_US_GAAP";
+            /**
+             * Capex Mode
+             * @default TOTAL
+             * @enum {string}
+             */
+            capex_mode: "MAINTENANCE" | "TOTAL";
+            /**
+             * Normalization Years
+             * @default 5
+             * @enum {integer}
+             */
+            normalization_years: 1 | 2 | 3 | 4 | 5;
+            /**
+             * Normalization Method
+             * @default CONSERVATIVE
+             * @enum {string}
+             */
+            normalization_method: "CONSERVATIVE" | "MEAN";
+            /**
+             * Growth Method
+             * @default LOWER_BOUND
+             * @enum {string}
+             */
+            growth_method: "LOWER_BOUND" | "OEPS_WEIGHTED" | "EQUAL_BLEND";
+            /**
+             * Growth Rate Cap
+             * @default 0.20
+             */
+            growth_rate_cap: number | string;
+            /** Growth Rate Floor */
+            growth_rate_floor?: number | string | null;
+        };
+        /** ValuationRequest */
+        "ValuationRequest-Output": {
+            /**
+             * Publish
+             * @default false
+             */
+            publish: boolean;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /**
+             * Statement Scope
+             * @default CFS
+             * @enum {string}
+             */
+            statement_scope: "CFS" | "OFS" | "CONSOLIDATED_US_GAAP";
+            /**
+             * Capex Mode
+             * @default TOTAL
+             * @enum {string}
+             */
+            capex_mode: "MAINTENANCE" | "TOTAL";
+            /**
+             * Normalization Years
+             * @default 5
+             * @enum {integer}
+             */
+            normalization_years: 1 | 2 | 3 | 4 | 5;
+            /**
+             * Normalization Method
+             * @default CONSERVATIVE
+             * @enum {string}
+             */
+            normalization_method: "CONSERVATIVE" | "MEAN";
+            /**
+             * Growth Method
+             * @default LOWER_BOUND
+             * @enum {string}
+             */
+            growth_method: "LOWER_BOUND" | "OEPS_WEIGHTED" | "EQUAL_BLEND";
+            /**
+             * Growth Rate Cap
+             * @default 0.20
+             */
+            growth_rate_cap: string;
+            /** Growth Rate Floor */
+            growth_rate_floor?: string | null;
+        };
+        /** ValuationResponse */
+        ValuationResponse: {
+            /**
+             * Published
+             * @default false
+             */
+            published: boolean;
+            options: components["schemas"]["ValuationRequest-Output"];
+            /** Annual Oe */
+            annual_oe: components["schemas"]["AnnualOe"][];
+            dcf?: components["schemas"]["DcfResultDTO"] | null;
+            /** Issues */
+            issues?: string[];
+            /** Sources */
+            sources?: {
+                [key: string]: string | null;
+            };
+        };
         /**
          * ValuationStatus
          * @enum {string}
@@ -570,6 +1792,585 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    stocks_api_admin_stocks_get: {
+        parameters: {
+            query?: {
+                search?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminStock"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_stock_api_admin_stocks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StockRegistration"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminStock"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_stock_api_admin_stocks__stock_id__refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stock_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    collection_status_api_admin_stocks__stock_id__refresh__batch_run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stock_id: number;
+                batch_run_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    editor_api_admin_editor_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EditorTable"][];
+                };
+            };
+        };
+    };
+    list_annual_financial_fact_api_admin_facts_annual_financial_fact_get: {
+        parameters: {
+            query: {
+                stock_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnualFactDataRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_annual_financial_fact_api_admin_facts_annual_financial_fact_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnualFactData"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnualFactDataRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_annual_financial_fact_api_admin_facts_annual_financial_fact__row_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                row_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnualFactDataPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnualFactDataRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_share_capital_fact_api_admin_facts_share_capital_fact_get: {
+        parameters: {
+            query: {
+                stock_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShareFactDataRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_share_capital_fact_api_admin_facts_share_capital_fact_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShareFactData"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShareFactDataRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_share_capital_fact_api_admin_facts_share_capital_fact__row_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                row_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShareFactDataPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShareFactDataRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_dilutive_security_fact_api_admin_facts_dilutive_security_fact_get: {
+        parameters: {
+            query: {
+                stock_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DilutiveFactDataRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_dilutive_security_fact_api_admin_facts_dilutive_security_fact_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DilutiveFactData"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DilutiveFactDataRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_dilutive_security_fact_api_admin_facts_dilutive_security_fact__row_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                row_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DilutiveFactDataPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DilutiveFactDataRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_market_fact_api_admin_facts_market_fact_get: {
+        parameters: {
+            query: {
+                stock_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketFactDataRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_market_fact_api_admin_facts_market_fact_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarketFactData"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketFactDataRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_market_fact_api_admin_facts_market_fact__row_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                row_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarketFactDataPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketFactDataRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    valuation_api_admin_stocks__stock_id__valuation_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stock_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValuationRequest-Input"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValuationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_check_health_get: {
         parameters: {
             query?: never;
@@ -645,7 +2446,7 @@ export interface operations {
                 search?: string | null;
                 market?: components["schemas"]["Market"] | null;
                 sector?: string | null;
-                coreStatus?: components["schemas"]["CoreStatus"] | null;
+                coreStatus?: components["schemas"]["CoreGradeFilter"] | null;
                 valuationStatus?: components["schemas"]["ValuationStatus"] | null;
                 sort?: components["schemas"]["StockSort"];
                 order?: components["schemas"]["SortOrder"];
@@ -680,7 +2481,9 @@ export interface operations {
     };
     get_stock_api_stocks__ticker__get: {
         parameters: {
-            query?: never;
+            query?: {
+                market?: components["schemas"]["Market"] | null;
+            };
             header?: never;
             path: {
                 ticker: string;
@@ -705,6 +2508,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_batch_status_api_batch_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchRunStatusDTO"];
+                };
+            };
+        };
+    };
+    cancel_batch_refresh_api_batch_cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchRunStatusDTO"];
+                };
+            };
+        };
+    };
+    trigger_batch_refresh_api_batch_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchRunStatusDTO"];
                 };
             };
         };

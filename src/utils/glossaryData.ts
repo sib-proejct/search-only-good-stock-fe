@@ -16,16 +16,16 @@ export const getBuffettRuleGlossary = (ruleId: string, language: Language): Help
     case 'sustained_roe':
       return {
         title: isKo ? '지속 가능한 자기자본이익률 (Sustained ROE)' : 'Sustained Return on Equity (ROE)',
-        badge: isKo ? '핵심 7원칙 #1' : 'CORE RULE #1',
+        badge: isKo ? '핵심 규칙' : 'CORE RULE',
         description: isKo
           ? '주주가 투자한 자기자본(순자산)을 바탕으로 기업이 얼마나 효율적으로 순이익을 창출했는지를 나타내는 핵심 수익성 지표입니다.'
           : 'Measures how efficiently a company generates profits from shareholders’ equity.',
         whyItMatters: isKo
-          ? '단순 매출 규모보다 중요한 것은 "주주 자본 1원당 얼마의 이익을 남기는가"입니다. 5년 연속 15% 이상을 유지하는 기업은 강력한 경제적 해자(Moat)를 보유했을 확률이 높습니다.'
+          ? '단순 매출 규모보다 중요한 것은 "주주 자본 1원당 얼마의 이익을 남기는가"입니다. 3년 연속 10% 이상을 유지하는 기업은 강력한 경제적 해자(Moat)를 보유했을 확률이 높습니다.'
           : 'High, consistent ROE indicates a durable competitive advantage (economic moat).',
         formula: isKo
-          ? 'ROE = 당기순이익 ÷ 평균 자기자본 (5개년 전 기간 매년 ≥ 15%)'
-          : 'ROE = Net Income / Average Common Equity (Every year ≥ 15%)',
+          ? 'ROE = 당기순이익 ÷ 평균 자기자본 (3개년 전 기간 매년 ≥ 10%)'
+          : 'ROE = Net Income / Average Common Equity (Every year ≥ 10%)',
         quote: {
           text: isKo
             ? '“우리는 회사의 규모로 실적을 평가하지 않고 주당 가치 증가율로 평가합니다. 높은 자본이익률을 지속하는 기업이 핵심입니다.”'
@@ -37,7 +37,7 @@ export const getBuffettRuleGlossary = (ruleId: string, language: Language): Help
     case 'sustained_roic':
       return {
         title: isKo ? '투하자본이익률 (Sustained ROIC)' : 'Sustained ROIC',
-        badge: isKo ? '핵심 7원칙 #2' : 'CORE RULE #2',
+        badge: isKo ? '핵심 규칙' : 'CORE RULE',
         description: isKo
           ? '부채와 자본 조달 방식에 따른 왜곡 없이, 실제 영업활동에 투입된 총 자본(투하자본) 대비 세후 영업이익 창출 효율을 평가합니다.'
           : 'Measures return generated on all operating capital invested in the core business, independent of debt financing leverage.',
@@ -45,7 +45,7 @@ export const getBuffettRuleGlossary = (ruleId: string, language: Language): Help
           ? '부채를 과도하게 끌어써서 ROE만 겉보기에 높인 부실기업을 걸러내고, 본업의 순수한 자본운용 능력을 검증합니다.'
           : 'Filters out companies that artificially inflate ROE through high debt leverage.',
         formula: isKo
-          ? 'ROIC = 세후영업이익(NOPAT) ÷ 평균 투하자본(IC) (5개년 전 기간 매년 ≥ 10%)'
+          ? 'ROIC = 세후영업이익(NOPAT) ÷ 평균 투하자본(IC) (3개년 전 기간 매년 ≥ 10%)'
           : 'ROIC = NOPAT / Average Invested Capital (Every year ≥ 10%)',
         quote: {
           text: isKo
@@ -58,7 +58,7 @@ export const getBuffettRuleGlossary = (ruleId: string, language: Language): Help
     case 'debt_safety':
       return {
         title: isKo ? '재무 안전성 & 이자보상배율 (Debt Safety)' : 'Conservative Debt Safety',
-        badge: isKo ? '핵심 7원칙 #3' : 'CORE RULE #3',
+        badge: isKo ? '핵심 규칙' : 'CORE RULE',
         description: isKo
           ? '기업의 부채비율이 건전한 수준인지, 그리고 영업이익으로 이자비용을 충분히 감당할 수 있는지를 평가합니다.'
           : 'Evaluates financial leverage safety and ability to service debt payments easily with operating earnings.',
@@ -66,8 +66,8 @@ export const getBuffettRuleGlossary = (ruleId: string, language: Language): Help
           ? '아무리 뛰어난 비즈니스 모델이라도 과도한 차입금은 불황기에 파산 위험을 초래합니다. 워런 버핏은 보수적인 무차입 혹은 최소 차입 경영을 극히 선호합니다.'
           : 'Excessive leverage is the primary cause of corporate distress during downturns.',
         formula: isKo
-          ? '부채비율 ≤ 100% AND 이자보상배율(EBIT/이자) ≥ 5.0배 (이자비용 0일 경우 통과)'
-          : 'Total Debt / Equity ≤ 100% & EBIT / Interest Paid ≥ 5.0x',
+          ? '부채비율 ≤ 150% AND 이자보상배율(EBIT/이자) ≥ 3.0배 (이자 0 및 EBIT 양수일 때 이자보상 조건 충족)'
+          : 'Total Debt / Equity ≤ 150% & EBIT / Interest Paid ≥ 3.0x',
         quote: {
           text: isKo
             ? '“우리는 밤에 편안히 잠들 수 있는 수준 이하로만 부채를 유지합니다. 과도한 레버리지는 언제나 위험을 부릅니다.”'
@@ -79,7 +79,7 @@ export const getBuffettRuleGlossary = (ruleId: string, language: Language): Help
     case 'retained_value_test':
       return {
         title: isKo ? '1달러 유보이익 가치창출 (1-Dollar Retained Value Test)' : '1-Dollar Retained Value Test',
-        badge: isKo ? '핵심 7원칙 #4' : 'CORE RULE #4',
+        badge: isKo ? '보조 규칙' : 'AUXILIARY RULE',
         description: isKo
           ? '기업이 배당으로 지급하지 않고 사내에 유보한 이익 1달러당 1달러 이상의 시장가치를 창출했는지를 검증합니다.'
           : 'Tests whether every dollar of earnings retained by the company creates at least one dollar of market value for shareholders.',
@@ -100,7 +100,7 @@ export const getBuffettRuleGlossary = (ruleId: string, language: Language): Help
     case 'capital_light_business':
       return {
         title: isKo ? '설비투자 효율성 (Capital-Light Business)' : 'Capital-Light Business',
-        badge: isKo ? '핵심 7원칙 #5' : 'CORE RULE #5',
+        badge: isKo ? '보조 규칙' : 'AUXILIARY RULE',
         description: isKo
           ? '기업이 영업활동으로 벌어들인 현금(CFO) 중 공장, 기계, 설비 유지보수(CapEx)에 소모되는 비중을 측정합니다.'
           : 'Measures how much operating cash flow must be poured back into capital expenditures just to maintain competitiveness.',
@@ -108,8 +108,8 @@ export const getBuffettRuleGlossary = (ruleId: string, language: Language): Help
           ? '매년 번 돈의 대부분을 설비투자에 쏟아부어야 하는 기업은 주주에게 환원할 잉여현금(FCF)이 남지 않습니다. 적은 자본으로 막대한 현금을 창출하는 기업이 최고의 자산입니다.'
           : 'Great businesses generate abundant free cash flow without consuming large capital investments.',
         formula: isKo
-          ? '5개년 누적 CapEx ÷ 5개년 누적 영업현금흐름(CFO) ≤ 50%'
-          : '5Y Cumulative CapEx / 5Y Cumulative CFO ≤ 50%',
+          ? '3개년 누적 CapEx ÷ 3개년 누적 영업현금흐름(CFO) ≤ 70%'
+          : '3Y Cumulative CapEx / 3Y Cumulative CFO ≤ 70%',
         quote: {
           text: isKo
             ? '“최고의 기업은 많은 자본을 추가로 들이지 않고도 높은 수익을 내며 성장하는 기업입니다.”'
@@ -121,46 +121,46 @@ export const getBuffettRuleGlossary = (ruleId: string, language: Language): Help
     case 'proven_earnings_power':
       return {
         title: isKo ? '검증된 실적 이익창출력 (Proven Earnings Power)' : 'Proven Earnings Power',
-        badge: isKo ? '핵심 7원칙 #6' : 'CORE RULE #6',
+        badge: isKo ? '핵심 규칙' : 'CORE RULE',
         description: isKo
-          ? '경기 변동이나 일시적 위기 속에서도 5년 내내 단 한 번의 적자 없이 영업이익(EBIT)과 당기순이익 흑자를 지켜냈는지 점검합니다.'
+          ? '경기 변동이나 일시적 위기 속에서도 3년 내내 단 한 번의 적자 없이 영업이익(EBIT)과 당기순이익 흑자를 지켜냈는지 점검합니다.'
           : 'Verifies consecutive profitability across all 5 historical years without any operating or net losses.',
         whyItMatters: isKo
           ? '워런 버핏의 제1원칙은 "돈을 잃지 마라", 제2원칙은 "제1원칙을 잊지 마라"입니다. 일관된 흑자 기조는 예측 불가능한 미래의 안전판 역할을 합니다.'
           : 'Rule #1 is never lose money. Consistent profitability across all cycles protects principal.',
         formula: isKo
-          ? '5개년 전 기간 매년 영업이익(EBIT) > 0 AND 당기순이익 > 0'
+          ? '3개년 전 기간 매년 영업이익(EBIT) > 0 AND 당기순이익 > 0'
           : 'EBIT > 0 and Net Income > 0 in all 5 historical years',
       };
 
     case 'eps_growth':
       return {
         title: isKo ? 'EPS 복리 성장률 (EPS Compound Growth)' : 'EPS Compound Growth',
-        badge: isKo ? '핵심 7원칙 #7' : 'CORE RULE #7',
+        badge: isKo ? '핵심 규칙' : 'CORE RULE',
         description: isKo
-          ? '1주당 벌어들이는 순이익(희석 EPS)이 지난 5년간 연평균(CAGR) 7% 이상 꾸준히 성장했는지를 평가합니다.'
-          : 'Evaluates whether diluted Earnings Per Share has compounded at an annualized rate of 7.0%+ over 5 years.',
+          ? '최근 3개 회계연도의 시작·종료 희석 EPS로 계산한 연환산 성장률이 8% 이상인지 평가합니다. 경과 기간은 2년이며, 매년 증가했음을 뜻하지는 않습니다.'
+          : 'Checks whether diluted EPS grew at an annualized rate of at least 8% across 3 consecutive fiscal years (2 elapsed years). This does not require growth every year.',
         whyItMatters: isKo
-          ? '총 이익이 늘더라도 주식수가 남발되면 주당 가치는 정체됩니다. 주주 입장에서 실질적인 성장은 오직 "주당순이익(EPS)의 성장"입니다.'
-          : 'Per-share earnings growth is the true driver of long-term intrinsic value expansion.',
+          ? '희석을 반영한 주당 이익의 성장을 확인합니다. 자사주 매입·일회성 이익·낮은 시작 EPS의 영향을 수익력·현금품질 규칙과 함께 검토합니다.'
+          : 'Measures per-share earnings growth after dilution. Review buybacks, one-off gains and a low starting EPS alongside earnings power and cash quality.',
         formula: isKo
-          ? '5개년 희석 EPS 연평균 복리성장률(CAGR) ≥ 7.0%'
-          : '5-Year Diluted EPS CAGR ≥ 7.0%',
+          ? '시작·종료 EPS > 0, (종료 EPS ÷ 시작 EPS)^(1/2) − 1 ≥ 8% (3개 회계연도)'
+          : 'Start/end EPS > 0; (end EPS / start EPS)^(1/2) − 1 ≥ 8% across 3 fiscal years',
       };
 
     case 'owner_earnings_quality':
       return {
         title: isKo ? '주주이익 현금품질 (Owner Earnings Quality)' : 'Owner Earnings Quality',
-        badge: isKo ? '보조 원칙' : 'SUPPLEMENTAL RULE',
+        badge: isKo ? '핵심 규칙' : 'CORE RULE',
         description: isKo
           ? '회계상 당기순이익이 실제 현금 형태의 주주이익(Owner Earnings)으로 얼마나 충실히 전환되는지를 검증합니다.'
           : 'Checks if accounting net income translates effectively into real, unencumbered cash for owners.',
         whyItMatters: isKo
-          ? '장부상 이익만 있고 실제 현금이 들어오지 않는 기업(매출채권 급증 등)은 분식 위험이 있습니다. 현금 전환율 70% 이상인 기업이 정직한 이익을 냅니다.'
-          : 'High cash conversion guarantees high earnings quality and low accounting risk.',
+          ? '장부상 이익만 있고 실제 현금이 들어오지 않는 기업(매출채권 급증 등)은 분식 위험이 있습니다. 현금 전환율 60% 이상을 요구하되 공시 품질도 함께 확인합니다.'
+          : 'Cash conversion helps assess earnings quality alongside the underlying disclosures.',
         formula: isKo
-          ? '주주이익(순이익 + 감가상각 - 유지CapEx) > 0 AND 현금전환율 ≥ 70%'
-          : 'Owner Earnings > 0 & Cash Conversion Ratio ≥ 70%',
+          ? '최근·중앙값 주주이익(이자 분류를 조정한 CFO − 유형·무형 투자지출) > 0, 누적 순이익 > 0, 현금전환율 ≥ 60%'
+          : 'Owner Earnings > 0 & Cash Conversion Ratio ≥ 60%',
       };
 
     case 'owner_earnings_yield':
@@ -196,8 +196,8 @@ export const DCF_GLOSSARY = {
       title: isKo ? '10개년 주주이익 DCF 가치평가 모델' : '10-Year Owner Earnings DCF Valuation',
       badge: isKo ? '내재가치 평가' : 'VALUATION MODEL',
       description: isKo
-        ? '워런 버핏의 "주주이익(Owner Earnings = 영업현금흐름 - 총 CapEx)"을 바탕으로, 향후 10년간 기업이 창출할 현금흐름을 주주요구수익률로 할인하여 주당 본질가치(Intrinsic Value)를 산출하는 보수적 가치평가 모델입니다 (성장 CapEx까지 전액 차감된 보수적 현금흐름 하한선 기준).'
-        : 'Warren Buffett’s discounted cash flow model using Owner Earnings discounted by the required cost of equity to calculate a conservative baseline intrinsic value per share.',
+        ? '이자 조정 영업현금흐름에서 유형·무형자산 투자지출을 차감한 대용치를 할인합니다. 유지투자와 성장투자, 주식보상·순차입은 별도로 조정하지 않으며, 버핏의 Owner Earnings를 정확히 재현하거나 가치 하한선을 보장하는 모델은 아닙니다.'
+        : 'Discounts an interest-adjusted CFO proxy after tangible and intangible investment. Maintenance investment, stock compensation and net borrowing are not separately adjusted; this is not a guaranteed lower bound.',
       whyItMatters: isKo
         ? '주가는 단기적으로 시장의 인기투표에 의해 등락하지만, 장기적으로는 기업이 평생 벌어들일 현금의 현재가치(내재가치)로 수렴합니다.'
         : 'Price is what you pay; value is what you get. Stock prices ultimately track per-share cash flow generation.',
@@ -218,14 +218,14 @@ export const DCF_GLOSSARY = {
       title: isKo ? '보수적 추정 내재가치 (Conservative IV)' : 'Conservative Intrinsic Value',
       badge: isKo ? '적정주가 추정' : 'FAIR VALUE',
       description: isKo
-        ? '미래의 불확실성을 감안하여 기본 성장률 대비 3.0%p 차감된 보수적 성장률(하한 0%)과 주주요구수익률(할인율)을 적용해 산출한 주당 적정 본질가치입니다.'
-        : 'Estimated intrinsic value per share applying a conservative growth assumption (base growth minus 3.0%p, floored at 0%) and required discount rate.',
+        ? '미래의 불확실성을 감안하여 기본 성장률 대비 3.0%p 차감된 보수적 성장률(음수 허용)과 주주요구수익률(할인율)을 적용해 산출한 주당 적정 본질가치입니다.'
+        : 'Estimated intrinsic value per share applying a conservative growth assumption (base growth minus 3.0%p, negative growth allowed) and required discount rate.',
       whyItMatters: isKo
         ? '과도한 낙관론으로 인한 투자 손실을 막기 위해, 최악의 경제 환경에서도 기업이 창출할 수 있는 안전한 가치를 기준점으로 삼습니다.'
         : 'Prevents overpaying by grounding valuation in pessimistic/modest growth realities.',
       tip: isKo
-        ? '현재 주가가 이 보수적 내재가치보다도 20% 이상 저렴할 때 가장 안전한 매수 기회가 됩니다.'
-        : 'A buying opportunity exists when price trades at a 20%+ discount to this conservative value.',
+        ? '20% 할인은 모델의 기준값입니다. 데이터와 핵심 규칙을 함께 확인해야 합니다.'
+        : 'A 20% discount is a model threshold; validate data and core rules as well.',
     };
   },
   marginOfSafety: (language: Language): HelpPopoverContent => {
@@ -237,7 +237,7 @@ export const DCF_GLOSSARY = {
         ? '추정된 기업의 내재가치와 현재 시장 주가 사이의 할인율 격차를 의미합니다.'
         : 'The percentage discount between estimated intrinsic value and current market price.',
       whyItMatters: isKo
-        ? '인간의 예측은 언제나 틀릴 수 있습니다. 내재가치 대비 20% 이상 저렴한 가격에 매수하면, 분석에 실수가 있거나 불황이 닥쳐도 원금을 안전하게 지킬 수 있습니다.'
+        ? '할인 폭은 성장률·현금흐름·주식 수 가정에 따라 달라집니다. 20% 할인도 원금 보장이나 매수 추천을 의미하지 않습니다.'
         : 'Provides a cushion against valuation miscalculations, unexpected industry downturns, or macroeconomic shocks.',
       formula: isKo
         ? '안전마진 = (보수적 내재가치 - 현재주가) ÷ 보수적 내재가치'
@@ -256,8 +256,8 @@ export const DCF_GLOSSARY = {
       title: isKo ? 'DCF 3대 시나리오 & 할인율 (주주요구수익률)' : 'DCF Scenarios & Discount Rate (Cost of Equity)',
       badge: isKo ? '시나리오 분석' : 'SENSITIVITY',
       description: isKo
-        ? '미래 성장률에 따라 보수적(Base-3%p), 기본(Base), 낙관적(Base+3%p) 3가지 시나리오로 내재가치를 다각도 비교하며, 주주요구수익률(무위험수익률+5%p 가산, 최저 8% 및 부채 리스크 가산)을 할인율로 적용합니다.'
-        : 'Compares intrinsic value estimates across Conservative (Base-3%p), Base, and Optimistic (Base+3%p) scenarios discounted by required cost of equity (Risk-Free + 5%p floor 8%, plus debt risk adjustments).',
+        ? '미래 성장률에 따라 보수적(Base-3%p), 기본(Base), 낙관적(Base+2%p) 3가지 시나리오로 내재가치를 다각도 비교하며, 주주요구수익률(무위험수익률+5%p 가산, 최저 8% 및 부채 리스크 가산)을 할인율로 적용합니다.'
+        : 'Compares intrinsic value estimates across Conservative (Base-3%p), Base, and Optimistic (Base+2%p) scenarios discounted by required cost of equity (Risk-Free + 5%p floor 8%, plus debt risk adjustments).',
       whyItMatters: isKo
         ? '단 하나의 확정된 숫자가 아닌 합리적인 가치 범위를 파악하여 의사결정의 유연성을 확보합니다.'
         : 'Helps understand the plausible range of value rather than relying on a single static number.',

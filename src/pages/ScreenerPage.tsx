@@ -1,6 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useStocks, MarketFilter, CoreStatusFilter, ValuationStatusFilter } from '../hooks/useStocks';
+import {
+  useStocks,
+  MarketFilter,
+  CoreGradeFilterOption,
+} from '../hooks/useStocks';
 import {
   CheckCircle2,
   ChevronDown,
@@ -17,6 +21,7 @@ import {
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import { StockDetailDrawer } from '../components/screener/StockDetailDrawer';
 import { StockSort, StockSummaryDTO } from '../types/api';
+import { getCoreGradeInfo } from '../utils/ruleFormatters';
 
 interface ScreenerPageProps {
   onSelectStock?: (stockId: string) => void;
@@ -25,7 +30,7 @@ interface ScreenerPageProps {
 
 export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searchQuery: globalSearchQuery }) => {
   const navigate = useNavigate();
-  const { t } = useAppConfig();
+  const { t, language } = useAppConfig();
   const {
     stocks,
     total,
@@ -36,10 +41,8 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
     setSearchQuery,
     market,
     setMarket,
-    coreStatus,
-    setCoreStatus,
-    valuationStatus,
-    setValuationStatus,
+    coreGradeFilter,
+    setCoreGradeFilter,
     sortField,
     setSortField,
     sortOrder,
@@ -57,11 +60,11 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
     if (globalSearchQuery !== searchQuery) {
       setSearchQuery(globalSearchQuery);
     }
-  }, [globalSearchQuery]);
+  }, [globalSearchQuery, searchQuery, setSearchQuery]);
 
   const [isMarketDropdownOpen, setIsMarketDropdownOpen] = useState(false);
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
-  const [drawerStockTicker, setDrawerStockTicker] = useState<string | null>(null);
+  const [drawerStockId, setDrawerStockId] = useState<string | null>(null);
 
   const marketDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
@@ -91,26 +94,19 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
 
   const currentMarketOption = marketOptions.find((o) => o.id === market) || marketOptions[0];
 
-  // Core Status Options
-  const coreStatusOptions: { id: CoreStatusFilter; label: string }[] = [
+  // Core Grade Filter Options
+  const coreGradeFilterOptions: {
+    id: CoreGradeFilterOption;
+    label: string;
+  }[] = [
     { id: 'ALL', label: t('allStatuses') },
-    { id: 'PASS', label: t('pass') },
-    { id: 'FAIL', label: t('fail') },
-    { id: 'N/A', label: t('na') },
-  ];
-
-  // Valuation Status Options
-  const valuationStatusOptions: { id: ValuationStatusFilter; label: string }[] = [
-    { id: 'ALL', label: t('allStatuses') },
-    { id: 'PASS_WITH_MARGIN', label: t('valuationPassWithMargin') },
-    { id: 'WATCH', label: t('valuationWatch') },
-    { id: 'NO_MARGIN', label: t('valuationNoMargin') },
-    { id: 'N/A', label: t('valuationNa') },
+    { id: 'PASS', label: t('coreStatusPass') },
+    { id: 'HOLD', label: t('coreStatusHold') },
+    { id: 'FAIL', label: t('coreStatusFail') },
   ];
 
   // Sort Options
   const sortOptions: { id: StockSort; label: string }[] = [
-    { id: 'conservativeMarginOfSafety', label: t('sortMargin') },
     { id: 'corePassCount', label: t('sortPassCount') },
     { id: 'marketCap', label: t('sortMarketCap') },
     { id: 'ticker', label: t('sortTicker') },
@@ -139,14 +135,8 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
     return `${val.toLocaleString()}원`;
   };
 
-  const formatPercent = (val: number | null) => {
-    if (val === null || val === undefined) return '—';
-    const pct = val * 100;
-    return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
-  };
-
   const selectedDrawerStock: StockSummaryDTO | null =
-    stocks.find((s) => s.ticker === drawerStockTicker || s.id === drawerStockTicker) || null;
+    stocks.find((stock) => stock.id === drawerStockId) || null;
   const latestLoadedDataAsOf = stocks.reduce<string | null>(
     (latest, stock) => (!latest || stock.dataAsOf > latest ? stock.dataAsOf : latest),
     null
@@ -174,7 +164,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
             </div>
             <div className="flex items-baseline gap-2 mt-2 whitespace-nowrap">
               <span className="text-2xl sm:text-3xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight tabular-nums">
-                {passedStockCount} / {totalStockCount}
+                {passedStockCount ?? '—'} / {totalStockCount ?? '—'}
               </span>
               <span className="text-xs sm:text-sm font-semibold text-[#86868B] dark:text-[#A1A1A6]">
                 {t('stocksPassed')}
@@ -210,7 +200,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
 
           <div className="pt-3 mt-3 border-t border-black/[0.06] dark:border-white/[0.08]">
             <span className="text-xs font-medium text-[#86868B] truncate block">
-              DCF Owner Earnings Intrinsic Valuation
+              Cash-Flow Proxy DCF Valuation
             </span>
           </div>
         </div>
@@ -218,23 +208,28 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
         {/* Card 3: Data Quality & Date */}
         <div className="md:col-span-3 bg-white dark:bg-[#1C1C1E] rounded-3xl p-5 sm:p-6 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between transition-colors duration-300">
           <div>
-            <span className="text-xs font-medium text-[#86868B] block truncate">
-              {t('loadedAsOfDateLabel')}
-            </span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-[#86868B] block truncate">
+                {t('loadedAsOfDateLabel')}
+              </span>
+              {import.meta.env.DEV && <a href="/admin/valuation" className="text-xs text-blue-600">종목 추가 · 원자료 관리</a>}
+            </div>
             <div className="flex items-baseline gap-1.5 mt-2 whitespace-nowrap">
               <span className="text-lg sm:text-xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
                 {latestLoadedDataAsOf?.slice(0, 10) ?? '—'}
               </span>
             </div>
+
           </div>
 
-          <div className="pt-3 mt-3 border-t border-black/[0.06] dark:border-white/[0.08]">
+          <div className="pt-3 mt-3 border-t border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between gap-2">
             <span className="text-xs font-medium text-[#86868B] truncate block font-mono">
               {t('loadedSnapshotStatus', {
                 loaded: stocks.length,
                 stale: loadedStaleCount,
               })}
             </span>
+
           </div>
         </div>
       </div>
@@ -247,15 +242,14 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
           <div className="relative shrink-0 z-30" ref={marketDropdownRef}>
             <button
               onClick={() => setIsMarketDropdownOpen(!isMarketDropdownOpen)}
-              className="h-10 sm:h-11 px-3.5 sm:px-4 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-semibold text-xs sm:text-[13px] flex items-center gap-1.5 border border-black/[0.06] dark:border-white/[0.08] shadow-2xs transition-all cursor-pointer select-none focus:outline-none"
+              className="h-10 sm:h-11 px-3.5 sm:px-4 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-semibold text-xs sm:text-[13px] flex items-center gap-1.5 border border-black/[0.06] dark:border-white/[0.08] shadow-sm transition-all cursor-pointer select-none focus:outline-none"
               aria-haspopup="true"
               aria-expanded={isMarketDropdownOpen}
             >
               <span>{currentMarketOption.label}</span>
               <ChevronDown
-                className={`w-3.5 h-3.5 text-[#8B95A1] dark:text-[#86868B] transition-transform duration-200 ${
-                  isMarketDropdownOpen ? 'rotate-180' : ''
-                }`}
+                className={`w-3.5 h-3.5 text-[#8B95A1] dark:text-[#86868B] transition-transform duration-200 ${isMarketDropdownOpen ? 'rotate-180' : ''
+                  }`}
               />
             </button>
 
@@ -270,11 +264,10 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                         setMarket(opt.id);
                         setIsMarketDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer select-none ${
-                        isSelected
+                      className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer select-none ${isSelected
                           ? 'bg-[#F2F4F6] dark:bg-[#2C2C2E] font-bold text-[#0071E3] dark:text-[#2997FF]'
                           : 'text-[#191F28] dark:text-[#F5F5F7] hover:bg-[#F9FAFB] dark:hover:bg-[#252528]'
-                      }`}
+                        }`}
                     >
                       <div>
                         <div className="font-semibold text-xs">{opt.label}</div>
@@ -290,37 +283,16 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
 
           {/* Core Status Capsule Ribbon */}
           <div className="inline-flex w-fit bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 rounded-2xl border border-black/[0.04] dark:border-white/[0.06] items-center gap-1 overflow-x-auto scrollbar-none shrink-0">
-            {coreStatusOptions.map((opt) => {
-              const isActive = coreStatus === opt.id;
+            {coreGradeFilterOptions.map((opt) => {
+              const isActive = coreGradeFilter === opt.id;
               return (
                 <button
                   key={opt.id}
-                  onClick={() => setCoreStatus(opt.id)}
-                  className={`px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-[13px] rounded-xl whitespace-nowrap transition-all duration-200 select-none cursor-pointer focus:outline-none shrink-0 ${
-                    isActive
+                  onClick={() => setCoreGradeFilter(opt.id)}
+                  className={`px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-[13px] rounded-xl whitespace-nowrap transition-all duration-200 select-none cursor-pointer focus:outline-none shrink-0 ${isActive
                       ? 'bg-white dark:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-bold shadow-sm border border-black/[0.04] dark:border-white/[0.06]'
                       : 'text-[#8B95A1] dark:text-[#86868B] hover:text-[#191F28] dark:hover:text-[#F5F5F7] font-medium hover:bg-white/40 dark:hover:bg-white/5'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Valuation Status Capsule Ribbon */}
-          <div className="hidden lg:inline-flex w-fit bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 rounded-2xl border border-black/[0.04] dark:border-white/[0.06] items-center gap-1 overflow-x-auto scrollbar-none shrink-0">
-            {valuationStatusOptions.map((opt) => {
-              const isActive = valuationStatus === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  onClick={() => setValuationStatus(opt.id)}
-                  className={`px-3 py-1.5 sm:py-2 text-xs rounded-xl whitespace-nowrap transition-all duration-200 select-none cursor-pointer focus:outline-none shrink-0 ${
-                    isActive
-                      ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] font-bold shadow-sm border border-black/[0.04] dark:border-white/[0.06]'
-                      : 'text-[#8B95A1] dark:text-[#86868B] hover:text-[#191F28] dark:hover:text-[#F5F5F7] font-medium hover:bg-white/40 dark:hover:bg-white/5'
-                  }`}
+                    }`}
                 >
                   {opt.label}
                 </button>
@@ -355,11 +327,10 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                         setSortField(opt.id);
                         setIsSortDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer select-none ${
-                        isSelected
+                      className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer select-none ${isSelected
                           ? 'bg-[#F2F4F6] dark:bg-[#2C2C2E] font-bold text-[#0071E3] dark:text-[#2997FF]'
                           : 'text-[#191F28] dark:text-[#F5F5F7] hover:bg-[#F9FAFB] dark:hover:bg-[#252528]'
-                      }`}
+                        }`}
                     >
                       <span>{opt.label}</span>
                       {isSelected && <Check className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF] stroke-[2.5]" />}
@@ -445,20 +416,21 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
           <div className="block md:hidden bg-white dark:bg-[#1C1C1E] rounded-2xl border border-black/[0.06] dark:border-white/[0.08] shadow-sm overflow-hidden divide-y divide-black/[0.04] dark:divide-white/[0.06]">
             {stocks.map((stock, index) => {
               const rank = index + 1;
+              const gradeInfo = getCoreGradeInfo(stock, language);
 
               return (
                 <div
                   key={stock.id}
-                  onClick={() => setDrawerStockTicker(stock.ticker)}
+                  onClick={() => setDrawerStockId(stock.id)}
                   className="p-4 flex items-center justify-between gap-3 active:bg-[#F5F5F7] dark:active:bg-[#2C2C2E] transition-colors cursor-pointer"
                 >
-                  {/* Left: Rank & Ticker & Name */}
+                  {/* Left: Rank & Ticker & Name & Grade */}
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="font-mono text-xs font-semibold text-[#86868B] w-4 shrink-0 tabular-nums">
                       {rank}
                     </span>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-sm text-[#1D1D1F] dark:text-[#F5F5F7] font-mono">
                           {stock.ticker}
                         </span>
@@ -467,54 +439,27 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                             STALE
                           </span>
                         )}
-                        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold">
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              stock.coreStatus === 'PASS'
-                                ? 'bg-[#34C759]'
-                                : stock.coreStatus === 'FAIL'
-                                ? 'bg-[#FF3B30]'
-                                : 'bg-[#86868B]'
-                            }`}
-                          />
-                          <span
-                            className={`tabular-nums ${
-                              stock.coreStatus === 'PASS'
-                                ? 'text-[#34C759]'
-                                : stock.coreStatus === 'FAIL'
-                                ? 'text-[#FF3B30]'
-                                : 'text-[#86868B]'
-                            }`}
-                          >
-                            {stock.coreStatus}
-                          </span>
-                          <span className="text-[10px] text-[#86868B] font-mono tabular-nums ml-0.5">
-                            (<span className="text-[#34C759] font-medium">{stock.corePassCount}</span>/<span className="text-[#FF3B30] font-medium">{stock.coreFailCount}</span>/<span className="font-medium text-[#86868B] dark:text-[#636366]">{stock.coreNaCount}</span>)
-                          </span>
-                        </span>
+                        <div className="inline-flex items-center gap-1.5 font-mono text-[11px] font-semibold" title={gradeInfo.desc}>
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${gradeInfo.dotClass}`} />
+                          <span className={gradeInfo.textClass}>{gradeInfo.badgeLabel}</span>
+                        </div>
                       </div>
-                      <div className="text-xs text-[#86868B] truncate mt-0.5 font-normal">
+                      <div className="text-xs text-[#86868B] truncate font-normal">
                         {stock.name} · {stock.market}
                       </div>
                     </div>
                   </div>
 
-                  {/* Right: Price & Margin of Safety */}
-                  <div className="text-right shrink-0">
+                  {/* Right: Current Price & Intrinsic Value */}
+                  <div className="text-right shrink-0 space-y-0.5">
                     <div className="font-mono font-bold text-sm text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
                       {formatPrice(stock.currentPrice, stock.currency)}
                     </div>
-                    <div
-                      className={`text-[11px] font-medium font-mono tabular-nums mt-0.5 ${
-                        stock.conservativeMarginOfSafety !== null && stock.conservativeMarginOfSafety >= 0
-                          ? 'text-[#34C759]'
-                          : stock.conservativeMarginOfSafety !== null
-                          ? 'text-[#FF3B30]'
-                          : 'text-[#86868B]'
-                      }`}
-                    >
-                      {formatPercent(stock.conservativeMarginOfSafety)}
-                    </div>
+                    {stock.conservativeIntrinsicValue !== null && (
+                      <div className="text-[11px] font-mono font-medium text-[#0071E3] dark:text-[#2997FF] tabular-nums">
+                        {formatPrice(stock.conservativeIntrinsicValue, stock.currency)}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -533,20 +478,19 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                     <th className="py-4 px-4 text-right whitespace-nowrap">{t('marketCapLabel')}</th>
                     <th className="py-4 px-4 text-center whitespace-nowrap">{t('coreStatusLabel')}</th>
                     <th className="py-4 px-4 text-center whitespace-nowrap">{t('coreRulesLabel')}</th>
-                    <th className="py-4 px-4 text-center whitespace-nowrap">{t('valuationStatusLabel')}</th>
                     <th className="py-4 px-4 text-right whitespace-nowrap">{t('intrinsicValue')}</th>
-                    <th className="py-4 px-4 text-right whitespace-nowrap">{t('marginOfSafety')}</th>
                     <th className="py-4 pr-6 sm:pr-7 pl-4 text-center whitespace-nowrap">{t('confidence')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.06] text-xs">
                   {stocks.map((stock, index) => {
                     const rank = index + 1;
+                    const gradeInfo = getCoreGradeInfo(stock, language);
 
                     return (
                       <tr
                         key={stock.id}
-                        onClick={() => setDrawerStockTicker(stock.ticker)}
+                        onClick={() => setDrawerStockId(stock.id)}
                         className="hover:bg-[#F5F5F7]/80 dark:hover:bg-[#2C2C2E]/60 transition-colors cursor-pointer group"
                       >
                         {/* Rank */}
@@ -587,28 +531,12 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                           {formatMarketCap(stock.marketCap, stock.currency)}
                         </td>
 
-                        {/* Core Status */}
+                        {/* 1. Core Status (등급제: 점 + 등급명만 표시) */}
                         <td className="py-4 px-4 text-center whitespace-nowrap">
-                          <div className="inline-flex items-center justify-center gap-1.5">
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                                stock.coreStatus === 'PASS'
-                                  ? 'bg-[#34C759]'
-                                  : stock.coreStatus === 'FAIL'
-                                  ? 'bg-[#FF3B30]'
-                                  : 'bg-[#86868B]'
-                              }`}
-                            />
-                            <span
-                              className={`font-mono font-bold text-xs tabular-nums ${
-                                stock.coreStatus === 'PASS'
-                                  ? 'text-[#34C759]'
-                                  : stock.coreStatus === 'FAIL'
-                                  ? 'text-[#FF3B30]'
-                                  : 'text-[#86868B]'
-                              }`}
-                            >
-                              {stock.coreStatus}
+                          <div className="inline-flex items-center justify-center gap-1.5" title={gradeInfo.desc}>
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${gradeInfo.dotClass}`} />
+                            <span className={`font-mono font-bold text-xs tabular-nums ${gradeInfo.textClass}`}>
+                              {gradeInfo.badgeLabel}
                             </span>
                           </div>
                         </td>
@@ -622,27 +550,9 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                           <span className="font-semibold text-[#86868B] dark:text-[#636366]">{stock.coreNaCount}</span>
                         </td>
 
-                        {/* Valuation Status */}
-                        <td className="py-4 px-4 text-center whitespace-nowrap">
-                          <span className="text-[11px] font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
-                            {stock.valuationStatus === 'PASS_WITH_MARGIN'
-                              ? t('valuationPassWithMargin')
-                              : stock.valuationStatus === 'WATCH'
-                              ? t('valuationWatch')
-                              : stock.valuationStatus === 'NO_MARGIN'
-                              ? t('valuationNoMargin')
-                              : t('valuationNa')}
-                          </span>
-                        </td>
-
-                        {/* Intrinsic Value */}
-                        <td className="py-4 px-4 text-right font-mono font-semibold tabular-nums whitespace-nowrap text-[#1D1D1F] dark:text-[#F5F5F7]">
+                        {/* Intrinsic Value (내재가치) */}
+                        <td className="py-4 px-4 text-right font-mono font-semibold tabular-nums whitespace-nowrap text-[#0071E3] dark:text-[#2997FF]">
                           {formatPrice(stock.conservativeIntrinsicValue, stock.currency)}
-                        </td>
-
-                        {/* Margin of Safety */}
-                        <td className="py-4 px-4 text-right font-mono font-semibold tabular-nums whitespace-nowrap text-[#1D1D1F] dark:text-[#F5F5F7]">
-                          {formatPercent(stock.conservativeMarginOfSafety)}
                         </td>
 
                         {/* Confidence */}
@@ -688,16 +598,16 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
       <StockDetailDrawer
         stock={selectedDrawerStock}
         isOpen={Boolean(selectedDrawerStock)}
-        onClose={() => setDrawerStockTicker(null)}
-        onNavigateToFullDetail={(ticker) => {
-          setDrawerStockTicker(null);
+        onClose={() => setDrawerStockId(null)}
+        onNavigateToFullDetail={(ticker, market) => {
+          setDrawerStockId(null);
           if (onSelectStock) {
             onSelectStock(ticker);
           }
-          navigate(`/stock/${ticker}`);
+          navigate(`/stock/${ticker}?market=${encodeURIComponent(market)}`);
         }}
         stockList={stocks}
-        onSelectStock={(ticker) => setDrawerStockTicker(ticker)}
+        onSelectStock={(stock) => setDrawerStockId(stock.id)}
       />
     </div>
   );

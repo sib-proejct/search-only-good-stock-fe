@@ -19,6 +19,7 @@ export const YearlyFinancialsTable: React.FC<YearlyFinancialsTableProps> = ({
 }) => {
   const { t, language } = useAppConfig();
   const isKo = language === 'ko';
+  const [isGlossaryOpen, setIsGlossaryOpen] = React.useState(false);
 
   if (!financials || financials.length === 0) {
     return null;
@@ -62,7 +63,6 @@ export const YearlyFinancialsTable: React.FC<YearlyFinancialsTableProps> = ({
 
   const cols = FINANCIALS_TABLE_GLOSSARY.columns;
   const categories = FINANCIALS_TABLE_GLOSSARY.categories(language);
-  const [isGlossaryOpen, setIsGlossaryOpen] = React.useState(false);
 
   return (
     <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-6 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-4 transition-colors duration-300">
@@ -296,7 +296,7 @@ export const YearlyFinancialsTable: React.FC<YearlyFinancialsTableProps> = ({
                     {cat.items.map((item, iIdx) => (
                       <div
                         key={iIdx}
-                        className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.06] shadow-2xs space-y-1"
+                        className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.06] shadow-sm space-y-1"
                       >
                         <div className="text-xs font-bold text-[#0071E3] dark:text-[#2997FF]">
                           {item.name}

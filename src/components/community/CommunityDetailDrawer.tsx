@@ -542,7 +542,7 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
                   onClick={handleSendComment}
                   disabled={!commentText.trim()}
                   className={`px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer shrink-0 ${commentText.trim()
-                    ? 'bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#0071E3] dark:hover:bg-[#2997FF] text-white shadow-xs'
+                    ? 'bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#0071E3] dark:hover:bg-[#2997FF] text-white shadow-sm'
                     : 'bg-black/5 dark:bg-white/5 text-[#86868B] cursor-not-allowed'
                     }`}
                 >
