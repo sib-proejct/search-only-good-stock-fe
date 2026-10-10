@@ -15,12 +15,21 @@ const label = 'text-[11px] text-[#86868B] font-medium uppercase tracking-wider b
 const input = 'w-full rounded-2xl border border-black/[0.06] dark:border-white/[0.08] bg-[#F2F4F6] dark:bg-[#2C2C2E] text-xs text-[#1D1D1F] dark:text-[#F5F5F7] font-medium focus:outline-none focus:border-[#0071E3]/30 px-3 py-2.5 mt-1';
 const button = 'rounded-full bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#2997FF] dark:hover:bg-[#0071E3] text-white text-xs font-semibold px-5 py-2 shadow-sm transition-colors disabled:opacity-40';
 
-export function StockValuationPage() {
-  const { ticker = '' } = useParams();
+interface StockValuationPageProps {
+  ticker?: string;
+  market?: Market;
+  years?: number;
+  embedded?: boolean;
+  onApplied?: () => void;
+}
+
+export function StockValuationPage({ ticker: panelTicker, market: panelMarket, years: panelYears, embedded = false, onApplied }: StockValuationPageProps = {}) {
+  const { ticker: routeTicker = '' } = useParams();
+  const ticker = panelTicker ?? routeTicker;
   const [params, setParams] = useSearchParams();
   const marketValue = params.get('market');
-  const market = ['KOSPI', 'KOSDAQ', 'NASDAQ', 'NYSE'].includes(marketValue ?? '') ? marketValue as Market : undefined;
-  const queryYears = Number(params.get('years') || 5);
+  const market = panelMarket ?? (['KOSPI', 'KOSDAQ', 'NASDAQ', 'NYSE'].includes(marketValue ?? '') ? marketValue as Market : undefined);
+  const queryYears = panelYears ?? Number(params.get('years') || 5);
   const years = [1, 2, 3, 4, 5].includes(queryYears) ? queryYears : 5;
   const { language } = useAppConfig(); const ko = language === 'ko';
   const [stock, setStock] = useState<StockDetailDTO | null>(null);
@@ -54,7 +63,7 @@ export function StockValuationPage() {
     setConditions({ ...conditions, ...patch }); setError('');
     if (patch.normalizationYears) {
       initialYears.current = patch.normalizationYears;
-      const next = new URLSearchParams(params); next.set('years', String(patch.normalizationYears)); setParams(next, { replace: true });
+      const next = new URLSearchParams(params); next.set('years', String(patch.normalizationYears)); if (!embedded) setParams(next, { replace: true });
     }
   };
   const run = async (action: 'preview' | 'apply') => {
@@ -63,7 +72,7 @@ export function StockValuationPage() {
     setBusy(true); setError('');
     try {
       const value = await valuationRequest(ticker, market, action, { baseSnapshotId: result.baseSnapshotId, conditions }, controller.signal);
-      if (!controller.signal.aborted) { setResult(value); setConditions(value.conditions); }
+      if (!controller.signal.aborted) { setResult(value); setConditions(value.conditions); if (action === 'apply') onApplied?.(); }
     } catch (err) { if (!controller.signal.aborted) setError(err instanceof Error ? err.message : String(err)); }
     finally { if (!controller.signal.aborted) setBusy(false); }
   };
@@ -75,18 +84,18 @@ export function StockValuationPage() {
   const confidence = getConfidenceInfo(dcf?.confidence ?? 'LOW', language);
   const notes = periodNote(period, ko);
   const marginColor = dcf?.conservativeMarginOfSafety == null ? 'text-[#86868B]' : dcf.conservativeMarginOfSafety >= .2 ? 'text-[#34C759]' : dcf.conservativeMarginOfSafety >= 0 ? 'text-[#0071E3] dark:text-[#2997FF]' : 'text-[#FF3B30]';
-  return <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-6 animate-fade-in">
-    <div className="flex flex-wrap items-center justify-between gap-3">
+  return <div className={embedded ? "space-y-5 animate-fade-in" : "max-w-[1600px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-6 animate-fade-in"}>
+    {!embedded && <div className="flex flex-wrap items-center justify-between gap-3">
       <Link to="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#6E6E73] dark:text-[#86868B] hover:text-[#0071E3] dark:hover:text-[#2997FF] transition-colors"><ArrowLeft className="w-4 h-4" />{ko ? '스크리너로 돌아가기' : 'Back to screener'}</Link>
       <Link className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full text-xs font-semibold bg-[#F5F5F7] dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] hover:bg-[#EBEBED] dark:hover:bg-[#2C2C2E] transition-colors" to={`/stock/${encodeURIComponent(ticker)}${market ? `?market=${market}` : ''}`}>{ko ? '전체 종목 분석' : 'Full stock analysis'}<ArrowRight className="w-3.5 h-3.5" /></Link>
-    </div>
+    </div>}
     {busy && <div role="status" className={`${box} text-center py-12 space-y-3`}><div className="inline-block w-8 h-8 border-2 border-[#0071E3] dark:border-[#2997FF] border-t-transparent rounded-full animate-spin" /><p className="text-xs text-[#86868B] font-medium">{ko ? '계산 자료를 확인하는 중…' : 'Loading valuation…'}</p></div>}
     {error && <div className={`${box} text-center border-[#FF3B30]/30`} role="alert"><AlertTriangle className="w-6 h-6 text-[#FF3B30] mx-auto mb-3" /><p className="text-xs text-[#86868B]">{error}</p><button className={`${button} inline-flex items-center gap-1.5 mt-4`} disabled={busy} onClick={() => setReload(v => v + 1)}><RotateCcw className="w-3.5 h-3.5" />{ko ? '최신 게시 자료 다시 불러오기' : 'Reload published data'}</button></div>}
     {result && conditions && stock && <>
       <header className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-6 sm:p-8 border border-black/[0.06] dark:border-white/[0.08] shadow-sm transition-colors duration-300">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="flex items-center gap-3 flex-wrap"><h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{stock.name}</h1><span className="font-mono text-base font-semibold text-[#86868B]">{ticker}</span><span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#86868B]"><Calendar className="w-3 h-3" />{result.dataAsOf.slice(0, 10)}</span>{stock.isStale && <span className="text-[10px] font-bold text-[#FF9500]">STALE</span>}</div>
+            <div className="flex items-center gap-3 flex-wrap"><h1 id={embedded ? "drawer-stock-title" : undefined} className="text-2xl sm:text-3xl font-bold tracking-tight">{stock.name}</h1><span className="font-mono text-base font-semibold text-[#86868B]">{ticker}</span><span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#86868B]"><Calendar className="w-3 h-3" />{result.dataAsOf.slice(0, 10)}</span>{stock.isStale && <span className="text-[10px] font-bold text-[#FF9500]">STALE</span>}</div>
             <p className="text-xs sm:text-[13px] text-[#86868B]">{stock.market} · {stock.sector} · {ko ? '현재 내재가치 계산' : 'Current intrinsic value'}</p>
           </div>
           <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-5 sm:gap-7">
@@ -100,7 +109,7 @@ export function StockValuationPage() {
         {notes && <details className="mt-5 p-3.5 rounded-2xl bg-[#FF9500]/10 border border-[#FF9500]/20"><summary className="flex items-center gap-1.5 text-xs font-bold text-[#C93400] dark:text-[#FF9500] cursor-pointer"><AlertTriangle className="w-4 h-4" />{ko ? '계산 자료 및 경고 확인' : 'Review calculation inputs and warnings'}</summary><p className="text-xs text-[#86868B] leading-relaxed mt-2">{notes}</p></details>}
         {result.defaultsUsed && <p className="text-xs text-[#86868B] mt-3">{ko ? '계산 조건이 없는 과거 게시 자료: 기존 엔진 기본 조건을 적용했습니다. 성장률 하한은 없습니다.' : 'Legacy publication without conditions: original engine defaults were used, with no growth floor.'}</p>}
       </header>
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <section className={`${embedded ? 'grid grid-cols-2' : 'grid grid-cols-2 lg:grid-cols-4'} gap-3 sm:gap-4`}>
         <div className={kpi}><span className={label}>{ko ? '핵심 판정' : 'Business quality'}</span><p className={`text-2xl sm:text-3xl font-bold tracking-tight mt-2 ${grade?.textClass}`} title={grade?.desc}>{grade?.label}</p><p className="text-[11px] text-[#86868B] mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] font-mono">{stock.corePassCount} PASS · {stock.coreFailCount} FAIL · {stock.coreNaCount} NA</p></div>
         <div className={kpi}><span className={label}>{ko ? '가치평가' : 'Valuation'}</span><p className="text-base sm:text-lg font-bold text-[#0071E3] dark:text-[#2997FF] mt-2">{valuation.label}</p><p className="text-[11px] text-[#86868B] mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06]">Cash-Flow Proxy DCF</p></div>
         <div className={kpi}><span className={label}>{ko ? '안전마진' : 'Margin of safety'}</span><p className={`text-2xl sm:text-3xl font-bold font-mono tracking-tight tabular-nums mt-2 ${marginColor}`}>{valuationPercent(dcf?.conservativeMarginOfSafety)}</p><p className="text-[11px] text-[#86868B] mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06]">{ko ? '보수적 DCF 추정' : 'Conservative DCF'}</p></div>

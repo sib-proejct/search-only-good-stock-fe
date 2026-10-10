@@ -22,6 +22,7 @@ import { useAppConfig } from '../context/ThemeLanguageContext';
 import { StockSort } from '../types/api';
 import { getCoreGradeInfo } from '../utils/ruleFormatters';
 import { StockDetailDrawer } from '../components/screener/StockDetailDrawer';
+import { StockValuationPage } from './StockValuationPage';
 import { stockApi } from '../services/api';
 import { periodNote, valuationPrice, valuationMarketCap, valuationPercent } from '../utils/valuationFormatters';
 
@@ -619,6 +620,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
       <StockDetailDrawer
         stock={selectedDrawerStock}
         years={years}
+        content={drawerStock && <StockValuationPage key={`${drawerStock.id}:${years}`} ticker={drawerStock.ticker} market={drawerStock.market} years={years} embedded onApplied={retry} />}
         isOpen={Boolean(selectedDrawerStock)}
         onClose={() => setDrawerStockId(null)}
         onNavigateToFullDetail={(ticker, stockMarket) => {

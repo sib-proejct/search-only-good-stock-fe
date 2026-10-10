@@ -20,6 +20,7 @@ interface StockDetailDrawerProps {
   stock: StockSummaryDTO | null;
   isOpen: boolean;
   years?: number;
+  content?: React.ReactNode;
   onClose: () => void;
   onNavigateToFullDetail: (ticker: string, market: Market) => void;
   stockList: StockSummaryDTO[];
@@ -30,6 +31,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
   stock,
   isOpen,
   years = 5,
+  content,
   onClose,
   onNavigateToFullDetail,
   stockList,
@@ -82,9 +84,11 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
   });
   const [isResizing, setIsResizing] = useState(false);
 
+  const customContent = content != null;
+
   // Fetch detail when stock changes
   useEffect(() => {
-    if (!stock || !isOpen) {
+    if (!stock || !isOpen || customContent) {
       setDetail(null);
       return;
     }
@@ -109,7 +113,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
     return () => {
       isCancelled = true;
     };
-  }, [stock, isOpen]);
+  }, [stock, isOpen, customContent]);
 
   // Resize mouse drag handling
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -180,6 +184,8 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
+      } else if (e.target instanceof HTMLElement && e.target.closest('input, select, textarea, [contenteditable="true"]')) {
+        return;
       } else if (e.key === 'ArrowLeft') {
         handlePrevStock();
       } else if (e.key === 'ArrowRight') {
@@ -314,6 +320,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
 
         {/* Scrollable Drawer Body */}
         <div className="flex-1 overflow-y-auto px-5 sm:px-7 py-5 sm:py-6 space-y-6">
+          {customContent ? content : <>
           {/* 1. Hero Stock Identity Card */}
           <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-5 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm transition-colors duration-300">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -561,6 +568,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
               )}
             </div>
           )}
+          </>}
         </div>
 
         {/* Sticky Bottom Action Footer */}
