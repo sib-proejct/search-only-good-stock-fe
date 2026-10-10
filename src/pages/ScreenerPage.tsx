@@ -119,9 +119,9 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
 
   // Sort Options
   const sortOptions: { id: StockSort; label: string }[] = [
+    { id: 'marketCap', label: t('sortMarketCap') },
     { id: 'conservativeMarginOfSafety', label: ko ? '선택 기간 안전마진' : 'Selected period margin' },
     { id: 'corePassCount', label: t('sortPassCount') },
-    { id: 'marketCap', label: t('sortMarketCap') },
     { id: 'currentPrice', label: ko ? '현재가' : 'Price' },
     { id: 'ticker', label: t('sortTicker') },
   ];
