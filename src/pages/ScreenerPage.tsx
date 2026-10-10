@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useStocks } from '../hooks/useStocks';
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import { getCoreGradeInfo } from '../utils/ruleFormatters';
-import { periodNote, valuationAmount, valuationPercent, valuationPrice } from '../utils/valuationFormatters';
+import { periodNote, valuationMarketCap, valuationPercent, valuationPrice } from '../utils/valuationFormatters';
 import type { Market, CoreGradeFilter, ValuationStatus, StockSort } from '../types/api';
 
 interface Props { searchQuery?: string; onSelectStock?: (ticker: string) => void }
@@ -57,7 +57,7 @@ export function ScreenerPage({ searchQuery = '' }: Props) {
           return <tr key={stock.id} className="border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
             <td className="p-4"><Link className="block font-bold text-[#0071E3]" to={href(stock.ticker, stock.market)}>{stock.ticker} · {stock.market}<span className="block text-xs text-[#86868B] font-normal">{stock.name}{stock.isStale ? ' · STALE' : ''}</span></Link></td>
             <td className="p-4 text-right tabular-nums">{valuationPrice(stock.currentPrice, stock.currency, ko)}</td>
-            <td className="p-4 text-right tabular-nums">{valuationAmount(stock.marketCap, stock.currency, ko)}</td>
+            <td className="p-4 text-right tabular-nums">{valuationMarketCap(stock.marketCap, stock.currency, ko)}</td>
             {[1, 2, 3, 4, 5].map(y => { const period = stock.periodValuations?.[String(y)]; return <td className={`p-4 text-right tabular-nums ${y === state.years ? 'text-[#0071E3] font-bold' : ''}`} key={y}>
               <Link title={periodNote(period, ko)} to={href(stock.ticker, stock.market)}>{valuationPrice(period?.dcf.scenarios?.conservative.intrinsicValuePerShare, stock.currency, ko)}<span className="block text-[10px] text-[#86868B]">{period?.dcf.confidence ?? '—'}{period?.dcf.warnings.includes('INCOMPLETE_GROWTH_HISTORY') ? ' ⚠' : ''}</span></Link>
             </td>; })}
@@ -70,7 +70,7 @@ export function ScreenerPage({ searchQuery = '' }: Props) {
         return <Link key={stock.id} to={href(stock.ticker, stock.market)} className="block rounded-2xl p-4 bg-white dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-2">
           <div className="flex justify-between"><strong>{stock.ticker} · {stock.market}</strong><span>{valuationPrice(stock.currentPrice, stock.currency, ko)}</span></div>
           <div className="flex justify-between text-sm"><span>{stock.name}</span><span className={grade.textClass}>{grade.badgeLabel}</span></div>
-          <p className="text-sm">{ko ? '시가총액' : 'Market cap'}: {valuationAmount(stock.marketCap, stock.currency, ko)}</p>
+          <p className="text-sm">{ko ? '시가총액' : 'Market cap'}: {valuationMarketCap(stock.marketCap, stock.currency, ko)}</p>
           <div className="flex justify-between text-sm text-[#0071E3]"><span>{state.years}{ko ? '개년 내재가치' : ' year value'}: {valuationPrice(period?.dcf.scenarios?.conservative.intrinsicValuePerShare, stock.currency, ko)}</span><span>{valuationPercent(period?.dcf.conservativeMarginOfSafety)}</span></div>
           <p className="text-xs text-[#86868B]">{period?.dcf.confidence} · {periodNote(period, ko)}</p>
         </Link>;

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { valuationRequest, type ValuationConditions } from './valuationApi';
 import { stockApi } from './api';
-import { valuationAmount, valuationPercent, valuationPrice, periodNote } from '../utils/valuationFormatters';
+import { valuationAmount, valuationMarketCap, valuationPercent, valuationPrice, periodNote } from '../utils/valuationFormatters';
 
 const conditions: ValuationConditions = {
   normalizationYears: 3, normalizationMethod: 'CONSERVATIVE', capexMode: 'TOTAL',
@@ -49,5 +49,8 @@ describe('published valuation contract', () => {
     expect(valuationAmount(85_400_000, 'USD')).toBe('$85.4M');
     expect(valuationPrice(116_800, 'KRW')).toBe('11만 6800원');
     expect(valuationPrice(99_999_999.6, 'KRW')).toBe('1억원');
+    expect(valuationMarketCap(45_564_836_436_800, 'KRW')).toBe('45조 5648억원');
+    expect(valuationMarketCap(99_999_999, 'KRW')).toBe('0억원');
+    expect(valuationMarketCap(85_400_000, 'USD')).toBe('$85.4M');
   });
 });

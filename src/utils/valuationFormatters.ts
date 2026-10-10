@@ -25,6 +25,12 @@ export function valuationAmount(value: number | null | undefined, currency: stri
   if (currency === 'USD') return formatMonetaryAmount(value, currency);
   return value.toLocaleString('en-US', { style: 'currency', currency, currencyDisplay: 'code', notation: 'compact', maximumFractionDigits: 2 });
 }
+
+export function valuationMarketCap(value: number | null | undefined, currency: string, ko = true) {
+  if (value == null || currency !== 'KRW') return valuationAmount(value, currency, ko);
+  const rounded = Math.trunc(value / 100_000_000) * 100_000_000;
+  return ko && rounded === 0 ? '0억원' : valuationAmount(rounded, currency, ko);
+}
 export function valuationPercent(value: number | null | undefined) {
   return value == null ? '—' : `${(value * 100).toFixed(1)}%`;
 }
