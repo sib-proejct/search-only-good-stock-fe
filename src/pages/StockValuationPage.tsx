@@ -7,9 +7,9 @@ import { valuationRequest, type ValuationView, type ValuationConditions } from '
 import { periodNote, valuationAmount, valuationPercent, valuationPrice } from '../utils/valuationFormatters';
 import type { Market, StockDetailDTO } from '../types/api';
 
-const box = 'rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1C1C1E] p-5';
-const input = 'w-full rounded-lg border border-black/15 dark:border-white/15 bg-transparent px-3 py-2 mt-1';
-const button = 'rounded-xl bg-[#0071E3] text-white px-4 py-2 disabled:opacity-40';
+const box = 'rounded-3xl border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-5 sm:p-6 shadow-sm transition-colors duration-300';
+const input = 'w-full rounded-2xl border border-black/[0.06] dark:border-white/[0.08] bg-[#F2F4F6] dark:bg-[#2C2C2E] px-3 py-2 mt-1';
+const button = 'rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold px-5 py-2 shadow-sm transition-colors disabled:opacity-40';
 
 export function StockValuationPage() {
   const { ticker = '' } = useParams();
