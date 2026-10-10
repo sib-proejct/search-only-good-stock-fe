@@ -47,9 +47,6 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
     return 'buffett';
   }, [propActiveGuide, location.pathname]);
 
-  const isDetail = currentTab === 'detail';
-  const canSearch = currentTab === 'screener';
-
   const handleNavigateTab = (tab: NavTab, guideType?: GuideType) => {
     if (onSelectTab) {
       onSelectTab(tab, guideType);
@@ -80,7 +77,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
       <div className="max-w-[1600px] mx-auto px-3 sm:px-8 h-14 sm:h-[4.5rem] flex items-center justify-between gap-1.5 sm:gap-4">
 
         {/* Mobile Search Overlay */}
-        {showMobileSearch && canSearch ? (
+        {showMobileSearch ? (
           <div className="flex-1 flex items-center gap-2 animate-fade-in">
             <div className="relative flex-1">
               <input
@@ -88,7 +85,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                 autoFocus
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder={isDetail ? `${t('searchTickerPlaceholder')}` : `${t('searchPlaceholder')}`}
+                placeholder={t('searchPlaceholder')}
                 className="w-full bg-[#F5F5F7] dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-[#F5F5F7] text-xs pl-8 pr-3 py-1.5 rounded-full border border-black/[0.06] dark:border-white/[0.08] focus:outline-none focus:border-[#0071E3] dark:focus:border-[#2997FF]"
               />
               <Search className="w-3.5 h-3.5 text-[#86868B] absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -230,8 +227,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
               </button>
             </nav>
 
-            {/* Right side: Screener Search Pill */}
-            {canSearch && (
+            {/* Right side: Search Pill */}
               <div className="flex items-center space-x-1.5 sm:space-x-4 shrink-0">
                 {/* Desktop Search */}
                 <div className="relative hidden md:block">
@@ -254,7 +250,6 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                   <Search className="w-4 h-4" />
                 </button>
               </div>
-            )}
           </>
         )}
 
