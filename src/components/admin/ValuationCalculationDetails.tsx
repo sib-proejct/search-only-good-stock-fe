@@ -105,7 +105,7 @@ export function ValuationCalculationDetails({
     dcf.rawGrowth > dcf.growthCap;
   const growthWasFloored =
     dcf.rawGrowth !== null &&
-    dcf.growthFloor !== null &&
+    dcf.growthFloor != null &&
     dcf.rawGrowth < dcf.growthFloor;
   const growthEndYear = Math.max(...result.annual_oe.map((row) => row.fiscal_year));
   const growthStartYear = growthEndYear - result.options.normalization_years;
@@ -297,7 +297,7 @@ export function ValuationCalculationDetails({
               <dt className="text-gray-500">성장률 상한</dt>
               <dd className="font-mono font-bold">{formatPercent(dcf.growthCap)}</dd>
               <dt className="text-gray-500">성장률 하한</dt>
-              <dd className="font-mono font-bold">{formatPercent(dcf.growthFloor)}</dd>
+              <dd className="font-mono font-bold">{formatPercent(dcf.growthFloor ?? null)}</dd>
               <dt className="text-gray-500">기준 성장률 = 원성장률의 하한·상한 적용값</dt>
               <dd className="font-mono font-bold text-blue-600 dark:text-blue-400">
                 {formatPercent(dcf.baseGrowth)}
@@ -322,7 +322,7 @@ export function ValuationCalculationDetails({
             {growthWasFloored && (
               <p className="rounded-lg bg-amber-50 p-2 text-xs leading-relaxed text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
                 선택한 산정 방식으로 원성장률은 {formatPercent(dcf.rawGrowth)}이지만,
-                성장률 하한 {formatPercent(dcf.growthFloor)}이 적용되어 기준 성장률은{' '}
+                성장률 하한 {formatPercent(dcf.growthFloor ?? null)}이 적용되어 기준 성장률은{' '}
                 {formatPercent(dcf.baseGrowth)}입니다.
               </p>
             )}

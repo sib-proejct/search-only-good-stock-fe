@@ -372,6 +372,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stocks/{ticker}/valuation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Valuation */
+        get: operations["get_valuation_api_stocks__ticker__valuation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stocks/{ticker}/valuation/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview */
+        post: operations["preview_api_stocks__ticker__valuation_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stocks/{ticker}/valuation/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply */
+        post: operations["apply_api_stocks__ticker__valuation_apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -856,6 +907,25 @@ export interface components {
             /** Indexvalue */
             indexValue: string | null;
         };
+        /** CapexEvidence */
+        CapexEvidence: {
+            /** Fiscalyear */
+            fiscalYear: number;
+            /** Reportedtotalcapex */
+            reportedTotalCapex?: string | null;
+            /** Tangiblecapex */
+            tangibleCapex?: string | null;
+            /** Intangiblecapex */
+            intangibleCapex?: string | null;
+            /** Maintenancecapexestimate */
+            maintenanceCapexEstimate?: string | null;
+            /** Growthcapexestimate */
+            growthCapexEstimate?: string | null;
+            /** Provider */
+            provider?: string | null;
+            /** Documentkey */
+            documentKey?: string | null;
+        };
         /** CapitalActionEvaluationDTO */
         CapitalActionEvaluationDTO: {
             /**
@@ -965,7 +1035,7 @@ export interface components {
             /** Rawgrowth */
             rawGrowth: number | null;
             /** Growthfloor */
-            growthFloor: number | null;
+            growthFloor?: number | null;
             /** Growthcap */
             growthCap: number | null;
             /** Basegrowth */
@@ -1286,6 +1356,27 @@ export interface components {
             unit: components["schemas"]["MetricUnit"];
             specialValue?: components["schemas"]["SpecialValue"] | null;
         };
+        /** PeriodValuationDTO */
+        PeriodValuationDTO: {
+            /**
+             * Years
+             * @enum {integer}
+             */
+            years: 1 | 2 | 3 | 4 | 5;
+            dcf: components["schemas"]["DcfResultDTO"];
+            /** Normalizationtargetyears */
+            normalizationTargetYears: number[];
+            /** Normalizationusedyears */
+            normalizationUsedYears: number[];
+            /** Growthtargetyears */
+            growthTargetYears: number[];
+            /** Epsgrowthusedyears */
+            epsGrowthUsedYears: number[];
+            /** Oepsgrowthusedyears */
+            oepsGrowthUsedYears: number[];
+            /** Missingreasons */
+            missingReasons: string[];
+        };
         /** QuarterlyBookPriceInput */
         QuarterlyBookPriceInput: {
             /** Fiscalyear */
@@ -1520,6 +1611,10 @@ export interface components {
         SpecialValue: "INFINITY";
         /** StockDetailDTO */
         StockDetailDTO: {
+            /** Periodvaluations */
+            periodValuations?: {
+                [key: string]: components["schemas"]["PeriodValuationDTO"];
+            };
             /** Id */
             id: string;
             /** Ticker */
@@ -1601,6 +1696,10 @@ export interface components {
         StockSort: "ticker" | "currentPrice" | "marketCap" | "conservativeMarginOfSafety" | "corePassCount";
         /** StockSummaryDTO */
         StockSummaryDTO: {
+            /** Periodvaluations */
+            periodValuations?: {
+                [key: string]: components["schemas"]["PeriodValuationDTO"];
+            };
             /** Id */
             id: string;
             /** Ticker */
@@ -1660,6 +1759,80 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /** ValuationConditions */
+        "ValuationConditions-Input": {
+            /**
+             * Normalizationyears
+             * @default 5
+             * @enum {integer}
+             */
+            normalizationYears: 1 | 2 | 3 | 4 | 5;
+            /**
+             * Normalizationmethod
+             * @default CONSERVATIVE
+             * @enum {string}
+             */
+            normalizationMethod: "CONSERVATIVE" | "MEAN";
+            /**
+             * Capexmode
+             * @default TOTAL
+             * @enum {string}
+             */
+            capexMode: "TOTAL" | "MAINTENANCE";
+            /**
+             * Growthmethod
+             * @default LOWER_BOUND
+             * @enum {string}
+             */
+            growthMethod: "LOWER_BOUND" | "OEPS_WEIGHTED" | "EQUAL_BLEND";
+            /**
+             * Growthratecap
+             * @default 0.20
+             */
+            growthRateCap: number | string;
+            /** Growthratefloor */
+            growthRateFloor?: number | string | null;
+        };
+        /** ValuationConditions */
+        "ValuationConditions-Output": {
+            /**
+             * Normalizationyears
+             * @default 5
+             * @enum {integer}
+             */
+            normalizationYears: 1 | 2 | 3 | 4 | 5;
+            /**
+             * Normalizationmethod
+             * @default CONSERVATIVE
+             * @enum {string}
+             */
+            normalizationMethod: "CONSERVATIVE" | "MEAN";
+            /**
+             * Capexmode
+             * @default TOTAL
+             * @enum {string}
+             */
+            capexMode: "TOTAL" | "MAINTENANCE";
+            /**
+             * Growthmethod
+             * @default LOWER_BOUND
+             * @enum {string}
+             */
+            growthMethod: "LOWER_BOUND" | "OEPS_WEIGHTED" | "EQUAL_BLEND";
+            /**
+             * Growthratecap
+             * @default 0.20
+             */
+            growthRateCap: string;
+            /** Growthratefloor */
+            growthRateFloor?: string | null;
+        };
+        /** ValuationPreviewRequest */
+        ValuationPreviewRequest: {
+            /** Basesnapshotid */
+            baseSnapshotId: number;
+            conditions: components["schemas"]["ValuationConditions-Input"];
+        };
         /** ValuationRequest */
         "ValuationRequest-Input": {
             /**
@@ -1707,8 +1880,11 @@ export interface components {
              * @default 0.20
              */
             growth_rate_cap: number | string;
-            /** Growth Rate Floor */
-            growth_rate_floor?: number | string | null;
+            /**
+             * Growth Rate Floor
+             * @default 0
+             */
+            growth_rate_floor: number | string | null;
         };
         /** ValuationRequest */
         "ValuationRequest-Output": {
@@ -1757,8 +1933,11 @@ export interface components {
              * @default 0.20
              */
             growth_rate_cap: string;
-            /** Growth Rate Floor */
-            growth_rate_floor?: string | null;
+            /**
+             * Growth Rate Floor
+             * @default 0
+             */
+            growth_rate_floor: string | null;
         };
         /** ValuationResponse */
         ValuationResponse: {
@@ -1783,6 +1962,41 @@ export interface components {
          * @enum {string}
          */
         ValuationStatus: "PASS_WITH_MARGIN" | "WATCH" | "NO_MARGIN" | "N/A";
+        /** ValuationView */
+        ValuationView: {
+            /**
+             * Dataasof
+             * Format: date-time
+             */
+            dataAsOf: string;
+            /** Annualfinancials */
+            annualFinancials: components["schemas"]["AnnualFinancialInput"][];
+            /** Annualownerearnings */
+            annualOwnerEarnings: {
+                [key: string]: string | null;
+            };
+            /** Basesnapshotid */
+            baseSnapshotId: number;
+            conditions: components["schemas"]["ValuationConditions-Output"];
+            /** Defaultsused */
+            defaultsUsed: boolean;
+            /** Periods */
+            periods: {
+                [key: string]: components["schemas"]["PeriodValuationDTO"];
+            };
+            /** Capexevidence */
+            capexEvidence: components["schemas"]["CapexEvidence"][];
+            /**
+             * Canapply
+             * @default false
+             */
+            canApply: boolean;
+            /**
+             * Published
+             * @default false
+             */
+            published: boolean;
+        };
     };
     responses: never;
     parameters: never;
@@ -2452,6 +2666,7 @@ export interface operations {
                 order?: components["schemas"]["SortOrder"];
                 limit?: number;
                 offset?: number;
+                years?: number;
             };
             header?: never;
             path?: never;
@@ -2568,6 +2783,113 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BatchRunStatusDTO"];
+                };
+            };
+        };
+    };
+    get_valuation_api_stocks__ticker__valuation_get: {
+        parameters: {
+            query?: {
+                market?: components["schemas"]["Market"] | null;
+            };
+            header?: never;
+            path: {
+                ticker: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValuationView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_api_stocks__ticker__valuation_preview_post: {
+        parameters: {
+            query?: {
+                market?: components["schemas"]["Market"] | null;
+            };
+            header?: never;
+            path: {
+                ticker: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValuationPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValuationView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_api_stocks__ticker__valuation_apply_post: {
+        parameters: {
+            query?: {
+                market?: components["schemas"]["Market"] | null;
+            };
+            header?: never;
+            path: {
+                ticker: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValuationPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValuationView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

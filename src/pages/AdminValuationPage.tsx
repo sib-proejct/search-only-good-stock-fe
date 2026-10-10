@@ -217,7 +217,7 @@ function storedValuationOptions(stock: AdminStockItem): ValuationOptions {
       growth_rate_floor: stored.growth_rate_floor == null
         || typeof stored.growth_rate_floor === 'string'
         || typeof stored.growth_rate_floor === 'number'
-        ? stored.growth_rate_floor
+        ? stored.growth_rate_floor ?? null
         : defaults.growth_rate_floor,
     };
   } catch {

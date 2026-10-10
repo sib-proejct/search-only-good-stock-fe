@@ -15,6 +15,8 @@ export type CoreGradeFilterOption = CoreGradeFilter | 'ALL';
 export type ValuationStatusFilter = ValuationStatus | 'ALL';
 
 export interface UseStocksReturn {
+  years: number;
+  setYears: (years: number) => void;
   stocks: StockSummaryDTO[];
   total: number;
   loading: boolean;
@@ -33,8 +35,6 @@ export interface UseStocksReturn {
   sortOrder: SortOrder;
   setSortOrder: (order: SortOrder) => void;
   toggleSortOrder: () => void;
-  passedStockCount: number | null;
-  totalStockCount: number | null;
   hasMore: boolean;
   loadMore: () => void;
   retry: () => void;
@@ -42,6 +42,8 @@ export interface UseStocksReturn {
 }
 
 export function useStocks(): UseStocksReturn {
+  const [years, setYearsState] = useState(5);
+  const setYears = useCallback((value: number) => { setYearsState(value); setOffset(0); }, []);
   const [stocks, setStocks] = useState<StockSummaryDTO[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -57,14 +59,10 @@ export function useStocks(): UseStocksReturn {
   const [valuationStatus, setValuationStatusState] =
     useState<ValuationStatusFilter>('ALL');
   const [sortField, setSortFieldState] =
-    useState<StockSort>('corePassCount');
+    useState<StockSort>('conservativeMarginOfSafety');
   const [sortOrder, setSortOrderState] = useState<SortOrder>('desc');
   const [offset, setOffset] = useState(0);
   const limit = 50;
-
-  // Market/search-wide statistics shown in the hero card.
-  const [passedStockCount, setPassedStockCount] = useState<number | null>(null);
-  const [totalStockCount, setTotalStockCount] = useState<number | null>(null);
 
   // Debounce search input by 300ms
   useEffect(() => {
@@ -110,7 +108,6 @@ export function useStocks(): UseStocksReturn {
   // Active abort controllers
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
-  const statsAbortRef = useRef<AbortController | null>(null);
 
   // Fetch stocks function
   const fetchStocks = useCallback(
@@ -130,6 +127,7 @@ export function useStocks(): UseStocksReturn {
 
       try {
         const query: StockListQuery = {
+          years,
           limit,
           offset: isLoadMore ? offset : 0,
         };
@@ -177,6 +175,7 @@ export function useStocks(): UseStocksReturn {
       }
     },
     [
+      years,
       debouncedSearch,
       market,
       coreGradeFilter,
@@ -187,60 +186,15 @@ export function useStocks(): UseStocksReturn {
     ]
   );
 
-  // Fetch numerator and denominator from the same market/search population.
-  const fetchMarketStats = useCallback(async () => {
-    statsAbortRef.current?.abort();
-    const controller = new AbortController();
-    statsAbortRef.current = controller;
-    setTotalStockCount(null);
-    setPassedStockCount(null);
-
-    const baseQuery: StockListQuery = { limit: 1, offset: 0 };
-    if (debouncedSearch.trim()) {
-      baseQuery.search = debouncedSearch.trim();
-    }
-    if (market !== 'ALL') {
-      baseQuery.market = market;
-    }
-
-    try {
-      const [allResponse, passedResponse] = await Promise.all([
-        stockApi.getStocks(baseQuery, controller.signal),
-        stockApi.getStocks(
-          { ...baseQuery, coreStatus: 'PASS' },
-          controller.signal
-        ),
-      ]);
-      if (statsAbortRef.current !== controller) return;
-      setTotalStockCount(allResponse.total);
-      setPassedStockCount(passedResponse.total);
-    } catch (err: unknown) {
-      if (err instanceof Error && err.name === 'AbortError') return;
-      if (statsAbortRef.current !== controller) return;
-      setTotalStockCount(null);
-      setPassedStockCount(null);
-    } finally {
-      if (statsAbortRef.current === controller) {
-        statsAbortRef.current = null;
-      }
-    }
-  }, [debouncedSearch, market]);
-
   // Initial & Filter Triggered Load
   useEffect(() => {
     fetchStocks(offset > 0);
   }, [fetchStocks, offset]);
 
-  // Trigger market-wide statistics load
-  useEffect(() => {
-    fetchMarketStats();
-  }, [fetchMarketStats]);
-
   useEffect(
     () => () => {
       requestIdRef.current += 1;
       abortControllerRef.current?.abort();
-      statsAbortRef.current?.abort();
     },
     []
   );
@@ -261,8 +215,7 @@ export function useStocks(): UseStocksReturn {
     if (offset === 0) {
       fetchStocks(false);
     }
-    fetchMarketStats();
-  }, [fetchStocks, fetchMarketStats, offset]);
+  }, [fetchStocks, offset]);
 
   const resetFilters = useCallback(() => {
     setSearchQueryState('');
@@ -270,12 +223,14 @@ export function useStocks(): UseStocksReturn {
     setMarketState('ALL');
     setCoreGradeFilterState('ALL');
     setValuationStatusState('ALL');
-    setSortFieldState('corePassCount');
+    setYearsState(5);
+    setSortFieldState('conservativeMarginOfSafety');
     setSortOrderState('desc');
     setOffset(0);
   }, []);
 
   return {
+    years, setYears,
     stocks,
     total,
     loading,
@@ -294,8 +249,6 @@ export function useStocks(): UseStocksReturn {
     sortOrder,
     setSortOrder,
     toggleSortOrder,
-    passedStockCount,
-    totalStockCount,
     hasMore: stocks.length < total,
     loadMore,
     retry,

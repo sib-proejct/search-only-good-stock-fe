@@ -43,6 +43,7 @@ export const stockApi = {
     const params = new URLSearchParams();
 
     if (query) {
+      if (query.years) params.set('years', String(query.years));
       if (query.search && query.search.trim() !== '') {
         params.set('search', query.search.trim());
       }
