@@ -21,6 +21,7 @@ import {
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import { StockSort } from '../types/api';
 import { getCoreGradeInfo } from '../utils/ruleFormatters';
+import { StockDetailDrawer } from '../components/screener/StockDetailDrawer';
 import { stockApi } from '../services/api';
 import { periodNote, valuationPrice, valuationMarketCap, valuationPercent } from '../utils/valuationFormatters';
 
@@ -73,7 +74,16 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
     }, 300);
     return () => { clearTimeout(timer); controller.abort(); };
   }, [searchQuery, market, years]);
-  const openValuation = (ticker: string, stockMarket: string) => navigate(`/stock/${encodeURIComponent(ticker)}/valuation?market=${encodeURIComponent(stockMarket)}&years=${years}`);
+  const [drawerStockId, setDrawerStockId] = useState<string | null>(null);
+  const drawerStock = stocks.find(stock => stock.id === drawerStockId) ?? null;
+  const drawerPeriod = drawerStock?.periodValuations?.[String(years)];
+  const selectedDrawerStock = drawerStock ? {
+    ...drawerStock,
+    conservativeIntrinsicValue: drawerPeriod?.dcf.scenarios?.conservative.intrinsicValuePerShare ?? null,
+    conservativeMarginOfSafety: drawerPeriod?.dcf.conservativeMarginOfSafety ?? null,
+    valuationStatus: drawerPeriod?.dcf.status ?? 'N/A' as const,
+    confidence: drawerPeriod?.dcf.confidence ?? 'LOW' as const,
+  } : null;
 
   const [isMarketDropdownOpen, setIsMarketDropdownOpen] = useState(false);
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
@@ -425,7 +435,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
               return (
                 <div
                   key={stock.id}
-                  onClick={() => openValuation(stock.ticker, stock.market)}
+                  onClick={() => setDrawerStockId(stock.id)}
                   className="p-4 flex items-center justify-between gap-3 active:bg-[#F5F5F7] dark:active:bg-[#2C2C2E] transition-colors cursor-pointer"
                 >
                   {/* Left: Rank & Ticker & Name & Grade */}
@@ -498,7 +508,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                     return (
                       <tr
                         key={stock.id}
-                        onClick={() => openValuation(stock.ticker, stock.market)}
+                        onClick={() => setDrawerStockId(stock.id)}
                         className="hover:bg-[#F5F5F7]/80 dark:hover:bg-[#2C2C2E]/60 transition-colors cursor-pointer group"
                       >
                         {/* Rank */}
@@ -606,6 +616,18 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
         </>
       )}
 
+      <StockDetailDrawer
+        stock={selectedDrawerStock}
+        years={years}
+        isOpen={Boolean(selectedDrawerStock)}
+        onClose={() => setDrawerStockId(null)}
+        onNavigateToFullDetail={(ticker, stockMarket) => {
+          setDrawerStockId(null);
+          navigate(`/stock/${encodeURIComponent(ticker)}/valuation?market=${encodeURIComponent(stockMarket)}&years=${years}`);
+        }}
+        stockList={stocks}
+        onSelectStock={stock => setDrawerStockId(stock.id)}
+      />
     </div>
   );
 };
