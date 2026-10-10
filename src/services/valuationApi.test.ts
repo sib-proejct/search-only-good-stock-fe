@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { valuationRequest, type ValuationConditions } from './valuationApi';
 import { stockApi } from './api';
-import { valuationPercent, valuationPrice, periodNote } from '../utils/valuationFormatters';
+import { valuationAmount, valuationPercent, valuationPrice, periodNote } from '../utils/valuationFormatters';
 
 const conditions: ValuationConditions = {
   normalizationYears: 3, normalizationMethod: 'CONSERVATIVE', capexMode: 'TOTAL',
@@ -38,5 +38,16 @@ describe('published valuation contract', () => {
     expect(valuationPercent(-.25)).toBe('-25.0%');
     expect(valuationPercent(null)).toBe('—');
     expect(periodNote(undefined, false)).toContain('supplementation');
+  });
+  it('groups won amounts without losing lower units', () => {
+    expect(valuationAmount(1_234_500_006_789, 'KRW')).toBe('1조 2345억 6789원');
+    expect(valuationAmount(1_234_556_786_789, 'KRW')).toBe('1조 2345억 5678만 6789원');
+    expect(valuationAmount(2_000_000_000_000, 'KRW')).toBe('2조원');
+    expect(valuationAmount(-520_000_000, 'KRW')).toBe('-5억 2000만원');
+    expect(valuationAmount(0, 'KRW')).toBe('0원');
+    expect(valuationAmount(null, 'KRW')).toBe('—');
+    expect(valuationAmount(85_400_000, 'USD')).toBe('$85.4M');
+    expect(valuationPrice(116_800, 'KRW')).toBe('11만 6800원');
+    expect(valuationPrice(99_999_999.6, 'KRW')).toBe('1억원');
   });
 });

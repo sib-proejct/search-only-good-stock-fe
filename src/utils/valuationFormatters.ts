@@ -1,9 +1,29 @@
 import type { PeriodValuation } from '../services/valuationApi';
-import { formatPerShare } from './numberFormatters';
+import { formatMonetaryAmount, formatPerShare } from './numberFormatters';
+
+function koreanWon(value: number) {
+  let remaining = Math.round(Math.abs(value));
+  const parts: string[] = [];
+  for (const [size, unit] of [[1_000_000_000_000, '조'], [100_000_000, '억'], [10_000, '만']] as const) {
+    const count = Math.floor(remaining / size);
+    if (count) parts.push(`${count}${unit}`);
+    remaining %= size;
+  }
+  if (remaining || !parts.length) parts.push(parts.length ? String(remaining) : remaining.toLocaleString('ko-KR'));
+  return `${value < 0 ? '-' : ''}${parts.join(' ')}원`;
+}
 
 export function valuationPrice(value: number | null | undefined, currency: string, ko = true) {
   if (value != null && currency === 'KRW' && !ko) return `KRW ${Math.round(value).toLocaleString('en-US')}`;
+  if (value != null && currency === 'KRW') return koreanWon(value);
   return value == null ? '—' : formatPerShare(value, currency, currency === 'KRW' ? 0 : 2);
+}
+
+export function valuationAmount(value: number | null | undefined, currency: string, ko = true) {
+  if (value == null) return '—';
+  if (ko && currency === 'KRW') return koreanWon(value);
+  if (currency === 'USD') return formatMonetaryAmount(value, currency);
+  return value.toLocaleString('en-US', { style: 'currency', currency, currencyDisplay: 'code', notation: 'compact', maximumFractionDigits: 2 });
 }
 export function valuationPercent(value: number | null | undefined) {
   return value == null ? '—' : `${(value * 100).toFixed(1)}%`;

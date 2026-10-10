@@ -4,8 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import { stockApi } from '../services/api';
 import { valuationRequest, type ValuationView, type ValuationConditions } from '../services/valuationApi';
-import { formatMonetaryAmount } from '../utils/numberFormatters';
-import { periodNote, valuationPercent, valuationPrice } from '../utils/valuationFormatters';
+import { periodNote, valuationAmount, valuationPercent, valuationPrice } from '../utils/valuationFormatters';
 import type { Market, StockDetailDTO } from '../types/api';
 
 const box = 'rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1C1C1E] p-5';
@@ -65,7 +64,7 @@ export function StockValuationPage() {
     finally { if (!controller.signal.aborted) setBusy(false); }
   };
   const money = (value: number | null | undefined) => valuationPrice(value, stock?.currency ?? 'KRW', ko);
-  const amount = (value: unknown) => value == null ? '—' : ko ? formatMonetaryAmount(value, stock?.currency ?? 'KRW') : Number(value).toLocaleString('en-US', {style:'currency',currency:stock?.currency ?? 'KRW',currencyDisplay:'code',notation:'compact',maximumFractionDigits:2});
+  const amount = (value: unknown) => valuationAmount(value == null ? null : Number(value), stock?.currency ?? 'KRW', ko);
   const chart = [1, 2, 3, 4, 5].map(year => ({ year, value: result?.periods[String(year)]?.dcf.scenarios?.conservative.intrinsicValuePerShare ?? null }));
   return <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8 space-y-6">
     <div className="flex justify-between gap-3 text-sm"><Link to="/" className="text-[#0071E3]">← {ko ? '스크리너' : 'Screener'}</Link><Link className="text-[#0071E3]" to={`/stock/${encodeURIComponent(ticker)}${market ? `?market=${market}` : ''}`}>{ko ? '기존 상세 분석' : 'Full stock analysis'} →</Link></div>

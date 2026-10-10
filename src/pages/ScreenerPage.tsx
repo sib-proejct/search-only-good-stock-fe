@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useStocks } from '../hooks/useStocks';
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import { getCoreGradeInfo } from '../utils/ruleFormatters';
-import { periodNote, valuationPercent, valuationPrice } from '../utils/valuationFormatters';
+import { periodNote, valuationAmount, valuationPercent, valuationPrice } from '../utils/valuationFormatters';
 import type { Market, CoreGradeFilter, ValuationStatus, StockSort } from '../types/api';
 
 interface Props { searchQuery?: string; onSelectStock?: (ticker: string) => void }
@@ -37,7 +37,7 @@ export function ScreenerPage({ searchQuery = '' }: Props) {
         <option value="ALL">{ko ? '기업 품질 전체' : 'All quality grades'}</option>{['PASS', 'HOLD', 'FAIL', 'N/A'].map(g => <option key={g}>{g}</option>)}
       </select>
       <select aria-label={ko ? '정렬' : 'Sort'} className={control} value={state.sortField} onChange={e => state.setSortField(e.target.value as StockSort)}>
-        <option value="conservativeMarginOfSafety">{ko ? '선택 기간 안전마진' : 'Selected period margin'}</option><option value="ticker">{ko ? '종목' : 'Ticker'}</option><option value="currentPrice">{ko ? '현재가' : 'Price'}</option><option value="corePassCount">{ko ? '기업 품질' : 'Quality'}</option>
+        <option value="conservativeMarginOfSafety">{ko ? '선택 기간 안전마진' : 'Selected period margin'}</option><option value="ticker">{ko ? '종목' : 'Ticker'}</option><option value="currentPrice">{ko ? '현재가' : 'Price'}</option><option value="marketCap">{ko ? '시가총액' : 'Market cap'}</option><option value="corePassCount">{ko ? '기업 품질' : 'Quality'}</option>
       </select>
       <button className={control} onClick={state.toggleSortOrder}>{state.sortOrder === 'desc' ? '↓' : '↑'}</button>
       <button className={control} onClick={state.resetFilters}>{ko ? '초기화' : 'Reset'}</button>
@@ -48,6 +48,7 @@ export function ScreenerPage({ searchQuery = '' }: Props) {
       <div className="hidden md:block overflow-x-auto rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1C1C1E]">
         <table className="w-full text-sm whitespace-nowrap"><thead className="text-[#86868B] border-b border-black/10 dark:border-white/10"><tr>
           <th className="p-4 text-left">{ko ? '종목' : 'Stock'}</th><th className="p-4 text-right">{ko ? '현재가' : 'Price'}</th>
+          <th className="p-4 text-right">{ko ? '시가총액' : 'Market cap'}</th>
           {[1, 2, 3, 4, 5].map(y => <th className={`p-4 text-right ${y === state.years ? 'text-[#0071E3]' : ''}`} key={y}>{y}{ko ? '개년' : ' years'}</th>)}
           <th className="p-4 text-right">{ko ? '안전마진' : 'Margin of safety'}</th><th className="p-4">{ko ? '기업 품질' : 'Quality'}</th>
         </tr></thead><tbody>{state.stocks.map(stock => {
@@ -56,6 +57,7 @@ export function ScreenerPage({ searchQuery = '' }: Props) {
           return <tr key={stock.id} className="border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
             <td className="p-4"><Link className="block font-bold text-[#0071E3]" to={href(stock.ticker, stock.market)}>{stock.ticker} · {stock.market}<span className="block text-xs text-[#86868B] font-normal">{stock.name}{stock.isStale ? ' · STALE' : ''}</span></Link></td>
             <td className="p-4 text-right tabular-nums">{valuationPrice(stock.currentPrice, stock.currency, ko)}</td>
+            <td className="p-4 text-right tabular-nums">{valuationAmount(stock.marketCap, stock.currency, ko)}</td>
             {[1, 2, 3, 4, 5].map(y => { const period = stock.periodValuations?.[String(y)]; return <td className={`p-4 text-right tabular-nums ${y === state.years ? 'text-[#0071E3] font-bold' : ''}`} key={y}>
               <Link title={periodNote(period, ko)} to={href(stock.ticker, stock.market)}>{valuationPrice(period?.dcf.scenarios?.conservative.intrinsicValuePerShare, stock.currency, ko)}<span className="block text-[10px] text-[#86868B]">{period?.dcf.confidence ?? '—'}{period?.dcf.warnings.includes('INCOMPLETE_GROWTH_HISTORY') ? ' ⚠' : ''}</span></Link>
             </td>; })}
@@ -68,6 +70,7 @@ export function ScreenerPage({ searchQuery = '' }: Props) {
         return <Link key={stock.id} to={href(stock.ticker, stock.market)} className="block rounded-2xl p-4 bg-white dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-2">
           <div className="flex justify-between"><strong>{stock.ticker} · {stock.market}</strong><span>{valuationPrice(stock.currentPrice, stock.currency, ko)}</span></div>
           <div className="flex justify-between text-sm"><span>{stock.name}</span><span className={grade.textClass}>{grade.badgeLabel}</span></div>
+          <p className="text-sm">{ko ? '시가총액' : 'Market cap'}: {valuationAmount(stock.marketCap, stock.currency, ko)}</p>
           <div className="flex justify-between text-sm text-[#0071E3]"><span>{state.years}{ko ? '개년 내재가치' : ' year value'}: {valuationPrice(period?.dcf.scenarios?.conservative.intrinsicValuePerShare, stock.currency, ko)}</span><span>{valuationPercent(period?.dcf.conservativeMarginOfSafety)}</span></div>
           <p className="text-xs text-[#86868B]">{period?.dcf.confidence} · {periodNote(period, ko)}</p>
         </Link>;
