@@ -59,7 +59,7 @@ export function useStocks(): UseStocksReturn {
   const [valuationStatus, setValuationStatusState] =
     useState<ValuationStatusFilter>('ALL');
   const [sortField, setSortFieldState] =
-    useState<StockSort>('conservativeMarginOfSafety');
+    useState<StockSort>('marketCap');
   const [sortOrder, setSortOrderState] = useState<SortOrder>('desc');
   const [offset, setOffset] = useState(0);
   const limit = 50;
@@ -224,7 +224,7 @@ export function useStocks(): UseStocksReturn {
     setCoreGradeFilterState('ALL');
     setValuationStatusState('ALL');
     setYearsState(5);
-    setSortFieldState('conservativeMarginOfSafety');
+    setSortFieldState('marketCap');
     setSortOrderState('desc');
     setOffset(0);
   }, []);
