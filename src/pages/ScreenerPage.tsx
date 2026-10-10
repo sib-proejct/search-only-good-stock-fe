@@ -55,23 +55,23 @@ export function ScreenerPage({ searchQuery = '' }: Props) {
           const grade = getCoreGradeInfo(stock, language);
           const selected = stock.periodValuations?.[String(state.years)];
           return <tr key={stock.id} className="border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-            <td className="p-4"><Link className="block font-bold text-[#0071E3]" to={href(stock.ticker, stock.market)}>{stock.ticker} · {stock.market}<span className="block text-xs text-[#86868B] font-normal">{stock.name}{stock.isStale ? ' · STALE' : ''}</span></Link></td>
-            <td className="p-4 text-right tabular-nums">{valuationPrice(stock.currentPrice, stock.currency, ko)}</td>
-            <td className="p-4 text-right tabular-nums">{valuationMarketCap(stock.marketCap, stock.currency, ko)}</td>
-            {[1, 2, 3, 4, 5].map(y => { const period = stock.periodValuations?.[String(y)]; return <td className={`p-4 text-right tabular-nums ${y === state.years ? 'text-[#0071E3] font-bold' : ''}`} key={y}>
+            <td className="p-4"><Link className="block font-bold text-[#0071E3]" to={href(stock.ticker, stock.market)}><span className="font-mono">{stock.ticker} · {stock.market}</span><span className="block text-xs text-[#86868B] font-normal">{stock.name}{stock.isStale ? ' · STALE' : ''}</span></Link></td>
+            <td className="p-4 text-right font-mono font-semibold tabular-nums">{valuationPrice(stock.currentPrice, stock.currency, ko)}</td>
+            <td className="p-4 text-right font-mono tabular-nums">{valuationMarketCap(stock.marketCap, stock.currency, ko)}</td>
+            {[1, 2, 3, 4, 5].map(y => { const period = stock.periodValuations?.[String(y)]; return <td className={`p-4 text-right font-mono tabular-nums ${y === state.years ? 'text-[#0071E3] font-bold' : ''}`} key={y}>
               <Link title={periodNote(period, ko)} to={href(stock.ticker, stock.market)}>{valuationPrice(period?.dcf.scenarios?.conservative.intrinsicValuePerShare, stock.currency, ko)}<span className="block text-[10px] text-[#86868B]">{period?.dcf.confidence ?? '—'}{period?.dcf.warnings.includes('INCOMPLETE_GROWTH_HISTORY') ? ' ⚠' : ''}</span></Link>
             </td>; })}
-            <td className="p-4 text-right tabular-nums" title={periodNote(selected, ko)}>{valuationPercent(selected?.dcf.conservativeMarginOfSafety)}</td><td className={`p-4 text-center ${grade.textClass}`}>{grade.badgeLabel}</td>
+            <td className="p-4 text-right font-mono tabular-nums" title={periodNote(selected, ko)}>{valuationPercent(selected?.dcf.conservativeMarginOfSafety)}</td><td className="p-4 text-center"><span className="inline-flex items-center justify-center gap-1.5" title={grade.desc}><span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full shrink-0 ${grade.dotClass}`} /><span className={`font-mono font-bold text-xs ${grade.textClass}`}>{grade.badgeLabel}</span></span></td>
           </tr>;
         })}</tbody></table>
       </div>
       <div className="md:hidden space-y-3">{state.stocks.map(stock => {
         const period = stock.periodValuations?.[String(state.years)]; const grade = getCoreGradeInfo(stock, language);
         return <Link key={stock.id} to={href(stock.ticker, stock.market)} className="block rounded-2xl p-4 bg-white dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-2">
-          <div className="flex justify-between"><strong>{stock.ticker} · {stock.market}</strong><span>{valuationPrice(stock.currentPrice, stock.currency, ko)}</span></div>
-          <div className="flex justify-between text-sm"><span>{stock.name}</span><span className={grade.textClass}>{grade.badgeLabel}</span></div>
-          <p className="text-sm">{ko ? '시가총액' : 'Market cap'}: {valuationMarketCap(stock.marketCap, stock.currency, ko)}</p>
-          <div className="flex justify-between text-sm text-[#0071E3]"><span>{state.years}{ko ? '개년 내재가치' : ' year value'}: {valuationPrice(period?.dcf.scenarios?.conservative.intrinsicValuePerShare, stock.currency, ko)}</span><span>{valuationPercent(period?.dcf.conservativeMarginOfSafety)}</span></div>
+          <div className="flex justify-between font-mono tabular-nums"><strong>{stock.ticker} · {stock.market}</strong><span className="font-semibold">{valuationPrice(stock.currentPrice, stock.currency, ko)}</span></div>
+          <div className="flex justify-between text-sm"><span>{stock.name}</span><span className="inline-flex items-center gap-1.5" title={grade.desc}><span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full shrink-0 ${grade.dotClass}`} /><span className={`font-mono font-bold text-xs ${grade.textClass}`}>{grade.badgeLabel}</span></span></div>
+          <p className="text-sm">{ko ? '시가총액' : 'Market cap'}: <span className="font-mono tabular-nums">{valuationMarketCap(stock.marketCap, stock.currency, ko)}</span></p>
+          <div className="flex justify-between text-sm text-[#0071E3]"><span>{state.years}{ko ? '개년 내재가치' : ' year value'}: <span className="font-mono tabular-nums">{valuationPrice(period?.dcf.scenarios?.conservative.intrinsicValuePerShare, stock.currency, ko)}</span></span><span className="font-mono tabular-nums">{valuationPercent(period?.dcf.conservativeMarginOfSafety)}</span></div>
           <p className="text-xs text-[#86868B]">{period?.dcf.confidence} · {periodNote(period, ko)}</p>
         </Link>;
       })}</div>
