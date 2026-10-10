@@ -123,7 +123,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
               <button
                 onClick={() => handleNavigateTab('screener')}
                 className={`text-xs sm:text-sm font-medium py-1 px-1.5 sm:px-0.5 shrink-0 relative transition-colors focus:outline-none whitespace-nowrap cursor-pointer ${currentTab === 'screener'
-                  ? 'text-[#0071E3] dark:text-[#2997FF] font-semibold'
+                  ? 'text-[#0071E3] dark:text-[#2997FF]'
                   : 'text-[#6E6E73] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                   }`}
               >
@@ -136,7 +136,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
               <button
                 onClick={() => handleNavigateTab('detail')}
                 className={`text-xs sm:text-sm font-medium py-1 px-1.5 sm:px-0.5 shrink-0 relative transition-colors focus:outline-none whitespace-nowrap cursor-pointer ${currentTab === 'detail'
-                  ? 'text-[#0071E3] dark:text-[#2997FF] font-semibold'
+                  ? 'text-[#0071E3] dark:text-[#2997FF]'
                   : 'text-[#6E6E73] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                   }`}
               >
@@ -159,7 +159,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                     setIsGuideOpen(false);
                   }}
                   className={`text-xs sm:text-sm font-medium py-1 px-1.5 sm:px-0.5 relative transition-colors focus:outline-none whitespace-nowrap cursor-pointer flex items-center gap-1 ${currentTab === 'guide'
-                    ? 'text-[#0071E3] dark:text-[#2997FF] font-semibold'
+                    ? 'text-[#0071E3] dark:text-[#2997FF]'
                     : 'text-[#6E6E73] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                     }`}
                 >
@@ -215,7 +215,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
               <button
                 onClick={() => handleNavigateTab('community')}
                 className={`text-xs sm:text-sm font-medium py-1 px-1.5 sm:px-0.5 shrink-0 relative transition-colors focus:outline-none whitespace-nowrap cursor-pointer ${currentTab === 'community'
-                  ? 'text-[#0071E3] dark:text-[#2997FF] font-semibold'
+                  ? 'text-[#0071E3] dark:text-[#2997FF]'
                   : 'text-[#6E6E73] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7]'
                   }`}
               >
