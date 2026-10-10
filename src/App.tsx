@@ -125,7 +125,9 @@ function AppContent() {
           {/* Right: Links & Controls on the Same Single Line */}
           <div className="flex flex-wrap items-center gap-5 sm:gap-6">
             <nav className="flex items-center space-x-5 sm:space-x-6 text-[#86868B]">
-              {import.meta.env.DEV && <a href="/admin/valuation">원자료 관리</a>}
+              <a href="/admin/valuation" className="text-[#0071E3] dark:text-[#2997FF] font-semibold hover:underline transition-colors">
+                내재가치 계산기 (원자료 관리)
+              </a>
               <a href="#privacy" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('privacy')}</a>
               <a href="#terms" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('terms')}</a>
               <a href="#disclosure" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('disclosure')}</a>

@@ -178,7 +178,7 @@ function defaultValuationOptions(stock: AdminStockItem): ValuationOptions {
     normalization_method: 'CONSERVATIVE',
     growth_method: 'LOWER_BOUND',
     growth_rate_cap: stock.growth_rate_cap ?? '0.20',
-    growth_rate_floor: stock.growth_rate_floor ?? null,
+    growth_rate_floor: stock.growth_rate_floor ?? '0',
     statement_scope: stock.currency === 'USD' ? 'CONSOLIDATED_US_GAAP' : 'CFS',
   };
 }
@@ -309,6 +309,107 @@ const formatMarketCap = (val: number | string | null | undefined, curr: string) 
   return `${num.toLocaleString()}원`;
 };
 
+function normalizeLeadingZero(str: string): string {
+  return str.replace(/^(-?)0+([1-9].*)$/, '$1$2');
+}
+
+interface PercentInputProps {
+  value?: string | number | null;
+  onChange: (nextRatio: string | null) => void;
+  min?: string | number;
+  max?: string | number;
+  step?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+  fallbackRatio?: string;
+}
+
+function PercentInput({
+  value,
+  onChange,
+  min,
+  max,
+  step = '0.1',
+  placeholder,
+  disabled,
+  className,
+  fallbackRatio,
+}: PercentInputProps) {
+  const toDisplay = (v: string | number | null | undefined): string => {
+    if (v == null || v === '') return '';
+    const num = Number(v);
+    if (isNaN(num)) return '';
+    return String(Math.round(num * 10000) / 100);
+  };
+
+  const [text, setText] = useState<string>(() => toDisplay(value));
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setText(toDisplay(value));
+    }
+  }, [value, isFocused]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (raw === '') {
+      setText('');
+      if (fallbackRatio === undefined) {
+        onChange(null);
+      }
+      return;
+    }
+
+    const clean = normalizeLeadingZero(raw);
+    setText(clean);
+
+    const num = parseFloat(clean);
+    if (!isNaN(num)) {
+      onChange(String(num / 100));
+    }
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    if (text.trim() === '') {
+      if (fallbackRatio !== undefined) {
+        onChange(fallbackRatio);
+        setText(toDisplay(fallbackRatio));
+      } else {
+        onChange(null);
+        setText('');
+      }
+    } else {
+      const num = parseFloat(text);
+      if (isNaN(num)) {
+        const resetVal = fallbackRatio !== undefined ? fallbackRatio : null;
+        onChange(resetVal);
+        setText(toDisplay(resetVal));
+      } else {
+        setText(String(num));
+      }
+    }
+  };
+
+  return (
+    <input
+      type="number"
+      min={min}
+      max={max}
+      step={step}
+      placeholder={placeholder}
+      className={className}
+      disabled={disabled}
+      value={text}
+      onFocus={() => setIsFocused(true)}
+      onChange={handleChange}
+      onBlur={handleBlur}
+    />
+  );
+}
+
 export function AdminValuationPage() {
   const [searchParams] = useSearchParams();
   const [stocks, setStocks] = useState<AdminStockItem[]>([]);
@@ -345,7 +446,7 @@ export function AdminValuationPage() {
     normalization_method: 'CONSERVATIVE',
     growth_method: 'LOWER_BOUND',
     growth_rate_cap: '0.20',
-    growth_rate_floor: null,
+    growth_rate_floor: '0',
     statement_scope: 'CFS',
   });
   const [result, setResult] = useState<ValuationResult | null>(null);
@@ -1197,20 +1298,16 @@ export function AdminValuationPage() {
                       <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Growth Floor</span>
                     </div>
                     <div className="relative">
-                      <input
-                        type="number"
+                      <PercentInput
                         min="-99.9"
                         max={Number(options.growth_rate_cap) * 100}
                         step="0.1"
-                        placeholder="미적용"
+                        placeholder="0"
+                        fallbackRatio="0"
                         className={`${control} min-h-11 pr-9 tabular-nums focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
                         disabled={busy}
-                        value={options.growth_rate_floor == null ? '' : Number(options.growth_rate_floor) * 100}
-                        onChange={(e) =>
-                          changeOption({
-                            growth_rate_floor: e.target.value === '' ? null : String(Number(e.target.value) / 100),
-                          })
-                        }
+                        value={options.growth_rate_floor}
+                        onChange={(val) => changeOption({ growth_rate_floor: val ?? '0' })}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
                     </div>
@@ -1221,19 +1318,16 @@ export function AdminValuationPage() {
                       <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Growth Cap</span>
                     </div>
                     <div className="relative">
-                      <input
-                        type="number"
+                      <PercentInput
                         min="0"
                         max="100"
                         step="0.1"
+                        placeholder="20"
+                        fallbackRatio="0.20"
                         className={`${control} min-h-11 pr-9 tabular-nums focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
                         disabled={busy}
-                        value={Number(options.growth_rate_cap) * 100}
-                        onChange={(e) =>
-                          changeOption({
-                            growth_rate_cap: String(Number(e.target.value) / 100),
-                          })
-                        }
+                        value={options.growth_rate_cap}
+                        onChange={(val) => changeOption({ growth_rate_cap: val ?? '0.20' })}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
                     </div>

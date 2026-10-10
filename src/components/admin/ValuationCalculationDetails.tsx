@@ -28,10 +28,10 @@ const growthCalculationText = (
   if (rawGrowth == null) return '—';
   if (epsGrowth == null && oepsGrowth == null) return formatSignedPercent(rawGrowth);
   if (epsGrowth == null) {
-    return `OEPS만 유효: ${formatSignedPercent(rawGrowth)}`;
+    return `OEPS 성장률만 유효: ${formatSignedPercent(rawGrowth)}`;
   }
   if (oepsGrowth == null) {
-    return `EPS만 유효: ${formatSignedPercent(rawGrowth)}`;
+    return `EPS 성장률만 유효: ${formatSignedPercent(rawGrowth)}`;
   }
   if (epsGrowth < 0 || oepsGrowth < 0 || method === 'LOWER_BOUND') {
     return `min(${formatSignedPercent(epsGrowth)}, ${formatSignedPercent(oepsGrowth)}) = ${formatSignedPercent(rawGrowth)}`;
