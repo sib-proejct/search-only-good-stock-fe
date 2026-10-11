@@ -1,8 +1,10 @@
+import { MultiStockCollector } from '../components/admin/MultiStockCollector';
 import { RegisterStockCard, StockDataCollector } from '../components/admin/ManagedStockActions';
 import { ValuationCalculationDetails } from '../components/admin/ValuationCalculationDetails';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
+  AlertTriangle,
   Check,
   ChevronDown,
   Search,
@@ -10,16 +12,17 @@ import {
 } from 'lucide-react';
 import {
   adminRequest,
+  calculateAdminValuation,
   changedValues,
   fieldDisplay,
   fieldValue,
   type AdminStock,
+  type AdminValuationCalculation,
   type Draft,
   type EditorTable,
   type FactRow,
   type TableName,
   type ValuationOptions,
-  type ValuationResult,
 } from '../services/adminApi';
 import {
   formatFieldPreview,
@@ -176,9 +179,9 @@ function defaultValuationOptions(stock: AdminStockItem): ValuationOptions {
     capex_mode: 'TOTAL',
     normalization_years: 5,
     normalization_method: 'CONSERVATIVE',
-    growth_method: 'LOWER_BOUND',
+    growth_method: 'OEPS_WEIGHTED',
     growth_rate_cap: stock.growth_rate_cap ?? '0.20',
-    growth_rate_floor: stock.growth_rate_floor ?? null,
+    growth_rate_floor: stock.growth_rate_floor ?? '0.05',
     statement_scope: stock.currency === 'USD' ? 'CONSOLIDATED_US_GAAP' : 'CFS',
   };
 }
@@ -214,10 +217,10 @@ function storedValuationOptions(stock: AdminStockItem): ValuationOptions {
       growth_rate_cap: typeof stored.growth_rate_cap === 'string' || typeof stored.growth_rate_cap === 'number'
         ? stored.growth_rate_cap
         : defaults.growth_rate_cap,
-      growth_rate_floor: stored.growth_rate_floor == null
+      growth_rate_floor: stored.growth_rate_floor === null
         || typeof stored.growth_rate_floor === 'string'
         || typeof stored.growth_rate_floor === 'number'
-        ? stored.growth_rate_floor
+        ? stored.growth_rate_floor ?? null
         : defaults.growth_rate_floor,
     };
   } catch {
@@ -309,6 +312,107 @@ const formatMarketCap = (val: number | string | null | undefined, curr: string) 
   return `${num.toLocaleString()}원`;
 };
 
+function normalizeLeadingZero(str: string): string {
+  return str.replace(/^(-?)0+([1-9].*)$/, '$1$2');
+}
+
+interface PercentInputProps {
+  value?: string | number | null;
+  onChange: (nextRatio: string | null) => void;
+  min?: string | number;
+  max?: string | number;
+  step?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+  fallbackRatio?: string;
+}
+
+function PercentInput({
+  value,
+  onChange,
+  min,
+  max,
+  step = '0.1',
+  placeholder,
+  disabled,
+  className,
+  fallbackRatio,
+}: PercentInputProps) {
+  const toDisplay = (v: string | number | null | undefined): string => {
+    if (v == null || v === '') return '';
+    const num = Number(v);
+    if (isNaN(num)) return '';
+    return String(Math.round(num * 10000) / 100);
+  };
+
+  const [text, setText] = useState<string>(() => toDisplay(value));
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setText(toDisplay(value));
+    }
+  }, [value, isFocused]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (raw === '') {
+      setText('');
+      if (fallbackRatio === undefined) {
+        onChange(null);
+      }
+      return;
+    }
+
+    const clean = normalizeLeadingZero(raw);
+    setText(clean);
+
+    const num = parseFloat(clean);
+    if (!isNaN(num)) {
+      onChange(String(num / 100));
+    }
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    if (text.trim() === '') {
+      if (fallbackRatio !== undefined) {
+        onChange(fallbackRatio);
+        setText(toDisplay(fallbackRatio));
+      } else {
+        onChange(null);
+        setText('');
+      }
+    } else {
+      const num = parseFloat(text);
+      if (isNaN(num)) {
+        const resetVal = fallbackRatio !== undefined ? fallbackRatio : null;
+        onChange(resetVal);
+        setText(toDisplay(resetVal));
+      } else {
+        setText(String(num));
+      }
+    }
+  };
+
+  return (
+    <input
+      type="number"
+      min={min}
+      max={max}
+      step={step}
+      placeholder={placeholder}
+      className={className}
+      disabled={disabled}
+      value={text}
+      onFocus={() => setIsFocused(true)}
+      onChange={handleChange}
+      onBlur={handleBlur}
+    />
+  );
+}
+
 export function AdminValuationPage() {
   const [searchParams] = useSearchParams();
   const [stocks, setStocks] = useState<AdminStockItem[]>([]);
@@ -332,7 +436,9 @@ export function AdminValuationPage() {
   const [missingOnly, setMissingOnly] = useState(false);
   const [review, setReview] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [collecting, setCollecting] = useState(false);
+  const [singleCollecting, setCollecting] = useState(false);
+  const [multiCollecting, setMultiCollecting] = useState(false);
+  const collecting = singleCollecting || multiCollecting;
   const [loadingRows, setLoadingRows] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -343,12 +449,12 @@ export function AdminValuationPage() {
     capex_mode: 'TOTAL',
     normalization_years: 5,
     normalization_method: 'CONSERVATIVE',
-    growth_method: 'LOWER_BOUND',
+    growth_method: 'OEPS_WEIGHTED',
     growth_rate_cap: '0.20',
-    growth_rate_floor: null,
+    growth_rate_floor: '0.05',
     statement_scope: 'CFS',
   });
-  const [result, setResult] = useState<ValuationResult | null>(null);
+  const [result, setResult] = useState<AdminValuationCalculation | null>(null);
   const [stale, setStale] = useState(false);
   const fields = tables.find((item) => item.table === table)?.fields ?? [];
   const changes = draft ? changedValues(draft, original) : {};
@@ -369,6 +475,7 @@ export function AdminValuationPage() {
   });
 
   const currentIndex = stock ? stocks.findIndex((s) => s.id === stock.id) : -1;
+  const earningsPowerFailures = result?.earningsPowerFailures ?? [];
 
   const resetEditor = useCallback(() => {
     setDraft(null);
@@ -674,10 +781,7 @@ export function AdminValuationPage() {
     setBusy(true);
     setError('');
     try {
-      const calculated = await adminRequest<ValuationResult>(`/stocks/${stock.id}/valuation`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...options, publish: true }),
-      });
+      const calculated = await calculateAdminValuation(stock.id, options);
       setResult(calculated);
       setStale(false);
       setNotice(calculated.published ? '계산 결과를 저장하고 종목 목록·상세에 반영했습니다.' : '계산 결과를 반영하지 않았습니다. 아래 부족한 자료를 확인하세요.');
@@ -1011,6 +1115,13 @@ export function AdminValuationPage() {
             </div>
           )}
           </div>
+          <MultiStockCollector
+            stocks={initialStocks}
+            currentId={stock?.id}
+            disabled={busy || dirty || (singleCollecting && !multiCollecting)}
+            onCollecting={setMultiCollecting}
+            onCollected={onCollected}
+          />
           {stock && (
             <StockDataCollector
               stock={stock}
@@ -1187,8 +1298,8 @@ export function AdminValuationPage() {
                       }
                     >
                       <option value="LOWER_BOUND">min(EPS, OEPS)</option>
-                      <option value="OEPS_WEIGHTED">OEPS 중심 (70% OEPS)</option>
-                      <option value="EQUAL_BLEND">균등 혼합 (Equal Blend)</option>
+                      <option value="OEPS_WEIGHTED">EPS 30% + OEPS 70%</option>
+                      <option value="EQUAL_BLEND">EPS 50% + OEPS 50%</option>
                     </select>
                   </label>
                   <label className="block min-w-0 space-y-2 text-sm">
@@ -1197,20 +1308,16 @@ export function AdminValuationPage() {
                       <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Growth Floor</span>
                     </div>
                     <div className="relative">
-                      <input
-                        type="number"
+                      <PercentInput
                         min="-99.9"
                         max={Number(options.growth_rate_cap) * 100}
                         step="0.1"
-                        placeholder="미적용"
+                        placeholder="0"
+                        fallbackRatio="0"
                         className={`${control} min-h-11 pr-9 tabular-nums focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
                         disabled={busy}
-                        value={options.growth_rate_floor == null ? '' : Number(options.growth_rate_floor) * 100}
-                        onChange={(e) =>
-                          changeOption({
-                            growth_rate_floor: e.target.value === '' ? null : String(Number(e.target.value) / 100),
-                          })
-                        }
+                        value={options.growth_rate_floor}
+                        onChange={(val) => changeOption({ growth_rate_floor: val ?? '0.05' })}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
                     </div>
@@ -1221,19 +1328,16 @@ export function AdminValuationPage() {
                       <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Growth Cap</span>
                     </div>
                     <div className="relative">
-                      <input
-                        type="number"
+                      <PercentInput
                         min="0"
                         max="100"
                         step="0.1"
+                        placeholder="20"
+                        fallbackRatio="0.20"
                         className={`${control} min-h-11 pr-9 tabular-nums focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
                         disabled={busy}
-                        value={Number(options.growth_rate_cap) * 100}
-                        onChange={(e) =>
-                          changeOption({
-                            growth_rate_cap: String(Number(e.target.value) / 100),
-                          })
-                        }
+                        value={options.growth_rate_cap}
+                        onChange={(val) => changeOption({ growth_rate_cap: val ?? '0.20' })}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
                     </div>
@@ -1255,29 +1359,33 @@ export function AdminValuationPage() {
                     : options.growth_method === 'OEPS_WEIGHTED'
                       ? 'EPS 30%·OEPS 70%로 반영합니다.'
                       : '각 50%로 반영합니다.'}{' '}
-                  둘 중 하나가 음수이면 min(EPS, OEPS)를 사용하고, 산정값을 성장률 하한{options.growth_rate_floor == null ? '(미적용)' : ` ${Number(options.growth_rate_floor) * 100}%`}과 상한 {Number(options.growth_rate_cap) * 100}% 범위로 제한합니다. 시작 연도를 포함한 {options.normalization_years + 1}개 연간 자료가 필요하며, 한 지표만 유효하면 해당 성장률과 이력 불완전 경고를 사용합니다.{' '}
+                  음수 성장률도 선택한 방식으로 계산하고, 산정값을 성장률 하한{options.growth_rate_floor == null ? '(미적용)' : ` ${Number(options.growth_rate_floor) * 100}%`}과 상한 {Number(options.growth_rate_cap) * 100}% 범위로 제한합니다. 시작 연도를 포함한 {options.normalization_years + 1}개 연간 자료가 필요하며, 한 지표만 유효하면 해당 성장률과 이력 불완전 경고를 사용합니다.{' '}
                   · 총 CAPEX 추정치가 부족하면 공시 유형·무형 취득액 합계 또는 수집된 공시 총액을 사용하며, 유지보수 모드는 유지보수 추정치 또는 총 CAPEX에서 성장 CAPEX를 차감해 계산합니다.
                 </p>
               </details>
             </div>
             <div className="flex flex-col gap-3 border-t border-black/5 bg-[#F5F5F7]/60 px-4 py-4 dark:border-white/10 dark:bg-white/[0.02] sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <p role="status" className={`text-xs leading-relaxed ${dirty ? 'text-amber-700 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                {dirty
-                  ? '미저장 변경을 저장하거나 취소한 뒤 계산하세요.'
-                  : collecting
-                    ? '자료 수집이 완료되면 계산할 수 있습니다.'
-                    : !options.as_of
-                      ? '계산 기준일을 선택해주세요.'
-                      : '선택한 조건으로 계산 결과를 반영합니다.'}
-              </p>
-              <button
-                type="button"
-                className={`${button} min-h-11 w-full shrink-0 font-semibold transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed sm:w-auto`}
-                disabled={busy || collecting || dirty || !options.as_of}
-                onClick={calculate}
-              >
-                {busy ? '처리 중…' : '계산 및 반영'}
-              </button>
+              <div className="w-full space-y-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p role="status" className={`text-xs leading-relaxed ${dirty ? 'text-amber-700 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {dirty
+                      ? '미저장 변경을 저장하거나 취소한 뒤 계산하세요.'
+                      : collecting
+                        ? '자료 수집이 완료되면 계산할 수 있습니다.'
+                        : !options.as_of
+                          ? '계산 기준일을 선택해주세요.'
+                          : '선택한 조건으로 계산 결과를 반영합니다.'}
+                  </p>
+                  <button
+                    type="button"
+                    className={`${button} min-h-11 w-full shrink-0 font-semibold transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed sm:w-auto`}
+                    disabled={busy || collecting || dirty || !options.as_of}
+                    onClick={calculate}
+                  >
+                    {busy ? '처리 중…' : '계산 및 반영'}
+                  </button>
+                </div>
+              </div>
             </div>
           </section>
           {result && (
@@ -1299,7 +1407,7 @@ export function AdminValuationPage() {
                   ? '기간 평균 (Mean)'
                   : '보수적 기준 (Conservative)'}{' '}
                 ·{' '}
-                {result.options.growth_method === 'LOWER_BOUND'
+                선택 방식: {result.options.growth_method === 'LOWER_BOUND'
                   ? 'min(EPS, OEPS)'
                   : result.options.growth_method === 'OEPS_WEIGHTED'
                     ? 'OEPS 중심 (70% OEPS)'
@@ -1317,7 +1425,53 @@ export function AdminValuationPage() {
                 </p>
               ))}
               {result.dcf && (
-                <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-4 dark:border-blue-900 dark:bg-blue-950/20 sm:p-5 space-y-4">
+                <div className="space-y-4">
+                  {result.dcf.reasonCodes.includes('PREREQUISITE_FAILED') && (
+                    <div className="space-y-3 rounded-2xl border border-red-200 bg-red-50/70 p-4 dark:border-red-900 dark:bg-red-950/30 sm:p-5">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-bold text-red-800 dark:text-red-200">
+                            선행 조건 실패 · 내재가치 계산 중단
+                          </h3>
+                          <p className="text-xs leading-relaxed text-red-900/80 dark:text-red-100/80">
+                            검증된 실적 이익창출력은 최근 3개년 동안 EBIT와 지배주주 순이익이 모두 양수여야 통과합니다.
+                            조건을 충족하지 못해 주당 내재가치와 안전마진을 계산하지 않았습니다.
+                          </p>
+                        </div>
+                      </div>
+                      {earningsPowerFailures.length > 0 && (
+                        <div className="overflow-x-auto rounded-xl border border-red-200/80 bg-white/80 dark:border-red-900/70 dark:bg-black/10">
+                          <table className="w-full text-xs tabular-nums">
+                            <thead>
+                              <tr className="border-b border-red-100 text-gray-600 dark:border-red-900/60 dark:text-gray-300">
+                                <th className="px-3 py-2 text-left font-semibold">실패 연도</th>
+                                <th className="px-3 py-2 text-right font-semibold">EBIT</th>
+                                <th className="px-3 py-2 text-right font-semibold">지배주주 순이익</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {earningsPowerFailures.map(({ fiscalYear, ebit, netIncome }) => (
+                                <tr key={fiscalYear} className="font-bold text-red-700 dark:text-red-300">
+                                  <td className="px-3 py-2.5">{fiscalYear}</td>
+                                  <td className="px-3 py-2.5 text-right">
+                                    {formatMonetaryAmount(ebit, stock.currency)}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-right">
+                                    {formatMonetaryAmount(netIncome, stock.currency)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                      <p className="text-xs font-bold text-red-800 dark:text-red-200">
+                        이익력 선행 조건을 통과하기 전에는 DCF 내재가치 숫자를 산출하거나 공식 값으로 적용하지 않습니다.
+                      </p>
+                    </div>
+                  )}
+                  <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-4 dark:border-blue-900 dark:bg-blue-950/20 sm:p-5 space-y-4">
                   <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300">최종 계산 요약</h3>
                   <dl className="grid gap-3 md:grid-cols-3">
                     <div className="min-w-0 rounded-xl border border-black/5 bg-white p-4 dark:border-white/10 dark:bg-[#1C1C1E]">
@@ -1369,7 +1523,7 @@ export function AdminValuationPage() {
                             <h4 className="text-sm font-semibold">
                               {({ conservative: '보수적', base: '기준', optimistic: '낙관적' } as Record<string, string>)[key] ?? key}
                             </h4>
-                            {key === 'conservative' && <span className="rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300 px-2 py-0.5 text-[10px] font-medium">안전마진 기준</span>}
+                            {key === 'base' && <span className="rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300 px-2 py-0.5 text-[10px] font-medium">안전마진 기준</span>}
                           </div>
                           <p className={`mt-3 text-xs ${key === 'base' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-500 dark:text-gray-400'}`}>주당 내재가치</p>
                           <p className="mt-1 text-3xl font-bold tracking-tight tabular-nums break-words">
@@ -1381,12 +1535,13 @@ export function AdminValuationPage() {
                     )}
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-2 border-t border-blue-200 pt-3 dark:border-blue-900">
-                    <p className="text-sm text-gray-600 dark:text-gray-300">보수적 내재가치 기준 안전마진</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">기준 내재가치 기준 안전마진</p>
                     <strong className="text-2xl tabular-nums tracking-tight">
                       {result.dcf.conservativeMarginOfSafety == null
                         ? '계산 불가'
                         : `${(result.dcf.conservativeMarginOfSafety * 100).toFixed(2)}%`}
                     </strong>
+                  </div>
                   </div>
                 </div>
               )}

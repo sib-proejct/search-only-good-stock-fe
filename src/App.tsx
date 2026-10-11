@@ -4,6 +4,8 @@ import { ThemeLanguageProvider, useAppConfig } from './context/ThemeLanguageCont
 import { TopNavBar } from './components/common/TopNavBar';
 import { Sun, Moon, Globe } from 'lucide-react';
 
+const StockValuationPage = lazy(() => import('./pages/StockValuationPage').then(module => ({ default: module.StockValuationPage })));
+
 const AdminValuationPage = lazy(() => import('./pages/AdminValuationPage').then(module => ({ default: module.AdminValuationPage })));
 
 const ScreenerPage = lazy(() =>
@@ -67,6 +69,7 @@ function AppContent() {
             element={<Navigate to="/" replace />}
           />
 
+          <Route path="/stock/:ticker/valuation" element={<StockValuationPage />} />
           {/* Stock Analysis Detail */}
           <Route
             path="/stock/:ticker"
@@ -125,7 +128,9 @@ function AppContent() {
           {/* Right: Links & Controls on the Same Single Line */}
           <div className="flex flex-wrap items-center gap-5 sm:gap-6">
             <nav className="flex items-center space-x-5 sm:space-x-6 text-[#86868B]">
-              {import.meta.env.DEV && <a href="/admin/valuation">원자료 관리</a>}
+              <a href="/admin/valuation" className="text-[#0071E3] dark:text-[#2997FF] font-semibold hover:underline transition-colors">
+                {language === 'ko' ? '내재가치 계산기 (원자료 관리)' : 'Valuation calculator (fact editor)'}
+              </a>
               <a href="#privacy" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('privacy')}</a>
               <a href="#terms" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('terms')}</a>
               <a href="#disclosure" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('disclosure')}</a>
