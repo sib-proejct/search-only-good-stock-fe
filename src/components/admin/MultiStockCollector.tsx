@@ -1,3 +1,4 @@
+import { Check, ListChecks } from 'lucide-react';
 import { MarketFilter } from '../common/MarketFilter';
 import type { Market } from '../../types/api';
 import { useEffect, useRef, useState } from 'react';
@@ -156,7 +157,9 @@ export function MultiStockCollector({
       setBusy(false);
     }
   }
-  const actionClass = 'rounded-xl px-4 py-2 text-sm border border-black/15 dark:border-white/20 disabled:opacity-40';
+  const actionClass = 'h-10 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold bg-white dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#2C2C2E] border border-black/15 dark:border-white/20 transition-colors cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071E3] disabled:opacity-50 disabled:cursor-not-allowed';
+  const checkboxClass = 'peer sr-only';
+  const checkmarkClass = 'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-black/15 bg-white text-transparent transition-colors dark:border-white/20 dark:bg-[#1C1C1E] peer-checked:border-[#0071E3] peer-checked:bg-[#0071E3] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#0071E3] peer-focus-visible:ring-offset-2 dark:peer-focus-visible:ring-offset-[#1C1C1E] peer-disabled:opacity-50';
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button
@@ -172,6 +175,7 @@ export function MultiStockCollector({
           setOpen(true);
         }}
       >
+        <ListChecks className="h-3.5 w-3.5" aria-hidden="true" />
         여러 종목 수집
       </button>
       {items.length > 0 && (
@@ -210,10 +214,11 @@ export function MultiStockCollector({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
-            <div className="flex flex-wrap gap-2 items-center">
-              <label className="text-sm flex gap-2">
+            <div className="flex flex-wrap gap-2 items-center rounded-2xl bg-[#F2F4F6] dark:bg-white/[0.03] p-2">
+              <label className={`min-h-10 px-3 rounded-xl inline-flex items-center gap-2 text-xs sm:text-sm font-semibold transition-colors ${running || disabled || !visible.length ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-white/60 dark:hover:bg-white/[0.05]'}`}>
                 <input
                   type="checkbox"
+                  className={checkboxClass}
                   disabled={running || disabled || !visible.length}
                   checked={visible.length > 0 && visible.every((stock) => selected.includes(stock.id))}
                   onChange={(event) => {
@@ -223,6 +228,7 @@ export function MultiStockCollector({
                       : previous.filter((id) => !ids.includes(id)));
                   }}
                 />
+                <span className={checkmarkClass} aria-hidden="true"><Check className="h-3.5 w-3.5" strokeWidth={3} /></span>
                 검색 결과 전체 선택
               </label>
               <button
@@ -233,16 +239,16 @@ export function MultiStockCollector({
               >
                 선택 해제
               </button>
-              <span className="text-sm">{selected.length}개 선택</span>
+              <span className="ml-auto rounded-lg bg-[#0071E3]/10 dark:bg-[#2997FF]/15 px-3 py-1.5 text-xs font-semibold tabular-nums text-[#0071E3] dark:text-[#2997FF]">{selected.length}개 선택</span>
             </div>
             <div className="overflow-y-auto min-h-0 border rounded-xl divide-y dark:divide-white/10">
               {!visible.length && <p className="p-4 text-sm">검색 결과가 없습니다.</p>}
               {visible.map((stock) => {
                 const item = items.find((candidate) => candidate.stock_id === stock.id);
                 return (
-                  <label key={stock.id} className="flex gap-3 items-start p-3 text-sm">
+                  <label key={stock.id} className={`flex gap-3 items-start p-3 text-sm transition-colors ${selected.includes(stock.id) ? 'bg-[#0071E3]/[0.05] dark:bg-[#2997FF]/[0.08]' : ''} ${running || disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-[#F5F5F7] dark:hover:bg-white/[0.04]'}`}>
                     <input
-                      className="mt-1"
+                      className={checkboxClass}
                       type="checkbox"
                       aria-label={`${stock.name} (${stock.ticker}) 수집 선택`}
                       disabled={running || disabled}
@@ -251,6 +257,7 @@ export function MultiStockCollector({
                         ? [...previous, stock.id]
                         : previous.filter((id) => id !== stock.id))}
                     />
+                    <span className={`${checkmarkClass} mt-0.5`} aria-hidden="true"><Check className="h-3.5 w-3.5" strokeWidth={3} /></span>
                     <span className="flex-1">
                       {stock.name} <span className="text-gray-500">{stock.ticker} · {stock.market}</span>
                       {item && (
@@ -280,7 +287,7 @@ export function MultiStockCollector({
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                className={`${actionClass} bg-blue-600 text-white`}
+                className="h-10 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold bg-[#0071E3] hover:bg-[#0077ED] text-white shadow-sm transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071E3] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#1C1C1E] disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={running || disabled || !selected.length}
                 onClick={() => void collect(selected)}
               >
