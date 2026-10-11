@@ -1,3 +1,5 @@
+import { MarketFilter } from '../common/MarketFilter';
+import type { Market } from '../../types/api';
 import { useEffect, useRef, useState } from 'react';
 import { adminRequest, type AdminStock } from '../../services/adminApi';
 import type { components } from '../../types/openapi.generated';
@@ -28,6 +30,7 @@ export function MultiStockCollector({
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<number[]>([]);
   const [search, setSearch] = useState('');
+  const [markets, setMarkets] = useState<Market[]>([]);
   const [items, setItems] = useState<Collection[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -42,6 +45,7 @@ export function MultiStockCollector({
     .map((item) => `${item.stock_id}:${item.batch_run_id}`)
     .join(',');
   const visible = stocks.filter((stock) =>
+    (markets.length === 0 || markets.some((market) => market === stock.market)) &&
     `${stock.name} ${stock.ticker}`.toLowerCase().includes(search.trim().toLowerCase()),
   );
   const failed = items.filter((item) => item.status === 'FAILED').map((item) => item.stock_id);
@@ -197,6 +201,7 @@ export function MultiStockCollector({
                 닫기
               </button>
             </div>
+            <MarketFilter markets={markets} onChange={setMarkets} />
             <input
               type="search"
               aria-label="수집할 종목 검색"

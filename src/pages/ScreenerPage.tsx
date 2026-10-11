@@ -1,3 +1,4 @@
+import { MarketFilter } from '../components/common/MarketFilter';
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -18,7 +19,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
-import { Market, StockSort } from '../types/api';
+import { StockSort } from '../types/api';
 import { getCoreGradeInfo } from '../utils/ruleFormatters';
 import { StockDetailDrawer } from '../components/screener/StockDetailDrawer';
 import { StockValuationPage } from './StockValuationPage';
@@ -99,14 +100,6 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const marketOptions: { id: Market | 'ALL'; label: string }[] = [
-    { id: 'ALL', label: t('allMarkets') },
-    { id: 'NASDAQ', label: 'NASDAQ' },
-    { id: 'NYSE', label: 'NYSE' },
-    { id: 'KOSPI', label: 'KOSPI' },
-    { id: 'KOSDAQ', label: 'KOSDAQ' },
-  ];
 
   // Core Grade Filter Options
   const coreGradeFilterOptions: {
@@ -244,29 +237,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
         {/* Left: Markets + Core Status Capsule Ribbon */}
         <div className="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
           {/* Market multi-select buttons */}
-          <div role="group" aria-label={ko ? '시장 선택' : 'Markets'} className="flex flex-wrap items-center gap-1 min-w-0 max-w-full rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 border border-black/[0.04] dark:border-white/[0.06]">
-            {marketOptions.map((opt) => {
-              const isActive = opt.id === 'ALL' ? market.length === 0 : market.includes(opt.id);
-              return (
-                <button
-                  type="button"
-                  key={opt.id}
-                  aria-pressed={isActive}
-                  onClick={() => {
-                    const id = opt.id;
-                    setMarket(id === 'ALL' ? [] : market.includes(id)
-                      ? market.filter(value => value !== id)
-                      : [...market, id]);
-                  }}
-                  className={`px-3 sm:px-4 py-2 text-xs sm:text-[13px] rounded-xl whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071E3] ${isActive
-                    ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] font-bold shadow-sm'
-                    : 'text-[#6B7684] dark:text-[#A1A1A6] hover:bg-white/60 dark:hover:bg-[#2C2C2E] font-medium'}`}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
+          <MarketFilter markets={market} onChange={setMarket} />
 
           {/* Core Status Capsule Ribbon */}
           <div className="inline-flex w-fit max-w-full bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 rounded-2xl border border-black/[0.04] dark:border-white/[0.06] items-center gap-1 overflow-x-auto scrollbar-none shrink-0">
