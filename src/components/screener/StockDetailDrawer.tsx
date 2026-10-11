@@ -430,7 +430,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                   {formatPercent(stock.conservativeMarginOfSafety)}
                 </span>
                 <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06]">
-                  {stock.conservativeIntrinsicValue !== null ? `IV: ${formatPrice(stock.conservativeIntrinsicValue, stock.currency)}` : '—'}
+                  {dcf?.scenarios?.base.intrinsicValuePerShare != null ? `IV: ${formatPrice(dcf.scenarios.base.intrinsicValuePerShare, stock.currency)}` : '—'}
                 </div>
               </div>
             </div>

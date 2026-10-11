@@ -188,19 +188,19 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
       {/* Main Intrinsic Value vs Price Strip */}
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* Conservative Intrinsic Value */}
+          {/* Base Intrinsic Value */}
           <div className="p-4 rounded-2xl bg-[#FBFBFD] dark:bg-[#252528]/50 border border-black/[0.04] dark:border-white/[0.06]">
             <div className="flex items-center gap-1">
               <span className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">
-                {isKo ? '보수적 추정 내재가치' : t('fairValueEstimate')}
+                {isKo ? '기준 추정 내재가치' : 'Base intrinsic value'}
               </span>
-              <HelpPopover content={DCF_GLOSSARY.conservativeIV(language)} align="left" iconSize={12} />
+              <HelpPopover content={DCF_GLOSSARY.baseIV(language)} align="left" iconSize={12} />
             </div>
             <div className="text-xl sm:text-2xl font-bold font-mono text-[#0071E3] dark:text-[#2997FF] tracking-tight tabular-nums mt-1">
-              {formatPrice(conservativeIV)}
+              {formatPrice(baseIV)}
             </div>
             <div className="text-[10px] text-[#86868B] mt-1 font-mono">
-              {isKo ? '보수적 성장률 가정 기준' : 'Conservative Scenario'}
+              {isKo ? '기준 성장률 가정' : 'Base Scenario'}
             </div>
           </div>
 
@@ -280,7 +280,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
               {/* Base */}
               <div className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#0071E3]/20 shadow-sm">
                 <div className="text-[10px] sm:text-[11px] font-bold text-[#0071E3] dark:text-[#2997FF]">
-                  {isKo ? '기본 (Base)' : 'Base'}
+                  {isKo ? '기준 (Base)' : 'Base'}
                 </div>
                 <div className="text-xs sm:text-sm font-bold font-mono mt-1 text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
                   {formatPrice(baseIV)}

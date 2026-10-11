@@ -472,7 +472,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                     </div>
                     <div className="text-[10px] font-mono text-[#86868B]">{ko ? '시총' : 'Cap'} {formatMarketCap(stock.marketCap, stock.currency)}</div>
                       <div title={periodNote(selected, ko)} className="text-[11px] font-mono font-medium text-[#0071E3] dark:text-[#2997FF] tabular-nums">
-                        {years}{ko ? '개년' : 'y'} · {formatPrice(selected?.dcf.scenarios?.conservative.intrinsicValuePerShare, stock.currency)} · {valuationPercent(selected?.dcf.conservativeMarginOfSafety)}
+                        {years}{ko ? '개년' : 'y'} · {formatPrice(selected?.dcf.scenarios?.base.intrinsicValuePerShare, stock.currency)} · {valuationPercent(selected?.dcf.conservativeMarginOfSafety)}
                       </div>
                       <p className="text-[10px] text-[#86868B] max-w-[180px]">{selected?.dcf.confidence ?? '—'}{!selected?.dcf.scenarios || selected.dcf.warnings.length > 0 ? ` · ${periodNote(selected, ko)}` : ''}</p>
                   </div>
@@ -572,7 +572,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                         {[1, 2, 3, 4, 5].map(year => {
                           const period = stock.periodValuations?.[String(year)];
                           return <td key={year} title={periodNote(period, ko)} className={`py-4 px-4 text-right font-mono tabular-nums whitespace-nowrap ${year === years ? 'font-semibold text-[#0071E3] dark:text-[#2997FF]' : 'text-[#86868B]'}`}>
-                            {formatPrice(period?.dcf.scenarios?.conservative.intrinsicValuePerShare, stock.currency)}
+                            {formatPrice(period?.dcf.scenarios?.base.intrinsicValuePerShare, stock.currency)}
                             {period?.dcf.warnings.includes('INCOMPLETE_GROWTH_HISTORY') && <span className="ml-1 text-[#FF9500]">⚠</span>}
                           </td>;
                         })}

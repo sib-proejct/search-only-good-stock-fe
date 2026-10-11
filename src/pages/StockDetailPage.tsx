@@ -582,16 +582,16 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
             {/* Divider */}
             <div className="hidden sm:block w-px h-10 bg-black/[0.08] dark:bg-white/[0.1] self-center" />
 
-            {/* Conservative Intrinsic Value */}
+            {/* Base Intrinsic Value */}
             <div className="text-left sm:text-right">
               <span className="text-[11px] font-semibold text-[#0071E3] dark:text-[#2997FF] uppercase tracking-wider block mb-0.5">
                 {t('intrinsicValue')}
               </span>
               <div className="text-2xl sm:text-3xl font-bold font-mono text-[#0071E3] dark:text-[#2997FF] tracking-tight tabular-nums">
-                {formatPrice(detail.conservativeIntrinsicValue, detail.currency)}
+                {formatPrice(detail.dcf.scenarios?.base.intrinsicValuePerShare ?? null, detail.currency)}
               </div>
               <div className="text-xs text-[#86868B] mt-1">
-                <span>{language === 'ko' ? '보수적 DCF 추정' : 'Conservative DCF'}</span>
+                <span>{language === 'ko' ? '기준 DCF 추정' : 'Base DCF'}</span>
               </div>
             </div>
           </div>
@@ -687,8 +687,8 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
               {formatPercent(detail.conservativeMarginOfSafety)}
             </span>
             <div className="text-[11px] text-[#86868B] mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between font-mono">
-              <span className="truncate max-w-[140px]" title={`IV: ${formatPrice(detail.conservativeIntrinsicValue, detail.currency)}`}>
-                IV: {formatPrice(detail.conservativeIntrinsicValue, detail.currency)}
+              <span className="truncate max-w-[140px]" title={`IV: ${formatPrice(detail.dcf.scenarios?.base.intrinsicValuePerShare ?? null, detail.currency)}`}>
+                IV: {formatPrice(detail.dcf.scenarios?.base.intrinsicValuePerShare ?? null, detail.currency)}
               </span>
               <span className="text-[10px] font-semibold">
                 {language === 'ko' ? '보수적 DCF' : 'CONSERVATIVE'}
