@@ -24,7 +24,7 @@ import { getCoreGradeInfo } from '../utils/ruleFormatters';
 import { StockDetailDrawer } from '../components/screener/StockDetailDrawer';
 import { StockValuationPage } from './StockValuationPage';
 import { stockApi } from '../services/api';
-import { growthUnavailableNote, periodNote, valuationPrice, valuationMarketCap, valuationPercent } from '../utils/valuationFormatters';
+import { periodNote, valuationPrice, valuationMarketCap, valuationPercent } from '../utils/valuationFormatters';
 
 interface ScreenerPageProps {
   onSelectStock?: (stockId: string) => void;
@@ -474,7 +474,6 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                       <div title={periodNote(selected, ko)} className="text-[11px] font-mono font-medium text-[#0071E3] dark:text-[#2997FF] tabular-nums">
                         {years}{ko ? '개년' : 'y'} · {formatPrice(selected?.dcf.scenarios?.conservative.intrinsicValuePerShare, stock.currency)} · {valuationPercent(selected?.dcf.conservativeMarginOfSafety)}
                       </div>
-                      {growthUnavailableNote(selected, ko) && <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-400">{ko ? 'CAGR 계산 불가: ' : 'CAGR unavailable: '}{growthUnavailableNote(selected, ko)}</p>}
                       <p className="text-[10px] text-[#86868B] max-w-[180px]">{selected?.dcf.confidence ?? '—'}{!selected?.dcf.scenarios || selected.dcf.warnings.length > 0 ? ` · ${periodNote(selected, ko)}` : ''}</p>
                   </div>
                 </div>
@@ -575,7 +574,6 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                           return <td key={year} title={periodNote(period, ko)} className={`py-4 px-4 text-right font-mono tabular-nums whitespace-nowrap ${year === years ? 'font-semibold text-[#0071E3] dark:text-[#2997FF]' : 'text-[#86868B]'}`}>
                             {formatPrice(period?.dcf.scenarios?.conservative.intrinsicValuePerShare, stock.currency)}
                             {period?.dcf.warnings.includes('INCOMPLETE_GROWTH_HISTORY') && <span className="ml-1 text-[#FF9500]">⚠</span>}
-                            {year === years && growthUnavailableNote(period, ko) && <p className="mt-1 max-w-[220px] whitespace-normal text-left font-sans text-[11px] font-normal text-amber-700 dark:text-amber-400">{ko ? 'CAGR 계산 불가: ' : 'CAGR unavailable: '}{growthUnavailableNote(period, ko)}</p>}
                           </td>;
                         })}
                         <td title={periodNote(selected, ko)} className="py-4 px-4 text-right font-mono tabular-nums whitespace-nowrap">{valuationPercent(selected?.dcf.conservativeMarginOfSafety)}</td>
