@@ -124,6 +124,25 @@ export function ValuationCalculationDetails({
     ? endOe / endShares
     : null;
 
+  const unavailableReasons = (metric: 'EPS' | 'OEPS'): string[] => {
+    const reasons: string[] = [];
+    for (let year = growthStartYear; year <= growthEndYear; year++) {
+      const row = result.annual_oe.find(item => item.fiscal_year === year);
+      if (!row) { reasons.push(`${year}년 연간 자료 누락`); continue; }
+      const value = parseNumeric(metric === 'EPS' ? row.diluted_eps : row.owner_earnings);
+      if (value === null) reasons.push(`${year}년 ${metric === 'EPS' ? '희석 EPS 누락' : '주주이익 계산 자료 부족'}`);
+      if (metric === 'OEPS') {
+        const shares = parseNumeric(row.diluted_shares);
+        if (shares === null) reasons.push(`${year}년 희석주식수 누락`);
+        else if ((year === growthStartYear || year === growthEndYear) && shares <= 0) reasons.push(`${year}년 희석주식수가 0 이하`);
+      }
+      if ((year === growthStartYear || year === growthEndYear) && value !== null && value <= 0) {
+        reasons.push(`${year}년 ${metric === 'EPS' ? '희석 EPS' : '주주이익'}이 0 이하 (${metric === 'EPS' ? formatPerShare(value, currency) : formatMonetaryAmount(value, currency)})`);
+      }
+    }
+    return reasons.length ? reasons : ['계산 입력과 DCF 적용 조건을 확인하세요.'];
+  };
+
   return (
     <details
       open
@@ -251,6 +270,7 @@ export function ValuationCalculationDetails({
                     <strong>EPS CAGR</strong>
                     <strong className="text-blue-600 dark:text-blue-400">{formatPercent(dcf.epsGrowth ?? null)}</strong>
                   </div>
+                  {dcf.epsGrowth == null && <p className="mt-2 font-sans text-amber-700 dark:text-amber-400 leading-relaxed">계산 불가: {unavailableReasons('EPS').join(' · ')}</p>}
                   <p className="mt-1 text-gray-500 break-words">
                     ({formatPerShare(endEps, currency)} ÷ {formatPerShare(startEps, currency)})
                     <sup>1/{result.options.normalization_years}</sup> − 1
@@ -265,6 +285,7 @@ export function ValuationCalculationDetails({
                     <strong>OEPS CAGR</strong>
                     <strong className="text-blue-600 dark:text-blue-400">{formatPercent(dcf.oepsGrowth ?? null)}</strong>
                   </div>
+                  {dcf.oepsGrowth == null && <p className="mt-2 font-sans text-amber-700 dark:text-amber-400 leading-relaxed">계산 불가: {unavailableReasons('OEPS').join(' · ')}</p>}
                   <p className="mt-1 text-gray-500 break-words">
                     ({formatPerShare(endOeps, currency)} ÷ {formatPerShare(startOeps, currency)})
                     <sup>1/{result.options.normalization_years}</sup> − 1

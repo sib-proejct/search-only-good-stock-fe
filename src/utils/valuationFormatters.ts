@@ -76,3 +76,14 @@ export function periodNote(period: PeriodValuation | undefined, ko: boolean): st
     return `${year ? `${year}: ` : ''}${labels[code]?.[ko ? 0 : 1] ?? code}`;
   }).join(' · ');
 }
+
+export function growthUnavailableNote(period: PeriodValuation | undefined, ko: boolean): string {
+  if (!period || (period.dcf.epsGrowth != null && period.dcf.oepsGrowth != null)) return '';
+  const reasons = period.missingReasons.filter(reason => /(?:^|: )(EPS|OEPS)_/.test(reason));
+  const detailed = reasons.filter(reason => !reason.endsWith('GROWTH_UNAVAILABLE'));
+  return periodNote({
+    ...period,
+    missingReasons: detailed.length ? detailed : reasons,
+    dcf: { ...period.dcf, reasonCodes: [], warnings: [] },
+  }, ko) || (ko ? '성장률 계산 자료를 확인하세요.' : 'Review growth calculation inputs.');
+}

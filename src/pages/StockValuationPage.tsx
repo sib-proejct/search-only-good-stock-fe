@@ -5,7 +5,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import { stockApi } from '../services/api';
 import { valuationRequest, type ValuationView, type ValuationConditions } from '../services/valuationApi';
-import { periodNote, valuationAmount, valuationMarketCap, valuationPercent, valuationPrice } from '../utils/valuationFormatters';
+import { growthUnavailableNote, periodNote, valuationAmount, valuationMarketCap, valuationPercent, valuationPrice } from '../utils/valuationFormatters';
 import type { Market, StockDetailDTO } from '../types/api';
 import { getCoreGradeInfo, getValuationStatusInfo, getConfidenceInfo } from '../utils/ruleFormatters';
 
@@ -138,6 +138,7 @@ export function StockValuationPage({ ticker: panelTicker, market: panelMarket, y
           [ko ? '성장률 대상 (기초 연도 포함)' : 'Growth target (including opening year)', period?.growthTargetYears], [ko ? 'EPS 성장률 사용' : 'EPS growth used', period?.epsGrowthUsedYears], [ko ? 'OEPS 성장률 사용' : 'OEPS growth used', period?.oepsGrowthUsedYears],
         ].map(([label, values]) => <div key={String(label)}><dt className="text-[#86868B]">{String(label)}</dt><dd className="font-mono tabular-nums mt-1">{Array.isArray(values) && values.length ? values.join(', ') : '—'}</dd></div>)}</dl>
         <p className="mt-4 text-sm font-mono tabular-nums">EPS CAGR: {valuationPercent(dcf?.epsGrowth)} · OEPS CAGR: {valuationPercent(dcf?.oepsGrowth)}</p>
+        {growthUnavailableNote(period, ko) && <p className="mt-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 p-3 text-sm text-amber-700 dark:text-amber-400"><strong>{ko ? 'CAGR 계산 불가 사유: ' : 'CAGR unavailable: '}</strong>{growthUnavailableNote(period, ko)}</p>}
         <p className="mt-4 text-sm">{ko ? '누락 및 경고' : 'Missing inputs and warnings'}: {periodNote(period, ko)}</p>
         <p className="mt-2 text-sm">{ko ? '정상화 주당 주주이익' : 'Normalized owner earnings per share'}: {money(dcf?.normalizedOeps)} · {ko ? '할인율' : 'Discount rate'}: {valuationPercent(dcf?.discountRate)}</p>
       </section>
