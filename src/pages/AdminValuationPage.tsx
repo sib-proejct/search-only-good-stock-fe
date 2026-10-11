@@ -1,3 +1,4 @@
+import { MultiStockCollector } from '../components/admin/MultiStockCollector';
 import { RegisterStockCard, StockDataCollector } from '../components/admin/ManagedStockActions';
 import { ValuationCalculationDetails } from '../components/admin/ValuationCalculationDetails';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -433,7 +434,9 @@ export function AdminValuationPage() {
   const [missingOnly, setMissingOnly] = useState(false);
   const [review, setReview] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [collecting, setCollecting] = useState(false);
+  const [singleCollecting, setCollecting] = useState(false);
+  const [multiCollecting, setMultiCollecting] = useState(false);
+  const collecting = singleCollecting || multiCollecting;
   const [loadingRows, setLoadingRows] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -1112,6 +1115,13 @@ export function AdminValuationPage() {
             </div>
           )}
           </div>
+          <MultiStockCollector
+            stocks={initialStocks}
+            currentId={stock?.id}
+            disabled={busy || dirty || (singleCollecting && !multiCollecting)}
+            onCollecting={setMultiCollecting}
+            onCollected={onCollected}
+          />
           {stock && (
             <StockDataCollector
               stock={stock}

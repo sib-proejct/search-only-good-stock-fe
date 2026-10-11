@@ -22,6 +22,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/stocks/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Stocks */
+        post: operations["refresh_stocks_api_admin_stocks_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/stocks/{stock_id}/refresh": {
         parameters: {
             query?: never;
@@ -1741,6 +1758,18 @@ export interface components {
             /** Isstale */
             isStale: boolean;
         };
+        /** StocksRefreshRequest */
+        StocksRefreshRequest: {
+            /** Stock Ids */
+            stock_ids: number[];
+        };
+        /** StocksRefreshResponse */
+        StocksRefreshResponse: {
+            /** Batch Run Id */
+            batch_run_id: number;
+            /** Items */
+            items: components["schemas"]["CollectionStatus"][];
+        };
         /**
          * ThresholdOperator
          * @enum {string}
@@ -2064,6 +2093,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminStock"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_stocks_api_admin_stocks_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StocksRefreshRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StocksRefreshResponse"];
                 };
             };
             /** @description Validation Error */
