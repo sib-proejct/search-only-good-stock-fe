@@ -1,11 +1,18 @@
 import type { components } from '../types/openapi.generated';
-import { normalizeScientificNotation } from '../utils/numberFormatters';
+import { normalizeScientificNotation, parseNumeric } from '../utils/numberFormatters';
 
 export type AdminStock = components['schemas']['AdminStock'];
 export type EditorTable = components['schemas']['EditorTable'];
 export type EditorField = components['schemas']['EditorField'];
 export type ValuationOptions = components['schemas']['ValuationRequest-Input'];
 export type ValuationResult = components['schemas']['ValuationResponse'];
+export type AdminValuationCalculation = ValuationResult & {
+  earningsPowerFailures: Array<{
+    fiscalYear: number;
+    ebit: number;
+    netIncome: number;
+  }>;
+};
 export type TableName = EditorTable['table'];
 export type FactRow =
   | components['schemas']['AnnualFactDataRead']
@@ -33,6 +40,48 @@ export async function adminRequest<T>(
     );
   }
   return body as T;
+}
+
+export async function calculateAdminValuation(
+  stockId: number,
+  options: ValuationOptions,
+): Promise<AdminValuationCalculation> {
+  const requestOptions = { ...options, publish: true };
+  // Fetch annual evidence independently of the currently selected editor table.
+  const facts = await adminRequest<components['schemas']['AnnualFactDataRead'][]>(
+    `/facts/annual_financial_fact?stock_id=${stockId}`,
+  );
+  const result = await adminRequest<ValuationResult>(`/stocks/${stockId}/valuation`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestOptions),
+  });
+  const earningsPowerFailures: AdminValuationCalculation['earningsPowerFailures'] = [];
+  if (result.dcf?.reasonCodes.includes('PREREQUISITE_FAILED')) {
+    const { as_of: cutoff, statement_scope: scope } = result.options;
+    const includedYears = new Set(result.annual_oe.map((row) => row.fiscal_year));
+    const byYear = new Map(facts
+      .filter((row) => row.statement_scope === scope
+        && row.period_end <= cutoff
+        && (row.filed_at == null || row.filed_at <= cutoff)
+        && includedYears.has(row.fiscal_year))
+      .map((row) => [row.fiscal_year, row]));
+    const latestYear = Math.max(...includedYears);
+    const years = [latestYear - 2, latestYear - 1, latestYear];
+    // The earnings rule requires three consecutive fiscal years and both values.
+    if (years.every((year) => byYear.has(year))) {
+      for (const fiscalYear of years) {
+        const row = byYear.get(fiscalYear)!;
+        const ebit = parseNumeric(row.ebit);
+        const netIncome = parseNumeric(row.net_income_common);
+        if (ebit !== null && netIncome !== null && (ebit <= 0 || netIncome <= 0)) {
+          earningsPowerFailures.push({ fiscalYear, ebit, netIncome });
+        }
+      }
+    }
+  }
+  // Store parsed evidence with this response so later editor changes cannot alter it.
+  return { ...result, earningsPowerFailures };
 }
 
 export function fieldDisplay(
