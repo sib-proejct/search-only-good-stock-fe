@@ -178,7 +178,7 @@ function defaultValuationOptions(stock: AdminStockItem): ValuationOptions {
     normalization_method: 'CONSERVATIVE',
     growth_method: 'OEPS_WEIGHTED',
     growth_rate_cap: stock.growth_rate_cap ?? '0.20',
-    growth_rate_floor: stock.growth_rate_floor ?? '0',
+    growth_rate_floor: stock.growth_rate_floor ?? '0.05',
     statement_scope: stock.currency === 'USD' ? 'CONSOLIDATED_US_GAAP' : 'CFS',
   };
 }
@@ -214,7 +214,7 @@ function storedValuationOptions(stock: AdminStockItem): ValuationOptions {
       growth_rate_cap: typeof stored.growth_rate_cap === 'string' || typeof stored.growth_rate_cap === 'number'
         ? stored.growth_rate_cap
         : defaults.growth_rate_cap,
-      growth_rate_floor: stored.growth_rate_floor == null
+      growth_rate_floor: stored.growth_rate_floor === null
         || typeof stored.growth_rate_floor === 'string'
         || typeof stored.growth_rate_floor === 'number'
         ? stored.growth_rate_floor ?? null
@@ -446,7 +446,7 @@ export function AdminValuationPage() {
     normalization_method: 'CONSERVATIVE',
     growth_method: 'OEPS_WEIGHTED',
     growth_rate_cap: '0.20',
-    growth_rate_floor: '0',
+    growth_rate_floor: '0.05',
     statement_scope: 'CFS',
   });
   const [result, setResult] = useState<ValuationResult | null>(null);
@@ -1307,7 +1307,7 @@ export function AdminValuationPage() {
                         className={`${control} min-h-11 pr-9 tabular-nums focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
                         disabled={busy}
                         value={options.growth_rate_floor}
-                        onChange={(val) => changeOption({ growth_rate_floor: val ?? '0' })}
+                        onChange={(val) => changeOption({ growth_rate_floor: val ?? '0.05' })}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
                     </div>

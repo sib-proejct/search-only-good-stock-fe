@@ -1790,8 +1790,11 @@ export interface components {
              * @default 0.20
              */
             growthRateCap: number | string;
-            /** Growthratefloor */
-            growthRateFloor?: number | string | null;
+            /**
+             * Growthratefloor
+             * @default 0.05
+             */
+            growthRateFloor: number | string | null;
         };
         /** ValuationConditions */
         "ValuationConditions-Output": {
@@ -1824,8 +1827,11 @@ export interface components {
              * @default 0.20
              */
             growthRateCap: string;
-            /** Growthratefloor */
-            growthRateFloor?: string | null;
+            /**
+             * Growthratefloor
+             * @default 0.05
+             */
+            growthRateFloor: string | null;
         };
         /** ValuationPreviewRequest */
         ValuationPreviewRequest: {
@@ -1882,7 +1888,7 @@ export interface components {
             growth_rate_cap: number | string;
             /**
              * Growth Rate Floor
-             * @default 0
+             * @default 0.05
              */
             growth_rate_floor: number | string | null;
         };
@@ -1935,7 +1941,7 @@ export interface components {
             growth_rate_cap: string;
             /**
              * Growth Rate Floor
-             * @default 0
+             * @default 0.05
              */
             growth_rate_floor: string | null;
         };
