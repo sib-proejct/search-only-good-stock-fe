@@ -550,7 +550,7 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
         language === 'ko'
           ? '주주이익 DCF 가치평가'
           : 'Owner Earnings 10Y DCF Valuation',
-      targetHurdle: 'Conservative Margin of Safety ≥ 20.0%',
+      targetHurdle: 'Base Margin of Safety ≥ 20.0%',
       applicability:
         language === 'ko'
           ? '비금융 일반기업 (금융업 N/A)'
@@ -581,11 +581,11 @@ export const RuleGuidePage: React.FC<RuleGuidePageProps> = ({
       formula:
         'OEPS_t = OEPS × (1+g)^t  |  PV = Σ[OEPS_t / (1+r)^t] + Terminal Value / (1+r)^10  |  Margin = (Value - Price) ÷ Value',
       conditionText:
-        'Current Price ≤ Conservative Intrinsic Value × 0.80 (20%+ Margin)',
+        'Current Price ≤ Base Intrinsic Value × 0.80 (20%+ Margin)',
       passCondition:
         language === 'ko'
-          ? 'PASS_WITH_MARGIN: 핵심 전체 통과·LOW가 아닌 신뢰도·보수적 추정가치 대비 20.0% 이상 할인'
-          : 'PASS_WITH_MARGIN: Stock price trades at a ≥ 20.0% discount to conservative DCF intrinsic value',
+          ? 'PASS_WITH_MARGIN: 핵심 전체 통과·LOW가 아닌 신뢰도·기준 추정가치 대비 20.0% 이상 할인'
+          : 'PASS_WITH_MARGIN: Stock price trades at a ≥ 20.0% discount to base DCF intrinsic value',
       exclusionCondition:
         language === 'ko'
           ? 'NO_MARGIN (기준 가치 초과 고평가) 또는 WATCH (가치 범위 내이나 20% 안전마진 미확보)'

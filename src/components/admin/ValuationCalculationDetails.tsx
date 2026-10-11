@@ -33,7 +33,7 @@ const growthCalculationText = (
   if (oepsGrowth == null) {
     return `EPS 성장률만 유효: ${formatSignedPercent(rawGrowth)}`;
   }
-  if (epsGrowth < 0 || oepsGrowth < 0 || method === 'LOWER_BOUND') {
+  if (method === 'LOWER_BOUND') {
     return `min(${formatSignedPercent(epsGrowth)}, ${formatSignedPercent(oepsGrowth)}) = ${formatSignedPercent(rawGrowth)}`;
   }
   if (method === 'OEPS_WEIGHTED') {
@@ -105,7 +105,7 @@ export function ValuationCalculationDetails({
     dcf.rawGrowth > dcf.growthCap;
   const growthWasFloored =
     dcf.rawGrowth !== null &&
-    dcf.growthFloor !== null &&
+    dcf.growthFloor != null &&
     dcf.rawGrowth < dcf.growthFloor;
   const growthEndYear = Math.max(...result.annual_oe.map((row) => row.fiscal_year));
   const growthStartYear = growthEndYear - result.options.normalization_years;
@@ -123,6 +123,25 @@ export function ValuationCalculationDetails({
   const endOeps = endOe !== null && endShares !== null && endShares > 0
     ? endOe / endShares
     : null;
+
+  const unavailableReasons = (metric: 'EPS' | 'OEPS'): string[] => {
+    const reasons: string[] = [];
+    for (let year = growthStartYear; year <= growthEndYear; year++) {
+      const row = result.annual_oe.find(item => item.fiscal_year === year);
+      if (!row) { reasons.push(`${year}년 연간 자료 누락`); continue; }
+      const value = parseNumeric(metric === 'EPS' ? row.diluted_eps : row.owner_earnings);
+      if (value === null) reasons.push(`${year}년 ${metric === 'EPS' ? '희석 EPS 누락' : '주주이익 계산 자료 부족'}`);
+      if (metric === 'OEPS') {
+        const shares = parseNumeric(row.diluted_shares);
+        if (shares === null) reasons.push(`${year}년 희석주식수 누락`);
+        else if ((year === growthStartYear || year === growthEndYear) && shares <= 0) reasons.push(`${year}년 희석주식수가 0 이하`);
+      }
+      if ((year === growthStartYear || year === growthEndYear) && value !== null && value <= 0) {
+        reasons.push(`${year}년 ${metric === 'EPS' ? '희석 EPS' : '주주이익'}이 0 이하 (${metric === 'EPS' ? formatPerShare(value, currency) : formatMonetaryAmount(value, currency)})`);
+      }
+    }
+    return reasons.length ? reasons : ['계산 입력과 DCF 적용 조건을 확인하세요.'];
+  };
 
   return (
     <details
@@ -251,6 +270,7 @@ export function ValuationCalculationDetails({
                     <strong>EPS CAGR</strong>
                     <strong className="text-blue-600 dark:text-blue-400">{formatPercent(dcf.epsGrowth ?? null)}</strong>
                   </div>
+                  {dcf.epsGrowth == null && <p className="mt-2 font-sans text-amber-700 dark:text-amber-400 leading-relaxed">계산 불가: {unavailableReasons('EPS').join(' · ')}</p>}
                   <p className="mt-1 text-gray-500 break-words">
                     ({formatPerShare(endEps, currency)} ÷ {formatPerShare(startEps, currency)})
                     <sup>1/{result.options.normalization_years}</sup> − 1
@@ -265,6 +285,7 @@ export function ValuationCalculationDetails({
                     <strong>OEPS CAGR</strong>
                     <strong className="text-blue-600 dark:text-blue-400">{formatPercent(dcf.oepsGrowth ?? null)}</strong>
                   </div>
+                  {dcf.oepsGrowth == null && <p className="mt-2 font-sans text-amber-700 dark:text-amber-400 leading-relaxed">계산 불가: {unavailableReasons('OEPS').join(' · ')}</p>}
                   <p className="mt-1 text-gray-500 break-words">
                     ({formatPerShare(endOeps, currency)} ÷ {formatPerShare(startOeps, currency)})
                     <sup>1/{result.options.normalization_years}</sup> − 1
@@ -297,7 +318,7 @@ export function ValuationCalculationDetails({
               <dt className="text-gray-500">성장률 상한</dt>
               <dd className="font-mono font-bold">{formatPercent(dcf.growthCap)}</dd>
               <dt className="text-gray-500">성장률 하한</dt>
-              <dd className="font-mono font-bold">{formatPercent(dcf.growthFloor)}</dd>
+              <dd className="font-mono font-bold">{formatPercent(dcf.growthFloor ?? null)}</dd>
               <dt className="text-gray-500">기준 성장률 = 원성장률의 하한·상한 적용값</dt>
               <dd className="font-mono font-bold text-blue-600 dark:text-blue-400">
                 {formatPercent(dcf.baseGrowth)}
@@ -306,9 +327,8 @@ export function ValuationCalculationDetails({
               <dd className="font-mono font-bold">{formatPercent(dcf.discountRate)}</dd>
             </dl>
             <p className="text-xs text-gray-500 leading-relaxed">
-              선택한 산정 방식은 EPS와 OEPS 성장률이 모두 유효할 때 적용됩니다. 한 지표만
-              유효하면 해당 성장률을 사용하고, 하나라도 음수이면 더 낮은 성장률을
-              사용합니다. 산정 후에는 기업별 성장률 하한·상한 범위로 제한해 기준
+              선택한 혼합 방식은 EPS와 OEPS 성장률이 모두 유효할 때 적용됩니다. 한 지표만
+              유효하면 해당 성장률을 사용하고, 음수 성장률도 선택한 비율로 혼합합니다. 산정 후에는 기업별 성장률 하한·상한 범위로 제한해 기준
               성장률로 적용합니다. 할인율은 무위험금리와 시장위험 프리미엄을 합산하고
               7% 하한 및 부채 안전성 가산금리를 반영합니다.
             </p>
@@ -322,7 +342,7 @@ export function ValuationCalculationDetails({
             {growthWasFloored && (
               <p className="rounded-lg bg-amber-50 p-2 text-xs leading-relaxed text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
                 선택한 산정 방식으로 원성장률은 {formatPercent(dcf.rawGrowth)}이지만,
-                성장률 하한 {formatPercent(dcf.growthFloor)}이 적용되어 기준 성장률은{' '}
+                성장률 하한 {formatPercent(dcf.growthFloor ?? null)}이 적용되어 기준 성장률은{' '}
                 {formatPercent(dcf.baseGrowth)}입니다.
               </p>
             )}
@@ -353,7 +373,7 @@ export function ValuationCalculationDetails({
             )}
             <div className="rounded-lg bg-black/[0.025] dark:bg-white/[0.04] p-3 text-xs">
               <span className="font-mono block">
-                안전마진 = (보수적 내재가치 − 현재가) ÷ 보수적 내재가치
+                안전마진 = (기준 내재가치 − 현재가) ÷ 기준 내재가치
               </span>
               <strong className="text-base mt-1 block">
                 {formatPercent(dcf.conservativeMarginOfSafety)} · {statusLabel(dcf.status)}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { StockSummaryDTO, StockDetailDTO, ReasonCode, Market } from '../../types/api';
 import { stockApi } from '../../services/api';
+import { periodNote, valuationPrice, valuationMarketCap } from '../../utils/valuationFormatters';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
 import { getMetricLabel, getRuleInfo, getCoreGradeInfo } from '../../utils/ruleFormatters';
 import {
@@ -18,6 +19,8 @@ import {
 interface StockDetailDrawerProps {
   stock: StockSummaryDTO | null;
   isOpen: boolean;
+  years?: number;
+  content?: React.ReactNode;
   onClose: () => void;
   onNavigateToFullDetail: (ticker: string, market: Market) => void;
   stockList: StockSummaryDTO[];
@@ -27,6 +30,8 @@ interface StockDetailDrawerProps {
 export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
   stock,
   isOpen,
+  years = 5,
+  content,
   onClose,
   onNavigateToFullDetail,
   stockList,
@@ -79,9 +84,11 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
   });
   const [isResizing, setIsResizing] = useState(false);
 
+  const customContent = content != null;
+
   // Fetch detail when stock changes
   useEffect(() => {
-    if (!stock || !isOpen) {
+    if (!stock || !isOpen || customContent) {
       setDetail(null);
       return;
     }
@@ -106,7 +113,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
     return () => {
       isCancelled = true;
     };
-  }, [stock, isOpen]);
+  }, [stock, isOpen, customContent]);
 
   // Resize mouse drag handling
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -177,6 +184,8 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
+      } else if (e.target instanceof HTMLElement && e.target.closest('input, select, textarea, [contenteditable="true"]')) {
+        return;
       } else if (e.key === 'ArrowLeft') {
         handlePrevStock();
       } else if (e.key === 'ArrowRight') {
@@ -204,26 +213,10 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
     return null;
   }
 
-  const formatPrice = (val: number | null, curr: string) => {
-    if (val === null || val === undefined) return '—';
-    if (curr === 'USD') {
-      return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-    return `${Math.round(val).toLocaleString()}원`;
-  };
-
-  const formatMarketCap = (val: number | null, curr: string) => {
-    if (val === null || val === undefined) return '—';
-    if (curr === 'USD') {
-      if (val >= 1_000_000_000_000) return `$${(val / 1_000_000_000_000).toFixed(1)}T`;
-      if (val >= 1_000_000_000) return `$${(val / 1_000_000_000).toFixed(1)}B`;
-      if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(1)}M`;
-      return `$${val.toLocaleString()}`;
-    }
-    if (val >= 1_000_000_000_000) return `${(val / 1_000_000_000_000).toFixed(1)}조원`;
-    if (val >= 100_000_000) return `${(val / 100_000_000).toFixed(1)}억원`;
-    return `${val.toLocaleString()}원`;
-  };
+  const period = stock.periodValuations?.[String(years)];
+  const dcf = period?.dcf;
+  const formatPrice = (val: number | null | undefined, curr: string) => valuationPrice(val, curr, language === 'ko');
+  const formatMarketCap = (val: number | null, curr: string) => valuationMarketCap(val, curr, language === 'ko');
 
   const formatPercent = (val: number | null) => {
     if (val === null || val === undefined) return '—';
@@ -327,6 +320,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
 
         {/* Scrollable Drawer Body */}
         <div className="flex-1 overflow-y-auto px-5 sm:px-7 py-5 sm:py-6 space-y-6">
+          {customContent ? content : <>
           {/* 1. Hero Stock Identity Card */}
           <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-5 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm transition-colors duration-300">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -436,7 +430,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
                   {formatPercent(stock.conservativeMarginOfSafety)}
                 </span>
                 <div className="text-[10px] text-[#86868B] mt-1.5 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06]">
-                  {stock.conservativeIntrinsicValue !== null ? `IV: ${formatPrice(stock.conservativeIntrinsicValue, stock.currency)}` : '—'}
+                  {dcf?.scenarios?.base.intrinsicValuePerShare != null ? `IV: ${formatPrice(dcf.scenarios.base.intrinsicValuePerShare, stock.currency)}` : '—'}
                 </div>
               </div>
             </div>
@@ -537,34 +531,35 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
               </div>
 
               {/* DCF Valuation Details Card */}
-              {detail.dcf && (
+              <p className="text-[11px] text-[#86868B] leading-relaxed">{periodNote(period, language === 'ko')}</p>
+              {dcf && (
                 <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold text-[#1D1D1F] dark:text-[#F5F5F7] flex items-center gap-1.5">
                       <TrendingUp className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />
                       <span>DCF Valuation Scenarios</span>
                     </h3>
-                    <span className="text-[10px] font-mono text-[#86868B]">{detail.dcf.method}</span>
+                    <span className="text-[10px] font-mono text-[#86868B]">{years}{language === 'ko' ? '개년' : 'y'} · {dcf.method}</span>
                   </div>
 
-                  {detail.dcf.scenarios && (
+                  {dcf.scenarios && (
                     <div className="grid grid-cols-3 gap-2 text-center pt-1">
                       <div className="p-2.5 rounded-xl bg-[#F5F5F7] dark:bg-[#252528]">
                         <div className="text-[10px] text-[#86868B]">Conservative</div>
                         <div className="text-xs font-bold font-mono mt-1 text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
-                          {formatPrice(detail.dcf.scenarios.conservative.intrinsicValuePerShare, stock.currency)}
+                          {formatPrice(dcf.scenarios.conservative.intrinsicValuePerShare, stock.currency)}
                         </div>
                       </div>
                       <div className="p-2.5 rounded-xl bg-[#F5F5F7] dark:bg-[#252528] border border-[#0071E3]/20">
                         <div className="text-[10px] text-[#0071E3] dark:text-[#2997FF] font-semibold">Base</div>
                         <div className="text-xs font-bold font-mono mt-1 text-[#0071E3] dark:text-[#2997FF] tabular-nums">
-                          {formatPrice(detail.dcf.scenarios.base.intrinsicValuePerShare, stock.currency)}
+                          {formatPrice(dcf.scenarios.base.intrinsicValuePerShare, stock.currency)}
                         </div>
                       </div>
                       <div className="p-2.5 rounded-xl bg-[#F5F5F7] dark:bg-[#252528]">
                         <div className="text-[10px] text-[#86868B]">Optimistic</div>
                         <div className="text-xs font-bold font-mono mt-1 text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
-                          {formatPrice(detail.dcf.scenarios.optimistic.intrinsicValuePerShare, stock.currency)}
+                          {formatPrice(dcf.scenarios.optimistic.intrinsicValuePerShare, stock.currency)}
                         </div>
                       </div>
                     </div>
@@ -573,6 +568,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
               )}
             </div>
           )}
+          </>}
         </div>
 
         {/* Sticky Bottom Action Footer */}

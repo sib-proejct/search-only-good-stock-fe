@@ -1,8 +1,8 @@
+import { MarketFilter } from '../components/common/MarketFilter';
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   useStocks,
-  MarketFilter,
   CoreGradeFilterOption,
 } from '../hooks/useStocks';
 import {
@@ -19,19 +19,23 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
-import { StockDetailDrawer } from '../components/screener/StockDetailDrawer';
-import { StockSort, StockSummaryDTO } from '../types/api';
+import { StockSort } from '../types/api';
 import { getCoreGradeInfo } from '../utils/ruleFormatters';
+import { StockDetailDrawer } from '../components/screener/StockDetailDrawer';
+import { StockValuationPage } from './StockValuationPage';
+import { stockApi } from '../services/api';
+import { periodNote, valuationPrice, valuationMarketCap, valuationPercent } from '../utils/valuationFormatters';
 
 interface ScreenerPageProps {
   onSelectStock?: (stockId: string) => void;
   searchQuery: string;
 }
 
-export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searchQuery: globalSearchQuery }) => {
+export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalSearchQuery }) => {
   const navigate = useNavigate();
   const { t, language } = useAppConfig();
   const {
+    years, setYears, valuationStatus, setValuationStatus,
     stocks,
     total,
     loading,
@@ -47,34 +51,48 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
     setSortField,
     sortOrder,
     toggleSortOrder,
-    passedStockCount,
-    totalStockCount,
     hasMore,
     loadMore,
     retry,
     resetFilters,
   } = useStocks();
 
-  // Sync global search from TopNavBar if changed
+  const ko = language === 'ko';
+  const [counts, setCounts] = useState<{ total: number; passed: number; margin: number } | null>(null);
+  useEffect(() => { setSearchQuery(globalSearchQuery); }, [globalSearchQuery, setSearchQuery]);
   useEffect(() => {
-    if (globalSearchQuery !== searchQuery) {
-      setSearchQuery(globalSearchQuery);
-    }
-  }, [globalSearchQuery, searchQuery, setSearchQuery]);
-
-  const [isMarketDropdownOpen, setIsMarketDropdownOpen] = useState(false);
-  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+    const controller = new AbortController();
+    setCounts(null);
+    const timer = setTimeout(() => {
+      const query = { limit: 1, years, search: searchQuery.trim() || undefined, market: market.length ? market : undefined };
+      Promise.all([
+        stockApi.getStocks(query, controller.signal),
+        stockApi.getStocks({ ...query, coreStatus: 'PASS' }, controller.signal),
+        stockApi.getStocks({ ...query, valuationStatus: 'PASS_WITH_MARGIN' }, controller.signal),
+      ]).then(([all, passed, margin]) => {
+        if (!controller.signal.aborted) setCounts({ total: all.total, passed: passed.total, margin: margin.total });
+      }).catch(() => { /* Counts remain unavailable when the request fails. */ });
+    }, 300);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [searchQuery, market, years]);
   const [drawerStockId, setDrawerStockId] = useState<string | null>(null);
+  const drawerStock = stocks.find(stock => stock.id === drawerStockId) ?? null;
+  const drawerPeriod = drawerStock?.periodValuations?.[String(years)];
+  const selectedDrawerStock = drawerStock ? {
+    ...drawerStock,
+    conservativeIntrinsicValue: drawerPeriod?.dcf.scenarios?.conservative.intrinsicValuePerShare ?? null,
+    conservativeMarginOfSafety: drawerPeriod?.dcf.conservativeMarginOfSafety ?? null,
+    valuationStatus: drawerPeriod?.dcf.status ?? 'N/A' as const,
+    confidence: drawerPeriod?.dcf.confidence ?? 'LOW' as const,
+  } : null;
 
-  const marketDropdownRef = useRef<HTMLDivElement>(null);
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+
   const sortDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdowns when clicking outside
+  // Close the sort dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (marketDropdownRef.current && !marketDropdownRef.current.contains(event.target as Node)) {
-        setIsMarketDropdownOpen(false);
-      }
       if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target as Node)) {
         setIsSortDropdownOpen(false);
       }
@@ -82,17 +100,6 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // Market Options for Dropdown
-  const marketOptions: { id: MarketFilter; label: string; subLabel: string }[] = [
-    { id: 'ALL', label: t('allMarkets'), subLabel: 'NASDAQ · NYSE · KOSPI · KOSDAQ' },
-    { id: 'NASDAQ', label: 'NASDAQ', subLabel: 'US Tech & Growth' },
-    { id: 'NYSE', label: 'NYSE', subLabel: 'US Classic & Blue-Chip' },
-    { id: 'KOSPI', label: 'KOSPI', subLabel: 'KR Prime Market' },
-    { id: 'KOSDAQ', label: 'KOSDAQ', subLabel: 'KR Growth & Innovation' },
-  ];
-
-  const currentMarketOption = marketOptions.find((o) => o.id === market) || marketOptions[0];
 
   // Core Grade Filter Options
   const coreGradeFilterOptions: {
@@ -107,36 +114,17 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
 
   // Sort Options
   const sortOptions: { id: StockSort; label: string }[] = [
-    { id: 'corePassCount', label: t('sortPassCount') },
     { id: 'marketCap', label: t('sortMarketCap') },
+    { id: 'conservativeMarginOfSafety', label: ko ? '선택 기간 안전마진' : 'Selected period margin' },
+    { id: 'corePassCount', label: t('sortPassCount') },
+    { id: 'currentPrice', label: ko ? '현재가' : 'Price' },
     { id: 'ticker', label: t('sortTicker') },
   ];
 
   const currentSortOption = sortOptions.find((s) => s.id === sortField) || sortOptions[0];
 
-  const formatPrice = (val: number | null, curr: string) => {
-    if (val === null || val === undefined) return '—';
-    if (curr === 'USD') {
-      return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-    return `${Math.round(val).toLocaleString()}원`;
-  };
-
-  const formatMarketCap = (val: number | null, curr: string) => {
-    if (val === null || val === undefined) return '—';
-    if (curr === 'USD') {
-      if (val >= 1_000_000_000_000) return `$${(val / 1_000_000_000_000).toFixed(1)}T`;
-      if (val >= 1_000_000_000) return `$${(val / 1_000_000_000).toFixed(1)}B`;
-      if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(1)}M`;
-      return `$${val.toLocaleString()}`;
-    }
-    if (val >= 1_000_000_000_000) return `${(val / 1_000_000_000_000).toFixed(1)}조원`;
-    if (val >= 100_000_000) return `${(val / 100_000_000).toFixed(1)}억원`;
-    return `${val.toLocaleString()}원`;
-  };
-
-  const selectedDrawerStock: StockSummaryDTO | null =
-    stocks.find((stock) => stock.id === drawerStockId) || null;
+  const formatPrice = (val: number | null | undefined, curr: string) => valuationPrice(val, curr, ko);
+  const formatMarketCap = (val: number | null, curr: string) => valuationMarketCap(val, curr, ko);
   const latestLoadedDataAsOf = stocks.reduce<string | null>(
     (latest, stock) => (!latest || stock.dataAsOf > latest ? stock.dataAsOf : latest),
     null
@@ -164,7 +152,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
             </div>
             <div className="flex items-baseline gap-2 mt-2 whitespace-nowrap">
               <span className="text-2xl sm:text-3xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight tabular-nums">
-                {passedStockCount ?? '—'} / {totalStockCount ?? '—'}
+                {counts?.passed ?? '—'} / {counts?.total ?? '—'}
               </span>
               <span className="text-xs sm:text-sm font-semibold text-[#86868B] dark:text-[#A1A1A6]">
                 {t('stocksPassed')}
@@ -190,7 +178,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
             </span>
             <div className="flex items-baseline gap-2 mt-2 whitespace-nowrap">
               <span className="text-2xl sm:text-3xl font-bold font-mono text-[#34C759] tracking-tight tabular-nums">
-                {stocks.filter((s) => s.valuationStatus === 'PASS_WITH_MARGIN').length}
+                {counts?.margin ?? '—'}
               </span>
               <span className="text-xs sm:text-sm font-semibold text-[#86868B] dark:text-[#A1A1A6]">
                 {t('valuationPassWithMargin')}
@@ -200,7 +188,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
 
           <div className="pt-3 mt-3 border-t border-black/[0.06] dark:border-white/[0.08]">
             <span className="text-xs font-medium text-[#86868B] truncate block">
-              Cash-Flow Proxy DCF Valuation
+              {ko ? `${years}개년 재무자료 기준 현재 내재가치` : `Current intrinsic value using ${years} fiscal years`}
             </span>
           </div>
         </div>
@@ -212,7 +200,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
               <span className="text-xs font-medium text-[#86868B] block truncate">
                 {t('loadedAsOfDateLabel')}
               </span>
-              {import.meta.env.DEV && <a href="/admin/valuation" className="text-xs text-blue-600">종목 추가 · 원자료 관리</a>}
+              {import.meta.env.DEV && <a href="/admin/valuation" className="text-xs text-blue-600">{ko ? '종목 추가 · 원자료 관리' : 'Add stocks · Edit facts'}</a>}
             </div>
             <div className="flex items-baseline gap-1.5 mt-2 whitespace-nowrap">
               <span className="text-lg sm:text-xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
@@ -234,55 +222,25 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-xs font-medium text-[#86868B]">{ko ? '재무자료 기간' : 'Financial history'}</span>
+        <div className="inline-flex bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 rounded-2xl border border-black/[0.04] dark:border-white/[0.06] gap-1">
+          {[1, 2, 3, 4, 5].map(year => <button key={year} aria-pressed={years === year} onClick={() => setYears(year)} className={`px-3.5 py-2 text-xs rounded-xl transition-all ${years === year ? 'bg-white dark:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-bold shadow-sm' : 'text-[#8B95A1] dark:text-[#86868B] font-medium'}`}>{year}{ko ? '개년' : ' years'}</button>)}
+        </div>
+        <label className="text-xs text-[#86868B]">{ko ? '가치평가 ' : 'Valuation '}<select aria-label={ko ? '가치평가' : 'Valuation'} value={valuationStatus} onChange={event => setValuationStatus(event.target.value as typeof valuationStatus)} className="h-10 px-3 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] text-[#191F28] dark:text-[#F5F5F7] font-medium">
+          <option value="ALL">{ko ? '전체' : 'All'}</option><option value="PASS_WITH_MARGIN">{ko ? '안전마진 확보' : 'With margin'}</option><option value="WATCH">{ko ? '관찰' : 'Watch'}</option><option value="NO_MARGIN">{ko ? '안전마진 부족' : 'No margin'}</option><option value="N/A">{ko ? '계산 불가' : 'Unavailable'}</option>
+        </select></label>
+      </div>
+
       {/* 2. Toss/Apple Style Filter Ribbon */}
       <div className="flex flex-wrap items-center justify-between gap-3 py-1">
-        {/* Left: Market Dropdown + Core Status Capsule Ribbon */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Market Dropdown */}
-          <div className="relative shrink-0 z-30" ref={marketDropdownRef}>
-            <button
-              onClick={() => setIsMarketDropdownOpen(!isMarketDropdownOpen)}
-              className="h-10 sm:h-11 px-3.5 sm:px-4 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-semibold text-xs sm:text-[13px] flex items-center gap-1.5 border border-black/[0.06] dark:border-white/[0.08] shadow-sm transition-all cursor-pointer select-none focus:outline-none"
-              aria-haspopup="true"
-              aria-expanded={isMarketDropdownOpen}
-            >
-              <span>{currentMarketOption.label}</span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-[#8B95A1] dark:text-[#86868B] transition-transform duration-200 ${isMarketDropdownOpen ? 'rotate-180' : ''
-                  }`}
-              />
-            </button>
-
-            {isMarketDropdownOpen && (
-              <div className="absolute left-0 top-full mt-2 w-52 bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-xl dark:shadow-2xl border border-black/[0.08] dark:border-white/[0.12] p-1.5 z-50 animate-fade-in">
-                {marketOptions.map((opt) => {
-                  const isSelected = market === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => {
-                        setMarket(opt.id);
-                        setIsMarketDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer select-none ${isSelected
-                          ? 'bg-[#F2F4F6] dark:bg-[#2C2C2E] font-bold text-[#0071E3] dark:text-[#2997FF]'
-                          : 'text-[#191F28] dark:text-[#F5F5F7] hover:bg-[#F9FAFB] dark:hover:bg-[#252528]'
-                        }`}
-                    >
-                      <div>
-                        <div className="font-semibold text-xs">{opt.label}</div>
-                        <div className="text-[10px] text-[#8B95A1] dark:text-[#86868B] font-normal">{opt.subLabel}</div>
-                      </div>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF] stroke-[2.5]" />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+        {/* Left: Markets + Core Status Capsule Ribbon */}
+        <div className="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
+          {/* Market multi-select buttons */}
+          <MarketFilter markets={market} onChange={setMarket} />
 
           {/* Core Status Capsule Ribbon */}
-          <div className="inline-flex w-fit bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 rounded-2xl border border-black/[0.04] dark:border-white/[0.06] items-center gap-1 overflow-x-auto scrollbar-none shrink-0">
+          <div className="inline-flex w-fit max-w-full bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 rounded-2xl border border-black/[0.04] dark:border-white/[0.06] items-center gap-1 overflow-x-auto scrollbar-none shrink-0">
             {coreGradeFilterOptions.map((opt) => {
               const isActive = coreGradeFilter === opt.id;
               return (
@@ -396,7 +354,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
               {t('noStocksFound')}
             </h3>
             <p className="text-xs text-[#86868B]">
-              다른 시장이나 상태 필터를 선택하거나 검색어를 변경해보세요.
+              {ko ? '다른 시장이나 상태 필터를 선택하거나 검색어를 변경해보세요.' : 'Try a different market, status filter, or search.'}
             </p>
           </div>
           <button
@@ -417,6 +375,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
             {stocks.map((stock, index) => {
               const rank = index + 1;
               const gradeInfo = getCoreGradeInfo(stock, language);
+              const selected = stock.periodValuations?.[String(years)];
 
               return (
                 <div
@@ -455,16 +414,18 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                     <div className="font-mono font-bold text-sm text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
                       {formatPrice(stock.currentPrice, stock.currency)}
                     </div>
-                    {stock.conservativeIntrinsicValue !== null && (
-                      <div className="text-[11px] font-mono font-medium text-[#0071E3] dark:text-[#2997FF] tabular-nums">
-                        {formatPrice(stock.conservativeIntrinsicValue, stock.currency)}
+                    <div className="text-[10px] font-mono text-[#86868B]">{ko ? '시총' : 'Cap'} {formatMarketCap(stock.marketCap, stock.currency)}</div>
+                      <div title={periodNote(selected, ko)} className="text-[11px] font-mono font-medium text-[#0071E3] dark:text-[#2997FF] tabular-nums">
+                        {years}{ko ? '개년' : 'y'} · {formatPrice(selected?.dcf.scenarios?.base.intrinsicValuePerShare, stock.currency)} · {valuationPercent(selected?.dcf.conservativeMarginOfSafety)}
                       </div>
-                    )}
+                      <p className="text-[10px] text-[#86868B] max-w-[180px]">{selected?.dcf.confidence ?? '—'}{!selected?.dcf.scenarios || selected.dcf.warnings.length > 0 ? ` · ${periodNote(selected, ko)}` : ''}</p>
                   </div>
                 </div>
               );
             })}
           </div>
+
+          {hasMore && <button onClick={loadMore} disabled={loadingMore} className="md:hidden text-xs font-semibold text-[#0071E3] dark:text-[#2997FF]">{loadingMore ? t('loadingStocks') : t('loadMore')}</button>}
 
           {/* Desktop Table View (Shown on md: and above) */}
           <div className="hidden md:block bg-white dark:bg-[#1C1C1E] rounded-3xl border border-black/[0.06] dark:border-white/[0.08] shadow-sm overflow-hidden transition-colors duration-300">
@@ -478,7 +439,8 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                     <th className="py-4 px-4 text-right whitespace-nowrap">{t('marketCapLabel')}</th>
                     <th className="py-4 px-4 text-center whitespace-nowrap">{t('coreStatusLabel')}</th>
                     <th className="py-4 px-4 text-center whitespace-nowrap">{t('coreRulesLabel')}</th>
-                    <th className="py-4 px-4 text-right whitespace-nowrap">{t('intrinsicValue')}</th>
+                    {[1, 2, 3, 4, 5].map(year => <th key={year} className={`py-4 px-4 text-right whitespace-nowrap ${year === years ? 'text-[#0071E3] dark:text-[#2997FF]' : ''}`}>{year}{ko ? '개년 내재가치' : 'y value'}</th>)}
+                    <th className="py-4 px-4 text-right whitespace-nowrap">{ko ? '안전마진' : 'Margin of safety'}</th>
                     <th className="py-4 pr-6 sm:pr-7 pl-4 text-center whitespace-nowrap">{t('confidence')}</th>
                   </tr>
                 </thead>
@@ -486,6 +448,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                   {stocks.map((stock, index) => {
                     const rank = index + 1;
                     const gradeInfo = getCoreGradeInfo(stock, language);
+              const selected = stock.periodValuations?.[String(years)];
 
                     return (
                       <tr
@@ -550,23 +513,27 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
                           <span className="font-semibold text-[#86868B] dark:text-[#636366]">{stock.coreNaCount}</span>
                         </td>
 
-                        {/* Intrinsic Value (내재가치) */}
-                        <td className="py-4 px-4 text-right font-mono font-semibold tabular-nums whitespace-nowrap text-[#0071E3] dark:text-[#2997FF]">
-                          {formatPrice(stock.conservativeIntrinsicValue, stock.currency)}
-                        </td>
+                        {[1, 2, 3, 4, 5].map(year => {
+                          const period = stock.periodValuations?.[String(year)];
+                          return <td key={year} title={periodNote(period, ko)} className={`py-4 px-4 text-right font-mono tabular-nums whitespace-nowrap ${year === years ? 'font-semibold text-[#0071E3] dark:text-[#2997FF]' : 'text-[#86868B]'}`}>
+                            {formatPrice(period?.dcf.scenarios?.base.intrinsicValuePerShare, stock.currency)}
+                            {period?.dcf.warnings.includes('INCOMPLETE_GROWTH_HISTORY') && <span className="ml-1 text-[#FF9500]">⚠</span>}
+                          </td>;
+                        })}
+                        <td title={periodNote(selected, ko)} className="py-4 px-4 text-right font-mono tabular-nums whitespace-nowrap">{valuationPercent(selected?.dcf.conservativeMarginOfSafety)}</td>
 
                         {/* Confidence */}
                         <td className="py-4 pr-6 sm:pr-7 pl-4 text-center font-mono whitespace-nowrap">
                           <span
                             className={`text-[10px] font-bold ${
-                              stock.confidence === 'HIGH'
+                              selected?.dcf.confidence === 'HIGH'
                                 ? 'text-[#34C759]'
-                                : stock.confidence === 'MEDIUM'
+                                : selected?.dcf.confidence === 'MEDIUM'
                                 ? 'text-[#FF9500]'
                                 : 'text-[#86868B]'
                             }`}
                           >
-                            {stock.confidence}
+                            {selected?.dcf.confidence ?? '—'}
                           </span>
                         </td>
                       </tr>
@@ -594,20 +561,18 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ onSelectStock, searc
         </>
       )}
 
-      {/* 4. Quick Stock Detail Slide-over Panel */}
       <StockDetailDrawer
         stock={selectedDrawerStock}
+        years={years}
+        content={drawerStock && <StockValuationPage key={`${drawerStock.id}:${years}`} ticker={drawerStock.ticker} market={drawerStock.market} years={years} embedded onApplied={retry} />}
         isOpen={Boolean(selectedDrawerStock)}
         onClose={() => setDrawerStockId(null)}
-        onNavigateToFullDetail={(ticker, market) => {
+        onNavigateToFullDetail={(ticker, stockMarket) => {
           setDrawerStockId(null);
-          if (onSelectStock) {
-            onSelectStock(ticker);
-          }
-          navigate(`/stock/${ticker}?market=${encodeURIComponent(market)}`);
+          navigate(`/stock/${encodeURIComponent(ticker)}/valuation?market=${encodeURIComponent(stockMarket)}&years=${years}`);
         }}
         stockList={stocks}
-        onSelectStock={(stock) => setDrawerStockId(stock.id)}
+        onSelectStock={stock => setDrawerStockId(stock.id)}
       />
     </div>
   );

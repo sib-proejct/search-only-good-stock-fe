@@ -4,6 +4,7 @@ import {
   Currency,
   DcfResultDTO,
   ReasonCode,
+  RuleEvaluationDTO,
   ValuationStatus,
 } from '../../types/api';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
@@ -26,6 +27,7 @@ interface DcfValuationCardProps {
   currency: Currency;
   currentPrice: number | null;
   annualFinancials: AnnualFinancialDTO[];
+  ruleEvaluations: RuleEvaluationDTO[];
 }
 
 export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
@@ -33,6 +35,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
   currency,
   currentPrice,
   annualFinancials,
+  ruleEvaluations,
 }) => {
   const { t, language } = useAppConfig();
   const isKo = language === 'ko';
@@ -163,6 +166,38 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
   const conservativeIV = dcf.scenarios?.conservative.intrinsicValuePerShare ?? null;
   const baseIV = dcf.scenarios?.base.intrinsicValuePerShare ?? null;
   const optimisticIV = dcf.scenarios?.optimistic.intrinsicValuePerShare ?? null;
+  const earningsPowerRule = ruleEvaluations.find(
+    (evaluation) => evaluation.ruleId === 'proven_earnings_power',
+  );
+  const failedEarningsYears = (() => {
+    if (earningsPowerRule?.status !== 'FAIL') return [];
+
+    const metrics = new Map<string, number | null>();
+    earningsPowerRule.metrics.forEach((metric) => {
+      metrics.set(metric.metricId, metric.value);
+    });
+    const years = new Set<number>();
+    earningsPowerRule.metrics.forEach(({ metricId }) => {
+      const match = /^(?:ebit|net_income_common)_(\d{4})$/.exec(metricId);
+      if (match) years.add(Number(match[1]));
+    });
+
+    return [...years]
+      .map((year) => ({
+        year,
+        ebit: metrics.get(`ebit_${year}`) ?? null,
+        netIncome: metrics.get(`net_income_common_${year}`) ?? null,
+      }))
+      .filter(
+        ({ ebit, netIncome }) =>
+          (ebit !== null && ebit <= 0) ||
+          (netIncome !== null && netIncome <= 0),
+      )
+      .sort((a, b) => a.year - b.year);
+  })();
+  const blockedByEarningsPower =
+    dcf.reasonCodes.includes('PREREQUISITE_FAILED') &&
+    earningsPowerRule?.status === 'FAIL';
 
   return (
     <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-6 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between h-full space-y-6 transition-colors duration-300">
@@ -185,22 +220,65 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
         <div>{getStatusBadge(dcf.status)}</div>
       </div>
 
-      {/* Main Intrinsic Value vs Price Strip */}
+      {blockedByEarningsPower ? (
+        <div className="rounded-2xl border border-[#FF3B30]/20 bg-[#FF3B30]/[0.06] p-4 sm:p-5 space-y-3">
+          <div className="flex items-start gap-3">
+            <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#FF3B30]" />
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-[#9E1B13] dark:text-[#FF6B63]">
+                {isKo ? '선행 조건 실패 · DCF 계산 중단' : 'Prerequisite failed · DCF stopped'}
+              </h3>
+              <p className="text-xs leading-relaxed text-[#6E6E73] dark:text-[#C7C7CC]">
+                {isKo
+                  ? '입증된 이익력 규칙은 평가 기간 동안 EBIT와 지배주주 순이익이 모두 양수여야 통과합니다. 이 조건을 통과하지 못해 내재가치 계산을 진행하지 않았습니다.'
+                  : 'The proven earnings power rule requires both EBIT and net income attributable to owners to remain positive. Since it failed, intrinsic value was not calculated.'}
+              </p>
+            </div>
+          </div>
+          {failedEarningsYears.length > 0 && (
+            <div className="overflow-x-auto rounded-xl border border-[#FF3B30]/10 bg-white/70 dark:bg-black/10">
+              <table className="w-full text-xs tabular-nums">
+                <thead>
+                  <tr className="border-b border-black/[0.06] text-[#86868B] dark:border-white/[0.08]">
+                    <th className="px-3 py-2 text-left font-semibold">{isKo ? '실패 연도' : 'Failed year'}</th>
+                    <th className="px-3 py-2 text-right font-semibold">EBIT</th>
+                    <th className="px-3 py-2 text-right font-semibold">{isKo ? '지배주주 순이익' : 'Net income to owners'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {failedEarningsYears.map(({ year, ebit, netIncome }) => (
+                    <tr key={year} className="text-[#FF3B30]">
+                      <td className="px-3 py-2.5 text-left font-bold">{year}</td>
+                      <td className="px-3 py-2.5 text-right font-bold">{formatAmount(ebit)}</td>
+                      <td className="px-3 py-2.5 text-right font-bold">{formatAmount(netIncome)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="text-xs font-bold text-[#9E1B13] dark:text-[#FF6B63]">
+            {isKo
+              ? '따라서 현재 화면에는 추정 내재가치와 안전마진이 없습니다. 이익력 선행 조건을 통과하기 전에는 DCF 숫자를 산출하지 않습니다.'
+              : 'No intrinsic value or margin of safety is shown. DCF figures are withheld until the earnings prerequisite passes.'}
+          </p>
+        </div>
+      ) : (
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* Conservative Intrinsic Value */}
+          {/* Base Intrinsic Value */}
           <div className="p-4 rounded-2xl bg-[#FBFBFD] dark:bg-[#252528]/50 border border-black/[0.04] dark:border-white/[0.06]">
             <div className="flex items-center gap-1">
               <span className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">
-                {isKo ? '보수적 추정 내재가치' : t('fairValueEstimate')}
+                {isKo ? '기준 추정 내재가치' : 'Base intrinsic value'}
               </span>
-              <HelpPopover content={DCF_GLOSSARY.conservativeIV(language)} align="left" iconSize={12} />
+              <HelpPopover content={DCF_GLOSSARY.baseIV(language)} align="left" iconSize={12} />
             </div>
             <div className="text-xl sm:text-2xl font-bold font-mono text-[#0071E3] dark:text-[#2997FF] tracking-tight tabular-nums mt-1">
-              {formatPrice(conservativeIV)}
+              {formatPrice(baseIV)}
             </div>
             <div className="text-[10px] text-[#86868B] mt-1 font-mono">
-              {isKo ? '보수적 성장률 가정 기준' : 'Conservative Scenario'}
+              {isKo ? '기준 성장률 가정' : 'Base Scenario'}
             </div>
           </div>
 
@@ -217,11 +295,11 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
             </div>
           </div>
 
-          {/* Conservative Margin of Safety */}
+          {/* Base Margin of Safety */}
           <div className="p-4 rounded-2xl bg-[#FBFBFD] dark:bg-[#252528]/50 border border-black/[0.04] dark:border-white/[0.06]">
             <div className="flex items-center gap-1">
               <span className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">
-                {isKo ? '보수적 안전마진' : t('marginOfSafety')}
+                {isKo ? '기준 안전마진' : t('marginOfSafety')}
               </span>
               <HelpPopover content={DCF_GLOSSARY.marginOfSafety(language)} align="left" iconSize={12} />
             </div>
@@ -280,7 +358,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
               {/* Base */}
               <div className="p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-[#0071E3]/20 shadow-sm">
                 <div className="text-[10px] sm:text-[11px] font-bold text-[#0071E3] dark:text-[#2997FF]">
-                  {isKo ? '기본 (Base)' : 'Base'}
+                  {isKo ? '기준 (Base)' : 'Base'}
                 </div>
                 <div className="text-xs sm:text-sm font-bold font-mono mt-1 text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
                   {formatPrice(baseIV)}
@@ -451,6 +529,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
           </div>
         )}
       </div>
+      )}
 
       {/* Footer Info */}
       <div className="pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between text-[11px] text-[#86868B] font-mono">

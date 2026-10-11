@@ -212,20 +212,20 @@ export const DCF_GLOSSARY = {
       },
     };
   },
-  conservativeIV: (language: Language): HelpPopoverContent => {
+  baseIV: (language: Language): HelpPopoverContent => {
     const isKo = language === 'ko';
     return {
-      title: isKo ? '보수적 추정 내재가치 (Conservative IV)' : 'Conservative Intrinsic Value',
+      title: isKo ? '기준 추정 내재가치 (Base IV)' : 'Base Intrinsic Value',
       badge: isKo ? '적정주가 추정' : 'FAIR VALUE',
       description: isKo
-        ? '미래의 불확실성을 감안하여 기본 성장률 대비 3.0%p 차감된 보수적 성장률(음수 허용)과 주주요구수익률(할인율)을 적용해 산출한 주당 적정 본질가치입니다.'
-        : 'Estimated intrinsic value per share applying a conservative growth assumption (base growth minus 3.0%p, negative growth allowed) and required discount rate.',
+        ? 'EPS와 OEPS로 산정한 성장률에 설정된 상하한을 적용한 기준 성장률과 할인율로 계산한 주당 내재가치입니다.'
+        : 'Intrinsic value per share calculated using the base growth rate, after applying the configured growth floor and cap, and the discount rate.',
       whyItMatters: isKo
-        ? '과도한 낙관론으로 인한 투자 손실을 막기 위해, 최악의 경제 환경에서도 기업이 창출할 수 있는 안전한 가치를 기준점으로 삼습니다.'
-        : 'Prevents overpaying by grounding valuation in pessimistic/modest growth realities.',
+        ? '현재 주가와 기준 시나리오의 내재가치를 비교할 수 있습니다.'
+        : 'Allows comparison of the current price with the base scenario valuation.',
       tip: isKo
-        ? '20% 할인은 모델의 기준값입니다. 데이터와 핵심 규칙을 함께 확인해야 합니다.'
-        : 'A 20% discount is a model threshold; validate data and core rules as well.',
+        ? '안전마진과 평가 상태는 기준 시나리오를 기준으로 계산합니다.'
+        : 'Margin of safety and valuation status use the base scenario.',
     };
   },
   marginOfSafety: (language: Language): HelpPopoverContent => {
@@ -240,8 +240,8 @@ export const DCF_GLOSSARY = {
         ? '할인 폭은 성장률·현금흐름·주식 수 가정에 따라 달라집니다. 20% 할인도 원금 보장이나 매수 추천을 의미하지 않습니다.'
         : 'Provides a cushion against valuation miscalculations, unexpected industry downturns, or macroeconomic shocks.',
       formula: isKo
-        ? '안전마진 = (보수적 내재가치 - 현재주가) ÷ 보수적 내재가치'
-        : 'Margin of Safety = (Conservative IV - Price) / Conservative IV',
+        ? '안전마진 = (기준 내재가치 - 현재주가) ÷ 기준 내재가치'
+        : 'Margin of Safety = (Base IV - Price) / Base IV',
       quote: {
         text: isKo
           ? '“투자에서 가장 중요한 세 단어는 바로 ‘안전마진’입니다.”'
