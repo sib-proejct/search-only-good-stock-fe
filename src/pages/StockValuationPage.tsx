@@ -137,6 +137,7 @@ export function StockValuationPage({ ticker: panelTicker, market: panelMarket, y
           [ko ? '정상화 대상' : 'Normalization target', period?.normalizationTargetYears], [ko ? '정상화 유효 입력' : 'Normalization valid inputs', period?.normalizationUsedYears],
           [ko ? '성장률 대상 (기초 연도 포함)' : 'Growth target (including opening year)', period?.growthTargetYears], [ko ? 'EPS 성장률 사용' : 'EPS growth used', period?.epsGrowthUsedYears], [ko ? 'OEPS 성장률 사용' : 'OEPS growth used', period?.oepsGrowthUsedYears],
         ].map(([label, values]) => <div key={String(label)}><dt className="text-[#86868B]">{String(label)}</dt><dd className="font-mono tabular-nums mt-1">{Array.isArray(values) && values.length ? values.join(', ') : '—'}</dd></div>)}</dl>
+        <p className="mt-4 text-sm font-mono tabular-nums">EPS CAGR: {valuationPercent(dcf?.epsGrowth)} · OEPS CAGR: {valuationPercent(dcf?.oepsGrowth)}</p>
         <p className="mt-4 text-sm">{ko ? '누락 및 경고' : 'Missing inputs and warnings'}: {periodNote(period, ko)}</p>
         <p className="mt-2 text-sm">{ko ? '정상화 주당 주주이익' : 'Normalized owner earnings per share'}: {money(dcf?.normalizedOeps)} · {ko ? '할인율' : 'Discount rate'}: {valuationPercent(dcf?.discountRate)}</p>
       </section>
