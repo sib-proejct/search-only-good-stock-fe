@@ -2664,7 +2664,7 @@ export interface operations {
         parameters: {
             query?: {
                 search?: string | null;
-                market?: components["schemas"]["Market"] | null;
+                market?: components["schemas"]["Market"][] | null;
                 sector?: string | null;
                 coreStatus?: components["schemas"]["CoreGradeFilter"] | null;
                 valuationStatus?: components["schemas"]["ValuationStatus"] | null;

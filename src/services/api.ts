@@ -48,7 +48,7 @@ export const stockApi = {
         params.set('search', query.search.trim());
       }
       if (query.market) {
-        params.set('market', query.market);
+        query.market.forEach(value => params.append('market', value));
       }
       if (query.sector && query.sector.trim() !== '') {
         params.set('sector', query.sector.trim());

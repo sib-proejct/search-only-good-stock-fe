@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   useStocks,
-  MarketFilter,
   CoreGradeFilterOption,
 } from '../hooks/useStocks';
 import {
@@ -19,7 +18,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
-import { StockSort } from '../types/api';
+import { Market, StockSort } from '../types/api';
 import { getCoreGradeInfo } from '../utils/ruleFormatters';
 import { StockDetailDrawer } from '../components/screener/StockDetailDrawer';
 import { StockValuationPage } from './StockValuationPage';
@@ -64,7 +63,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
     const controller = new AbortController();
     setCounts(null);
     const timer = setTimeout(() => {
-      const query = { limit: 1, years, search: searchQuery.trim() || undefined, market: market === 'ALL' ? undefined : market };
+      const query = { limit: 1, years, search: searchQuery.trim() || undefined, market: market.length ? market : undefined };
       Promise.all([
         stockApi.getStocks(query, controller.signal),
         stockApi.getStocks({ ...query, coreStatus: 'PASS' }, controller.signal),
@@ -86,18 +85,13 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
     confidence: drawerPeriod?.dcf.confidence ?? 'LOW' as const,
   } : null;
 
-  const [isMarketDropdownOpen, setIsMarketDropdownOpen] = useState(false);
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
 
-  const marketDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdowns when clicking outside
+  // Close the sort dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (marketDropdownRef.current && !marketDropdownRef.current.contains(event.target as Node)) {
-        setIsMarketDropdownOpen(false);
-      }
       if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target as Node)) {
         setIsSortDropdownOpen(false);
       }
@@ -106,16 +100,13 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Market Options for Dropdown
-  const marketOptions: { id: MarketFilter; label: string; subLabel: string }[] = [
-    { id: 'ALL', label: t('allMarkets'), subLabel: 'NASDAQ · NYSE · KOSPI · KOSDAQ' },
-    { id: 'NASDAQ', label: 'NASDAQ', subLabel: 'US Tech & Growth' },
-    { id: 'NYSE', label: 'NYSE', subLabel: 'US Classic & Blue-Chip' },
-    { id: 'KOSPI', label: 'KOSPI', subLabel: 'KR Prime Market' },
-    { id: 'KOSDAQ', label: 'KOSDAQ', subLabel: 'KR Growth & Innovation' },
+  const marketOptions: { id: Market | 'ALL'; label: string }[] = [
+    { id: 'ALL', label: t('allMarkets') },
+    { id: 'NASDAQ', label: 'NASDAQ' },
+    { id: 'NYSE', label: 'NYSE' },
+    { id: 'KOSPI', label: 'KOSPI' },
+    { id: 'KOSDAQ', label: 'KOSDAQ' },
   ];
-
-  const currentMarketOption = marketOptions.find((o) => o.id === market) || marketOptions[0];
 
   // Core Grade Filter Options
   const coreGradeFilterOptions: {
@@ -250,53 +241,35 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
 
       {/* 2. Toss/Apple Style Filter Ribbon */}
       <div className="flex flex-wrap items-center justify-between gap-3 py-1">
-        {/* Left: Market Dropdown + Core Status Capsule Ribbon */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Market Dropdown */}
-          <div className="relative shrink-0 z-30" ref={marketDropdownRef}>
-            <button
-              onClick={() => setIsMarketDropdownOpen(!isMarketDropdownOpen)}
-              className="h-10 sm:h-11 px-3.5 sm:px-4 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-semibold text-xs sm:text-[13px] flex items-center gap-1.5 border border-black/[0.06] dark:border-white/[0.08] shadow-sm transition-all cursor-pointer select-none focus:outline-none"
-              aria-haspopup="true"
-              aria-expanded={isMarketDropdownOpen}
-            >
-              <span>{currentMarketOption.label}</span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-[#8B95A1] dark:text-[#86868B] transition-transform duration-200 ${isMarketDropdownOpen ? 'rotate-180' : ''
-                  }`}
-              />
-            </button>
-
-            {isMarketDropdownOpen && (
-              <div className="absolute left-0 top-full mt-2 w-52 bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-xl dark:shadow-2xl border border-black/[0.08] dark:border-white/[0.12] p-1.5 z-50 animate-fade-in">
-                {marketOptions.map((opt) => {
-                  const isSelected = market === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => {
-                        setMarket(opt.id);
-                        setIsMarketDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer select-none ${isSelected
-                          ? 'bg-[#F2F4F6] dark:bg-[#2C2C2E] font-bold text-[#0071E3] dark:text-[#2997FF]'
-                          : 'text-[#191F28] dark:text-[#F5F5F7] hover:bg-[#F9FAFB] dark:hover:bg-[#252528]'
-                        }`}
-                    >
-                      <div>
-                        <div className="font-semibold text-xs">{opt.label}</div>
-                        <div className="text-[10px] text-[#8B95A1] dark:text-[#86868B] font-normal">{opt.subLabel}</div>
-                      </div>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF] stroke-[2.5]" />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+        {/* Left: Markets + Core Status Capsule Ribbon */}
+        <div className="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
+          {/* Market multi-select buttons */}
+          <div role="group" aria-label={ko ? '시장 선택' : 'Markets'} className="flex flex-wrap items-center gap-1 min-w-0 max-w-full rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 border border-black/[0.04] dark:border-white/[0.06]">
+            {marketOptions.map((opt) => {
+              const isActive = opt.id === 'ALL' ? market.length === 0 : market.includes(opt.id);
+              return (
+                <button
+                  type="button"
+                  key={opt.id}
+                  aria-pressed={isActive}
+                  onClick={() => {
+                    const id = opt.id;
+                    setMarket(id === 'ALL' ? [] : market.includes(id)
+                      ? market.filter(value => value !== id)
+                      : [...market, id]);
+                  }}
+                  className={`px-3 sm:px-4 py-2 text-xs sm:text-[13px] rounded-xl whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071E3] ${isActive
+                    ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] font-bold shadow-sm'
+                    : 'text-[#6B7684] dark:text-[#A1A1A6] hover:bg-white/60 dark:hover:bg-[#2C2C2E] font-medium'}`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Core Status Capsule Ribbon */}
-          <div className="inline-flex w-fit bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 rounded-2xl border border-black/[0.04] dark:border-white/[0.06] items-center gap-1 overflow-x-auto scrollbar-none shrink-0">
+          <div className="inline-flex w-fit max-w-full bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 rounded-2xl border border-black/[0.04] dark:border-white/[0.06] items-center gap-1 overflow-x-auto scrollbar-none shrink-0">
             {coreGradeFilterOptions.map((opt) => {
               const isActive = coreGradeFilter === opt.id;
               return (

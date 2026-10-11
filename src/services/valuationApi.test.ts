@@ -21,11 +21,20 @@ describe('published valuation contract', () => {
   it('uses the selected period for list filtering and sorting before pagination', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ items: [], total: 0 }) });
     vi.stubGlobal('fetch', fetchMock);
-    await stockApi.getStocks({ years: 2, market: 'NASDAQ', valuationStatus: 'WATCH', sort: 'conservativeMarginOfSafety', order: 'desc', offset: 50 });
+    await stockApi.getStocks({ years: 2, market: ['NASDAQ', 'NYSE'], valuationStatus: 'WATCH', sort: 'conservativeMarginOfSafety', order: 'desc', offset: 50 });
     const query = new URL(fetchMock.mock.calls[0][0], 'http://localhost').searchParams;
+    expect(query.getAll('market')).toEqual(['NASDAQ', 'NYSE']);
     expect(query.get('years')).toBe('2');
     expect(query.get('valuationStatus')).toBe('WATCH');
     expect(query.get('offset')).toBe('50');
+  });
+  it('omits the market query for all markets and preserves a single selection', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ items: [], total: 0 }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await stockApi.getStocks({ market: [] });
+    await stockApi.getStocks({ market: ['KOSPI'] });
+    expect(new URL(fetchMock.mock.calls[0][0], 'http://localhost').searchParams.has('market')).toBe(false);
+    expect(new URL(fetchMock.mock.calls[1][0], 'http://localhost').searchParams.getAll('market')).toEqual(['KOSPI']);
   });
   it('surfaces publication conflicts', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 409, json: async () => ({ detail: 'Published data changed; reload and recalculate' }) }));

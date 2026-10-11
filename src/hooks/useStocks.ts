@@ -10,7 +10,6 @@ import {
 } from '../types/api';
 import { stockApi } from '../services/api';
 
-export type MarketFilter = Market | 'ALL';
 export type CoreGradeFilterOption = CoreGradeFilter | 'ALL';
 export type ValuationStatusFilter = ValuationStatus | 'ALL';
 
@@ -24,8 +23,8 @@ export interface UseStocksReturn {
   error: string | null;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  market: MarketFilter;
-  setMarket: (market: MarketFilter) => void;
+  market: Market[];
+  setMarket: (market: Market[]) => void;
   coreGradeFilter: CoreGradeFilterOption;
   setCoreGradeFilter: (grade: CoreGradeFilterOption) => void;
   valuationStatus: ValuationStatusFilter;
@@ -53,7 +52,7 @@ export function useStocks(): UseStocksReturn {
   // Filter & Query States
   const [searchQuery, setSearchQueryState] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [market, setMarketState] = useState<MarketFilter>('ALL');
+  const [market, setMarketState] = useState<Market[]>([]);
   const [coreGradeFilter, setCoreGradeFilterState] =
     useState<CoreGradeFilterOption>('ALL');
   const [valuationStatus, setValuationStatusState] =
@@ -77,7 +76,7 @@ export function useStocks(): UseStocksReturn {
     setSearchQueryState(query);
   }, []);
 
-  const setMarket = useCallback((nextMarket: MarketFilter) => {
+  const setMarket = useCallback((nextMarket: Market[]) => {
     setMarketState(nextMarket);
     setOffset(0);
   }, []);
@@ -135,7 +134,7 @@ export function useStocks(): UseStocksReturn {
         if (debouncedSearch.trim()) {
           query.search = debouncedSearch.trim();
         }
-        if (market !== 'ALL') {
+        if (market.length > 0) {
           query.market = market;
         }
         if (coreGradeFilter !== 'ALL') {
@@ -220,7 +219,7 @@ export function useStocks(): UseStocksReturn {
   const resetFilters = useCallback(() => {
     setSearchQueryState('');
     setDebouncedSearch('');
-    setMarketState('ALL');
+    setMarketState([]);
     setCoreGradeFilterState('ALL');
     setValuationStatusState('ALL');
     setYearsState(5);
