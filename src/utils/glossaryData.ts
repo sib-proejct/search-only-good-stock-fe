@@ -224,8 +224,8 @@ export const DCF_GLOSSARY = {
         ? '현재 주가와 기준 시나리오의 내재가치를 비교할 수 있습니다.'
         : 'Allows comparison of the current price with the base scenario valuation.',
       tip: isKo
-        ? '안전마진과 평가 상태는 보수적 시나리오를 기준으로 계산합니다.'
-        : 'Margin of safety and valuation status use the conservative scenario.',
+        ? '안전마진과 평가 상태는 기준 시나리오를 기준으로 계산합니다.'
+        : 'Margin of safety and valuation status use the base scenario.',
     };
   },
   marginOfSafety: (language: Language): HelpPopoverContent => {
@@ -240,8 +240,8 @@ export const DCF_GLOSSARY = {
         ? '할인 폭은 성장률·현금흐름·주식 수 가정에 따라 달라집니다. 20% 할인도 원금 보장이나 매수 추천을 의미하지 않습니다.'
         : 'Provides a cushion against valuation miscalculations, unexpected industry downturns, or macroeconomic shocks.',
       formula: isKo
-        ? '안전마진 = (보수적 내재가치 - 현재주가) ÷ 보수적 내재가치'
-        : 'Margin of Safety = (Conservative IV - Price) / Conservative IV',
+        ? '안전마진 = (기준 내재가치 - 현재주가) ÷ 기준 내재가치'
+        : 'Margin of Safety = (Base IV - Price) / Base IV',
       quote: {
         text: isKo
           ? '“투자에서 가장 중요한 세 단어는 바로 ‘안전마진’입니다.”'

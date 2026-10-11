@@ -33,7 +33,7 @@ const growthCalculationText = (
   if (oepsGrowth == null) {
     return `EPS 성장률만 유효: ${formatSignedPercent(rawGrowth)}`;
   }
-  if (epsGrowth < 0 || oepsGrowth < 0 || method === 'LOWER_BOUND') {
+  if (method === 'LOWER_BOUND') {
     return `min(${formatSignedPercent(epsGrowth)}, ${formatSignedPercent(oepsGrowth)}) = ${formatSignedPercent(rawGrowth)}`;
   }
   if (method === 'OEPS_WEIGHTED') {
@@ -327,9 +327,8 @@ export function ValuationCalculationDetails({
               <dd className="font-mono font-bold">{formatPercent(dcf.discountRate)}</dd>
             </dl>
             <p className="text-xs text-gray-500 leading-relaxed">
-              선택한 산정 방식은 EPS와 OEPS 성장률이 모두 유효할 때 적용됩니다. 한 지표만
-              유효하면 해당 성장률을 사용하고, 하나라도 음수이면 더 낮은 성장률을
-              사용합니다. 산정 후에는 기업별 성장률 하한·상한 범위로 제한해 기준
+              선택한 혼합 방식은 EPS와 OEPS 성장률이 모두 유효할 때 적용됩니다. 한 지표만
+              유효하면 해당 성장률을 사용하고, 음수 성장률도 선택한 비율로 혼합합니다. 산정 후에는 기업별 성장률 하한·상한 범위로 제한해 기준
               성장률로 적용합니다. 할인율은 무위험금리와 시장위험 프리미엄을 합산하고
               7% 하한 및 부채 안전성 가산금리를 반영합니다.
             </p>
@@ -374,7 +373,7 @@ export function ValuationCalculationDetails({
             )}
             <div className="rounded-lg bg-black/[0.025] dark:bg-white/[0.04] p-3 text-xs">
               <span className="font-mono block">
-                안전마진 = (보수적 내재가치 − 현재가) ÷ 보수적 내재가치
+                안전마진 = (기준 내재가치 − 현재가) ÷ 기준 내재가치
               </span>
               <strong className="text-base mt-1 block">
                 {formatPercent(dcf.conservativeMarginOfSafety)} · {statusLabel(dcf.status)}

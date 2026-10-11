@@ -415,8 +415,8 @@ export function getValuationStatusInfo(
         label: isKo ? '안전마진 20%+ 확보' : 'Pass with Margin (20%+)',
         badgeLabel: isKo ? '안전마진 확보' : 'Pass with Margin',
         desc: isKo
-          ? '보수적 DCF 추정 내재가치 대비 20% 이상의 안전마진이 확보되었습니다.'
-          : 'Intrinsic value exceeds market price by 20%+ conservative margin of safety.',
+          ? '기준 DCF 추정 내재가치 대비 20% 이상의 안전마진이 확보되었습니다.'
+          : 'Intrinsic value exceeds market price by 20%+ base margin of safety.',
       };
     case 'WATCH':
       return {
@@ -431,8 +431,8 @@ export function getValuationStatusInfo(
         label: isKo ? '안전마진 미확보 (고평가)' : 'No Margin (Overvalued)',
         badgeLabel: isKo ? '마진 없음' : 'No Margin',
         desc: isKo
-          ? '현재 주가가 보수적 추정 내재가치보다 높아 안전마진이 없습니다.'
-          : 'Market price is higher than conservative fair value.',
+          ? '현재 주가가 기준 추정 내재가치보다 높아 안전마진이 없습니다.'
+          : 'Market price is higher than base fair value.',
       };
     case 'N/A':
     default:
