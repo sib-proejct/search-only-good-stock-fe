@@ -1781,7 +1781,7 @@ export interface components {
             capexMode: "TOTAL" | "MAINTENANCE";
             /**
              * Growthmethod
-             * @default LOWER_BOUND
+             * @default OEPS_WEIGHTED
              * @enum {string}
              */
             growthMethod: "LOWER_BOUND" | "OEPS_WEIGHTED" | "EQUAL_BLEND";
@@ -1815,7 +1815,7 @@ export interface components {
             capexMode: "TOTAL" | "MAINTENANCE";
             /**
              * Growthmethod
-             * @default LOWER_BOUND
+             * @default OEPS_WEIGHTED
              * @enum {string}
              */
             growthMethod: "LOWER_BOUND" | "OEPS_WEIGHTED" | "EQUAL_BLEND";
@@ -1871,7 +1871,7 @@ export interface components {
             normalization_method: "CONSERVATIVE" | "MEAN";
             /**
              * Growth Method
-             * @default LOWER_BOUND
+             * @default OEPS_WEIGHTED
              * @enum {string}
              */
             growth_method: "LOWER_BOUND" | "OEPS_WEIGHTED" | "EQUAL_BLEND";
@@ -1924,7 +1924,7 @@ export interface components {
             normalization_method: "CONSERVATIVE" | "MEAN";
             /**
              * Growth Method
-             * @default LOWER_BOUND
+             * @default OEPS_WEIGHTED
              * @enum {string}
              */
             growth_method: "LOWER_BOUND" | "OEPS_WEIGHTED" | "EQUAL_BLEND";
