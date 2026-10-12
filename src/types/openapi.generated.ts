@@ -458,6 +458,12 @@ export interface components {
             market: string;
             /** Currency */
             currency: string;
+            /**
+             * Industry Type
+             * @default GENERAL
+             * @enum {string}
+             */
+            industry_type: "GENERAL" | "FINANCIAL";
             /** Current Price */
             current_price?: number | null;
             /** Market Cap */
@@ -875,6 +881,10 @@ export interface components {
             owner_earnings: string | null;
             /** Selected */
             selected: boolean;
+            /** Net Income Common */
+            net_income_common?: string | null;
+            /** Common Equity */
+            common_equity?: string | null;
         };
         /**
          * Applicability
@@ -1036,15 +1046,21 @@ export interface components {
             /**
              * Method
              * @default OWNER_EARNINGS_DCF
-             * @constant
+             * @enum {string}
              */
-            method: "OWNER_EARNINGS_DCF";
+            method: "OWNER_EARNINGS_DCF" | "FINANCIAL_FCFE_DCF";
             /** Historyyears */
             historyYears: (5 | 4 | 3 | 2 | 1) | null;
             /** Normalizedownerearnings */
             normalizedOwnerEarnings: number | null;
             /** Normalizedoeps */
             normalizedOeps: number | null;
+            /** Normalizednetincome */
+            normalizedNetIncome?: number | null;
+            /** Normalizedeps */
+            normalizedEps?: number | null;
+            /** Normalizedroe */
+            normalizedRoe?: number | null;
             /** Epsgrowth */
             epsGrowth?: number | null;
             /** Oepsgrowth */

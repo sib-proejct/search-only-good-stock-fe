@@ -240,8 +240,13 @@ const isMissing = (value: unknown) => value === null || value === undefined || v
 function missingAnnualInputs(
   row: Draft,
   capexMode: ValuationOptions['capex_mode'],
+  financial = false,
 ): MissingValuationInput | null {
   const missing: string[] = [];
+  if (financial) {
+    const fields = ['net_income_common', 'common_equity'].filter(name => isMissing(row[name]));
+    return fields.length ? { fields, message: fields.map(name => getFieldMeta(name).ko).join(', ') } : null;
+  }
   if (isMissing(row.cfo)) missing.push('cfo');
 
   const interestScope = row.interest_paid_classification;
@@ -461,6 +466,7 @@ export function AdminValuationPage() {
   const dirty =
     draft !== null && (selected === null || Object.keys(changes).length > 0);
 
+  const financial = stock?.industry_type === 'FINANCIAL';
   const displayPrice = latestPrice ?? stock?.currentPrice ?? stock?.current_price;
 
   const filteredStocks = stocks.filter((s) => {
@@ -828,10 +834,18 @@ export function AdminValuationPage() {
     const selectedRows = eligibleRows.filter((row) =>
       selectedYears.has(Number((row as unknown as Draft).fiscal_year)),
     );
+    if (financial && latestYear > 0) {
+      const openingYear = latestYear - options.normalization_years;
+      const opening = eligibleRows.find(row => Number((row as unknown as Draft).fiscal_year) === openingYear);
+      if (!opening || isMissing((opening as unknown as Draft).common_equity)) {
+        valuationMissingNotices.push(`${openingYear}년 기초 보통주 자본이 필요합니다.`);
+      }
+    }
     selectedRows.forEach((row) => {
       const missing = missingAnnualInputs(
         row as unknown as Draft,
         options.capex_mode,
+        financial,
       );
       if (missing) valuationMissingByRow.set(row.id, missing);
     });
@@ -1209,12 +1223,12 @@ export function AdminValuationPage() {
                   </label>
                   <label className="block min-w-0 space-y-2 text-sm">
                     <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs font-medium text-gray-600 dark:text-gray-300">
-                      <span>CAPEX</span>
+                      <span>{financial ? 'CAPEX (내재가치 미사용)' : 'CAPEX'}</span>
                       <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Mode</span>
                     </div>
                     <select
                       className={`${control} min-h-11 min-w-0 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
-                      disabled={busy}
+                      disabled={busy || financial}
                       value={options.capex_mode}
                       onChange={(e) =>
                         changeOption({
@@ -1230,12 +1244,12 @@ export function AdminValuationPage() {
                 </div>
               </fieldset>
               <fieldset className="min-w-0 rounded-xl border border-black/5 bg-[#F5F5F7]/70 p-4 dark:border-white/10 dark:bg-white/[0.03]">
-                <legend className="px-1 text-sm font-semibold">OE 정규화</legend>
-                <p className="mb-4 text-xs leading-relaxed text-gray-500 dark:text-gray-400">기간과 방식은 정규화 OE 계산에, 기간은 성장률 산정에도 적용됩니다.</p>
+                <legend className="px-1 text-sm font-semibold">{financial ? '순이익·ROE 정규화' : 'OE 정규화'}</legend>
+                <p className="mb-4 text-xs leading-relaxed text-gray-500 dark:text-gray-400">{financial ? '순이익과 ROE를 정상화합니다. ROE 계산에는 시작 연도 이전의 자기자본도 필요합니다.' : '기간과 방식은 정규화 OE 계산에, 기간은 성장률 산정에도 적용됩니다.'}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <label className="block min-w-0 space-y-2 text-sm">
                     <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs font-medium text-gray-600 dark:text-gray-300">
-                      <span>OE 정규화·성장률 기간</span>
+                      <span>{financial ? '순이익·ROE 정규화·성장률 기간' : 'OE 정규화·성장률 기간'}</span>
                       <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Period</span>
                     </div>
                     <select
@@ -1257,7 +1271,7 @@ export function AdminValuationPage() {
                   </label>
                   <label className="block min-w-0 space-y-2 text-sm">
                     <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs font-medium text-gray-600 dark:text-gray-300">
-                      <span>정규화 OE 방식</span>
+                      <span>{financial ? '순이익·ROE 정규화 방식' : '정규화 OE 방식'}</span>
                       <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Method</span>
                     </div>
                     <select
@@ -1288,8 +1302,8 @@ export function AdminValuationPage() {
                     </div>
                     <select
                       className={`${control} min-h-11 min-w-0 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
-                      disabled={busy}
-                      value={options.growth_method}
+                      disabled={busy || financial}
+                      value={financial ? 'OEPS_WEIGHTED' : options.growth_method}
                       onChange={(e) =>
                         changeOption({
                           growth_method: e.target
@@ -1298,7 +1312,7 @@ export function AdminValuationPage() {
                       }
                     >
                       <option value="LOWER_BOUND">min(EPS, OEPS)</option>
-                      <option value="OEPS_WEIGHTED">EPS 30% + OEPS 70%</option>
+                      <option value="OEPS_WEIGHTED">{financial ? 'EPS CAGR' : 'EPS 30% + OEPS 70%'}</option>
                       <option value="EQUAL_BLEND">EPS 50% + OEPS 50%</option>
                     </select>
                   </label>
@@ -1349,7 +1363,8 @@ export function AdminValuationPage() {
                   계산 방식 및 자료 적용 기준
                   <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 text-gray-500 transition-transform group-open:rotate-180" />
                 </summary>
-                <p className="mt-3 text-sm leading-7 text-gray-600 dark:text-gray-400">
+                {financial && <p className="mt-3 text-sm leading-7 text-gray-600 dark:text-gray-400">순이익 기반 FCFE를 할인합니다. 성장률은 EPS CAGR만 사용하고 ROE 이하로 제한합니다. 성장률÷ROE만큼의 이익을 유보하며 CAPEX와 지급이자 분류는 내재가치 계산에 사용하지 않습니다.</p>}
+                {!financial && <p className="mt-3 text-sm leading-7 text-gray-600 dark:text-gray-400">
                   {options.normalization_method === 'MEAN'
                     ? '선택 기간 OE 합계 ÷ 선택 연수'
                     : 'min(최근 연도 OE, 선택 기간 OE 중앙값)'}{' '}
@@ -1361,7 +1376,7 @@ export function AdminValuationPage() {
                       : '각 50%로 반영합니다.'}{' '}
                   음수 성장률도 선택한 방식으로 계산하고, 산정값을 성장률 하한{options.growth_rate_floor == null ? '(미적용)' : ` ${Number(options.growth_rate_floor) * 100}%`}과 상한 {Number(options.growth_rate_cap) * 100}% 범위로 제한합니다. 시작 연도를 포함한 {options.normalization_years + 1}개 연간 자료가 필요하며, 한 지표만 유효하면 해당 성장률과 이력 불완전 경고를 사용합니다.{' '}
                   · 총 CAPEX 추정치가 부족하면 공시 유형·무형 취득액 합계 또는 수집된 공시 총액을 사용하며, 유지보수 모드는 유지보수 추정치 또는 총 CAPEX에서 성장 CAPEX를 차감해 계산합니다.
-                </p>
+                </p>}
               </details>
             </div>
             <div className="flex flex-col gap-3 border-t border-black/5 bg-[#F5F5F7]/60 px-4 py-4 dark:border-white/10 dark:bg-white/[0.02] sm:flex-row sm:items-center sm:justify-between sm:px-6">
@@ -1407,7 +1422,7 @@ export function AdminValuationPage() {
                   ? '기간 평균 (Mean)'
                   : '보수적 기준 (Conservative)'}{' '}
                 ·{' '}
-                선택 방식: {result.options.growth_method === 'LOWER_BOUND'
+                선택 방식: {financial ? 'EPS CAGR (금융업)' : result.options.growth_method === 'LOWER_BOUND'
                   ? 'min(EPS, OEPS)'
                   : result.options.growth_method === 'OEPS_WEIGHTED'
                     ? 'OEPS 중심 (70% OEPS)'
@@ -1415,7 +1430,7 @@ export function AdminValuationPage() {
                 ·{' '}
                 성장률 상한 {Number(result.options.growth_rate_cap) * 100}% ·{' '}
                 성장률 하한 {result.options.growth_rate_floor == null ? '미적용' : `${Number(result.options.growth_rate_floor) * 100}%`} ·{' '}
-                {result.options.capex_mode === 'TOTAL'
+                {financial ? 'CAPEX 미사용' : result.options.capex_mode === 'TOTAL'
                   ? '유지보수+성장 (Total)'
                   : '유지보수 (Maintenance)'}
               </p>
@@ -1475,18 +1490,18 @@ export function AdminValuationPage() {
                   <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300">최종 계산 요약</h3>
                   <dl className="grid gap-3 md:grid-cols-3">
                     <div className="min-w-0 rounded-xl border border-black/5 bg-white p-4 dark:border-white/10 dark:bg-[#1C1C1E]">
-                      <dt className="text-xs font-medium text-gray-600 dark:text-gray-400">정규화 OE · Normalized OE</dt>
+                      <dt className="text-xs font-medium text-gray-600 dark:text-gray-400">{financial ? '정규화 순이익' : '정규화 OE · Normalized OE'}</dt>
                       <dd className="mt-2 text-2xl font-bold tracking-tight tabular-nums break-words">
-                        {formatMonetaryAmount(result.dcf.normalizedOwnerEarnings, stock.currency)}
+                        {formatMonetaryAmount((financial ? result.dcf.normalizedNetIncome : result.dcf.normalizedOwnerEarnings), stock.currency)}
                       </dd>
                       <dd className="mt-1 text-xs text-gray-500 dark:text-gray-400 font-mono break-all">
-                        {fmt(result.dcf.normalizedOwnerEarnings)} {stock.currency}
+                        {fmt(financial ? result.dcf.normalizedNetIncome : result.dcf.normalizedOwnerEarnings)} {stock.currency}
                       </dd>
                     </div>
                     <div className="min-w-0 rounded-xl border border-black/5 bg-white p-4 dark:border-white/10 dark:bg-[#1C1C1E]">
-                      <dt className="text-xs font-medium text-gray-600 dark:text-gray-400">주당 정규화 OE · OEPS</dt>
+                      <dt className="text-xs font-medium text-gray-600 dark:text-gray-400">{financial ? '주당 정규화 순이익 · EPS' : '주당 정규화 OE · OEPS'}</dt>
                       <dd className="mt-2 text-2xl font-bold tracking-tight tabular-nums break-words">
-                        {formatPerShare(result.dcf.normalizedOeps, stock.currency)}
+                        {formatPerShare((financial ? result.dcf.normalizedEps : result.dcf.normalizedOeps), stock.currency)}
                         <span className="ml-1 text-sm font-normal text-gray-500 dark:text-gray-400">/주</span>
                       </dd>
                     </div>

@@ -522,6 +522,9 @@ export function getCoreGradeInfo(
 
 export function getDcfWarningLabel(warning: string, language: Language): string {
   const labels: Record<string, [string, string]> = {
+    NO_DISTRIBUTABLE_EARNINGS: ['성장에 필요한 자기자본을 유보한 뒤 배분할 이익이 없어 안전마진을 계산하지 않았습니다.', 'No earnings remain for distribution after equity retention; margin of safety was not calculated.'],
+    REGULATORY_CAPITAL_PROXY: ['성장률÷ROE로 자기자본 유보를 추정합니다. 실제 규제자본·대손·보험 지급여력은 별도 확인이 필요합니다.', 'Equity retention is estimated using growth / ROE. Review actual regulatory capital, credit losses and solvency requirements.'],
+    SUSTAINABLE_GROWTH_CAP: ['성장률 하한보다 ROE 기반 상한을 우선 적용했습니다.', 'The ROE-based growth cap overrides the selected floor.'],
     CASH_FLOW_PROXY: ['영업현금흐름에서 유형·무형자산 투자를 차감한 추정 모델입니다. 유지투자, 주식보상, 순차입을 별도로 조정한 가치는 아닙니다.', 'Cash-flow proxy deducting tangible and intangible investment; maintenance investment, stock compensation and net borrowing are not separately adjusted.'],
     ESTIMATED_CURRENT_SHARES: ['현재 주식 수가 확인되지 않아 연간 평균 주식 수를 사용했습니다. 주당 가치와 시가총액 추정에 오차가 있을 수 있습니다.', 'Current shares are unverified; annual average shares may distort per-share value and estimated market capitalization.'],
     INCOMPLETE_GROWTH_HISTORY: ['EPS 또는 OEPS 성장 이력이 완전하지 않아 유효한 한쪽 지표만 성장률에 반영했습니다.', 'Incomplete EPS or OEPS growth history: only the available metric was used.'],

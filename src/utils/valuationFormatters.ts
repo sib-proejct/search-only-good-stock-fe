@@ -62,6 +62,12 @@ export function periodNote(period: PeriodValuation | undefined, ko: boolean): st
     OEPS_NON_POSITIVE_SHARES: ['OEPS: 희석주식수가 0 이하', 'OEPS: non-positive diluted shares'],
     INCOMPLETE_GROWTH_HISTORY: ['성장 이력 부족: 유효 지표 또는 0 사용', 'Incomplete growth: valid metric or zero used'],
     NEGATIVE_GROWTH: ['음수 성장률', 'Negative growth'],
+    MISSING_NET_INCOME_COMMON: ['보통주 순이익 누락', 'Missing common net income'],
+    MISSING_COMMON_EQUITY: ['보통주 자본 누락', 'Missing common equity'],
+    MISSING_OPENING_COMMON_EQUITY: ['기초 보통주 자본 누락', 'Missing opening common equity'],
+    NO_DISTRIBUTABLE_EARNINGS: ['성장 자본 유보 후 배분 가능한 이익이 없음', 'No distributable earnings after equity retention'],
+    REGULATORY_CAPITAL_PROXY: ['ROE 기반 자기자본 유보 추정: 규제자본 검토 필요', 'ROE-based equity retention estimate: review regulatory capital'],
+    SUSTAINABLE_GROWTH_CAP: ['ROE 상한이 성장률 하한보다 우선 적용됨', 'ROE cap overrides the growth floor'],
     CASH_FLOW_PROXY: ['현금흐름 기반 추정', 'Cash flow proxy'],
     ONE_YEAR_HISTORY: ['1개년 자료', 'One year of history'],
     ESTIMATED_CURRENT_SHARES: ['현재 주식수 추정치 사용', 'Estimated current shares'],
@@ -78,7 +84,7 @@ export function periodNote(period: PeriodValuation | undefined, ko: boolean): st
 }
 
 export function growthUnavailableNote(period: PeriodValuation | undefined, ko: boolean): string {
-  if (!period || (period.dcf.epsGrowth != null && period.dcf.oepsGrowth != null)) return '';
+  if (!period || (period.dcf.epsGrowth != null && (period.dcf.method === 'FINANCIAL_FCFE_DCF' || period.dcf.oepsGrowth != null))) return '';
   const reasons = period.missingReasons.filter(reason => /(?:^|: )(EPS|OEPS)_/.test(reason));
   const detailed = reasons.filter(reason => !reason.endsWith('GROWTH_UNAVAILABLE'));
   return periodNote({
