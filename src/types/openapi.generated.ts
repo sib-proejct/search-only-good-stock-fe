@@ -477,6 +477,8 @@ export interface components {
             collection_stage?: string | null;
             /** Collection Error */
             collection_error?: string | null;
+            /** Collected At */
+            collected_at?: string | null;
             /** Batch Run Id */
             batch_run_id?: number | null;
             /**
@@ -998,6 +1000,8 @@ export interface components {
             stage: string;
             /** Error Detail */
             error_detail?: string | null;
+            /** Collected At */
+            collected_at?: string | null;
         };
         /**
          * Confidence

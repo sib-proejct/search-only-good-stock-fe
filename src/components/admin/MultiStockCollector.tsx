@@ -12,6 +12,8 @@ const stages: Record<string, string> = {
   COLLECT: '자료 수집 중',
   NORMALIZE: '자료 정리 중',
   SAVE: '저장 중',
+  CALCULATE: '계산 중',
+  PUBLISH: '계산 및 반영 완료',
   REVIEW: '완료',
 };
 
@@ -195,7 +197,7 @@ export function MultiStockCollector({
             role="dialog"
             aria-modal="true"
             aria-labelledby="multi-collection-title"
-            className="w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl bg-white dark:bg-[#1C1C1E] p-5 shadow-xl gap-4"
+            className="w-full max-w-2xl h-[90dvh] flex flex-col rounded-2xl bg-white dark:bg-[#1C1C1E] p-5 shadow-xl gap-4"
           >
             <div className="flex items-center justify-between">
               <h2 id="multi-collection-title" className="font-semibold text-lg">
@@ -241,10 +243,11 @@ export function MultiStockCollector({
               </button>
               <span className="ml-auto rounded-lg bg-[#0071E3]/10 dark:bg-[#2997FF]/15 px-3 py-1.5 text-xs font-semibold tabular-nums text-[#0071E3] dark:text-[#2997FF]">{selected.length}개 선택</span>
             </div>
-            <div className="overflow-y-auto min-h-0 border rounded-xl divide-y dark:divide-white/10">
+            <div className="flex-1 overflow-y-auto min-h-0 border rounded-xl divide-y dark:divide-white/10">
               {!visible.length && <p className="p-4 text-sm">검색 결과가 없습니다.</p>}
               {visible.map((stock) => {
                 const item = items.find((candidate) => candidate.stock_id === stock.id);
+                const collectedAt = item?.collected_at ?? stock.collected_at;
                 return (
                   <label key={stock.id} className={`flex gap-3 items-start p-3 text-sm transition-colors ${selected.includes(stock.id) ? 'bg-[#0071E3]/[0.05] dark:bg-[#2997FF]/[0.08]' : ''} ${running || disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-[#F5F5F7] dark:hover:bg-white/[0.04]'}`}>
                     <input
@@ -258,8 +261,15 @@ export function MultiStockCollector({
                         : previous.filter((id) => id !== stock.id))}
                     />
                     <span className={`${checkmarkClass} mt-0.5`} aria-hidden="true"><Check className="h-3.5 w-3.5" strokeWidth={3} /></span>
-                    <span className="flex-1">
-                      {stock.name} <span className="text-gray-500">{stock.ticker} · {stock.market}</span>
+                    <span className="flex-1 min-w-0">
+                      <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <span>{stock.name} <span className="text-gray-500">{stock.ticker} · {stock.market}</span></span>
+                        {collectedAt ? (
+                          <time dateTime={collectedAt} className="text-xs text-gray-500" title="최근 자료 수집 완료 시각 (한국 시간)">
+                            수신 {new Date(collectedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                          </time>
+                        ) : <span className="text-xs text-gray-500">{stock.collected_at === undefined ? '수신 시각 확인 불가' : '수신 기록 없음'}</span>}
+                      </span>
                       {item && (
                         <span className={`block text-xs mt-1 ${item.status === 'FAILED' ? 'text-red-600' : 'text-gray-500'}`}>
                           {item.status === 'FAILED'
@@ -268,7 +278,7 @@ export function MultiStockCollector({
                               ? '건너뜀'
                               : active(item.status)
                                 ? stages[item.stage] ?? '수집 중'
-                                : '완료'}
+                                : stages[item.stage] ?? '완료'}
                         </span>
                       )}
                     </span>

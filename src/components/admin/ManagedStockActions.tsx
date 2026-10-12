@@ -12,6 +12,8 @@ const stages: Record<string, string> = {
   COLLECT: '자료 수집 중',
   NORMALIZE: '자료 정리 중',
   SAVE: '원자료 저장 중',
+  CALCULATE: '계산 중',
+  PUBLISH: '계산 및 반영 완료',
   REVIEW: '수집 완료',
 };
 

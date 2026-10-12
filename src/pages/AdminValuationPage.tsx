@@ -938,7 +938,7 @@ export function AdminValuationPage() {
         <p className="text-sm text-blue-600 font-semibold">LOCAL ADMIN</p>
         <h1 className="text-3xl font-bold mt-2">내재가치 계산 · 원자료 관리</h1>
         <p className="text-sm text-gray-500 mt-3">
-          기본 10개와 직접 추가한 종목을 관리합니다. 종목별로 자료를 수집하고 확인·수정한 뒤, 계산 및 반영을 누르면 목록과 상세에도 결과가 저장됩니다.
+          기본 10개와 직접 추가한 종목을 관리합니다. 자료를 수집하면 기본값으로 자동 계산되어 목록과 상세에 반영됩니다. 원자료나 옵션을 수정한 뒤에는 계산 및 반영을 눌러 다시 계산할 수 있습니다.
         </p>
       </header>
       <RegisterStockCard disabled={busy || dirty || collecting} onRegistered={onRegistered} />
