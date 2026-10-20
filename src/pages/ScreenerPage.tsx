@@ -140,7 +140,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
 
   return (
     <>
-    <div className="screener-page screener-container max-w-[1600px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-5 sm:space-y-6 animate-fade-in">
+    <div className="screener-page page-container max-w-[1600px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-5 sm:space-y-6 animate-fade-in">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold">{favoritesOnly ? (ko ? '내 즐겨찾기' : 'My favorites') : (ko ? '종목 스크리너' : 'Stock screener')}</h1>
         <button onClick={() => navigate(favoritesOnly ? '/' : '/favorites')} className="rounded-full px-4 py-2 text-xs font-semibold bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF]">{favoritesOnly ? (ko ? '전체 종목 보기' : 'All stocks') : (ko ? '즐겨찾기만 보기' : 'Favorites only')}</button>

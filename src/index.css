@@ -237,78 +237,182 @@
   scrollbar-width: none;
 }
 
-/* Keep laptop sizing intact; scale only the screener and its shared chrome. */
+/* Large-display readability. Laptop and mobile sizes keep their existing styles. */
 @media (min-width: 1920px) {
-  .screener-shell {
-    --screener-width: 1840px;
-    --screener-body: 16px;
-    --screener-label: 17px;
-    --screener-small: 14px;
-    --screener-title: 30px;
-    --screener-total: 40px;
-    --screener-date: 26px;
-    --screener-control: 44px;
-    --screener-icon: 18px;
-    --screener-cell-y: 16px;
-    --screener-cell-x: 12px;
-    --screener-card-padding: 28px;
-    --screener-gap: 28px;
-    --screener-company-width: 200px;
+  .display-shell {
+    --display-width: 1840px;
+    --display-form-width: 520px;
+    --display-body: 16px;
+    --display-label: 17px;
+    --display-small: 14px;
+    --display-title: 30px;
+    --display-total: 40px;
+    --display-date: 26px;
+    --display-control: 44px;
+    --display-icon: 18px;
+    --display-cell-y: 16px;
+    --display-cell-x: 12px;
+    --display-card-padding: 28px;
+    --display-gap: 28px;
+    --display-company-width: 200px;
   }
 
-  .screener-shell .screener-container {
-    max-width: var(--screener-width);
+  .display-shell .page-container {
+    max-width: var(--display-width);
   }
 
   .screener-page {
-    padding-top: var(--screener-gap);
-    padding-bottom: var(--screener-gap);
+    padding-top: var(--display-gap);
+    padding-bottom: var(--display-gap);
   }
 
   .screener-page > :not([hidden]) ~ :not([hidden]) {
-    margin-top: var(--screener-gap);
+    margin-top: var(--display-gap);
   }
 
-  :is(.screener-page, .screener-shell .screener-chrome) .text-xs,
-  .screener-shell footer.screener-chrome {
-    font-size: var(--screener-body);
+  .display-content,
+  .display-shell .display-chrome {
+    font-size: var(--display-body);
     line-height: 1.5;
   }
 
-  :is(.screener-page, .screener-shell .screener-chrome) :is(.text-\[9px\], .text-\[10px\], .text-\[11px\]) {
-    font-size: var(--screener-small);
+  /* Panels keep their own compact typography, including embedded valuation. */
+  .display-content [role="dialog"] {
+    font-size: 1rem;
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-\[9px\], .text-\[10px\], .text-\[11px\], .sm\:text-\[11px\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: var(--display-small);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-xs, .sm\:text-xs):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: var(--display-body);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-\[13px\], .sm\:text-\[13px\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: var(--display-label);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-sm, .sm\:text-sm, .text-\[14px\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: var(--display-label);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-\[15px\], .sm\:text-\[15px\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: calc(var(--display-body) + 2px);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-base, .sm\:text-base, .sm\:text-\[16px\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: calc(var(--display-body) + 2px);
+  }
+
+  :is(.display-content, .display-chrome) :is(.sm\:text-\[17px\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: calc(var(--display-body) + 3px);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-lg, .sm\:text-lg):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: calc(var(--display-body) + 4px);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-xl, .sm\:text-xl):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: calc(var(--display-body) + 8px);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-2xl, .sm\:text-2xl):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: var(--display-title);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-3xl, .sm\:text-3xl):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: var(--display-total);
+  }
+
+  :is(.display-content, .display-chrome) :is(.lg\:text-\[34px\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: calc(var(--display-total) + 4px);
+  }
+
+  :is(.display-content, .display-chrome) [class*="text-"]:not(:where([role="dialog"], [role="dialog"] *)) {
     line-height: 1.5;
   }
 
-  :is(.screener-page, .screener-shell .screener-chrome) :is(.text-sm, .sm\:text-sm, .sm\:text-\[13px\]) {
-    font-size: var(--screener-label);
+  :is(.display-content, .display-chrome) :is(.leading-none):not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1;
+  }
+
+  :is(.display-content, .display-chrome) :is(.leading-tight, .leading-\[1\.25\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1.25;
+  }
+
+  :is(.display-content, .display-chrome) :is(.leading-snug):not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1.375;
+  }
+
+  :is(.display-content, .display-chrome) :is(.leading-normal):not(:where([role="dialog"], [role="dialog"] *)) {
     line-height: 1.5;
   }
 
-  .screener-page h1 {
-    font-size: var(--screener-title);
+  :is(.display-content, .display-chrome) :is(.leading-relaxed):not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1.625;
+  }
+
+  :is(.display-content, .display-chrome) :is(.leading-\[1\.7\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1.7;
+  }
+
+  :is(.display-content, .display-chrome) :is(.leading-7, .leading-\[1\.75\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1.75;
+  }
+
+  :is(.display-content, .display-chrome) :is(.leading-\[1\.8\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1.8;
+  }
+
+  .display-content > .max-w-\[1600px\] {
+    max-width: var(--display-width);
+  }
+
+  .display-content > .max-w-\[1400px\] {
+    max-width: calc(var(--display-width) * 0.875);
+  }
+
+  .display-content > .max-w-\[1200px\] {
+    max-width: calc(var(--display-width) * 0.75);
+  }
+
+  .display-content > .max-w-md {
+    max-width: var(--display-form-width);
+  }
+
+  .display-content :is(input:not([type="checkbox"], [type="radio"], [type="range"]), select, button.h-8, button.h-9, button.h-10):not(:where([role="dialog"], [role="dialog"] *)) {
+    min-height: var(--display-control);
+  }
+
+  .display-content .recharts-text:not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: var(--display-small);
+  }
+
+  .screener-page h1[class] {
+    font-size: var(--display-title);
     line-height: 1.25;
   }
 
   .screener-summary {
-    gap: var(--screener-gap);
+    gap: var(--display-gap);
   }
 
   .screener-summary > div {
     min-width: 0;
-    padding: var(--screener-card-padding);
+    padding: var(--display-card-padding);
   }
 
   .screener-summary .sm\:text-3xl {
-    font-size: var(--screener-total);
+    font-size: var(--display-total);
   }
 
   .screener-summary .sm\:text-xl {
-    font-size: var(--screener-date);
+    font-size: var(--display-date);
   }
 
   .screener-filters :is(button, select) {
-    min-height: var(--screener-control);
+    min-height: var(--display-control);
     padding-left: 18px;
     padding-right: 18px;
   }
@@ -318,76 +422,77 @@
   }
 
   .screener-filters .screener-sort-order {
-    width: var(--screener-control);
+    width: var(--display-control);
     padding: 0;
   }
 
   .screener-page > div:first-child button {
-    height: var(--screener-control);
+    height: var(--display-control);
   }
 
-  :is(.screener-page, .screener-shell .screener-chrome) svg {
-    width: var(--screener-icon);
-    height: var(--screener-icon);
+  :is(.display-content, .display-chrome) svg.lucide:not(:where([role="dialog"], [role="dialog"] *)) {
+    width: var(--display-icon);
+    height: var(--display-icon);
   }
 
   .screener-page :is(th, td) {
-    padding-top: var(--screener-cell-y);
-    padding-bottom: var(--screener-cell-y);
+    padding-top: var(--display-cell-y);
+    padding-bottom: var(--display-cell-y);
   }
 
   .screener-page :is(th, td).px-2\.5 {
-    padding-left: var(--screener-cell-x);
-    padding-right: var(--screener-cell-x);
+    padding-left: var(--display-cell-x);
+    padding-right: var(--display-cell-x);
   }
 
   .screener-page td.pl-2 {
-    padding-left: var(--screener-cell-x);
+    padding-left: var(--display-cell-x);
   }
 
   .screener-page td .truncate {
-    max-width: var(--screener-company-width);
+    max-width: var(--display-company-width);
   }
 
   .screener-page td button {
-    width: var(--screener-control);
-    height: var(--screener-control);
+    width: var(--display-control);
+    height: var(--display-control);
   }
 
-  .screener-shell header.screener-chrome > .screener-container {
+  .display-shell header.display-chrome > .page-container {
     height: 84px;
   }
 
-  .screener-shell header.screener-chrome input {
+  .display-shell header.display-chrome input {
     width: 280px;
-    min-height: var(--screener-control);
+    min-height: var(--display-control);
     padding-left: 40px;
   }
 }
 
 @media (min-width: 2560px) {
-  .screener-shell {
-    --screener-width: 2240px;
-    --screener-body: 18px;
-    --screener-label: 19px;
-    --screener-small: 15px;
-    --screener-title: 36px;
-    --screener-total: 44px;
-    --screener-date: 30px;
-    --screener-control: 48px;
-    --screener-icon: 20px;
-    --screener-cell-y: 20px;
-    --screener-cell-x: 16px;
-    --screener-card-padding: 32px;
-    --screener-gap: 32px;
-    --screener-company-width: 240px;
+  .display-shell {
+    --display-width: 2240px;
+    --display-form-width: 600px;
+    --display-body: 18px;
+    --display-label: 19px;
+    --display-small: 15px;
+    --display-title: 36px;
+    --display-total: 44px;
+    --display-date: 30px;
+    --display-control: 48px;
+    --display-icon: 20px;
+    --display-cell-y: 20px;
+    --display-cell-x: 16px;
+    --display-card-padding: 32px;
+    --display-gap: 32px;
+    --display-company-width: 240px;
   }
 
-  .screener-shell header.screener-chrome > .screener-container {
+  .display-shell header.display-chrome > .page-container {
     height: 92px;
   }
 
-  .screener-shell header.screener-chrome input {
+  .display-shell header.display-chrome input {
     width: 320px;
   }
 }
