@@ -3,12 +3,13 @@ import { FavoriteButton } from '../components/common/FavoriteButton';
 import { useAccount } from '../context/AccountContext';
 import { FinancialValuationDetails } from '../components/detail/FinancialValuationDetails';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Calendar, AlertTriangle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Calendar, AlertTriangle, RotateCcw, Sliders, Check } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import { stockApi } from '../services/api';
 import { valuationRequest, type ValuationView, type ValuationConditions } from '../services/valuationApi';
 import { growthUnavailableNote, periodNote, valuationAmount, valuationMarketCap, valuationPercent, valuationPrice } from '../utils/valuationFormatters';
+import { loadValuationConfig, saveValuationConfig } from '../utils/valuationConfig';
 import type { Market, StockDetailDTO } from '../types/api';
 import { getCoreGradeInfo, getValuationStatusInfo, getConfidenceInfo } from '../utils/ruleFormatters';
 
@@ -41,6 +42,7 @@ export function StockValuationPage({ ticker: panelTicker, market: panelMarket, y
   const [conditions, setConditions] = useState<ValuationConditions | null>(null);
   const [busy, setBusy] = useState(false); const [error, setError] = useState('');
   const [reload, setReload] = useState(0);
+  const [configToast, setConfigToast] = useState('');
   const actionController = useRef<AbortController | null>(null);
   // Changing the selected period is a condition edit; it does not discard a preview.
   const initialYears = useRef(years);
@@ -83,6 +85,22 @@ export function StockValuationPage({ ticker: panelTicker, market: panelMarket, y
   };
   const money = (value: number | null | undefined) => valuationPrice(value, stock?.currency ?? 'KRW', ko);
   const amount = (value: unknown) => valuationAmount(value == null ? null : Number(value), stock?.currency ?? 'KRW', ko);
+  const applyBrowserDefaults = () => {
+    const loaded = loadValuationConfig();
+    edit(loaded);
+    setConfigToast(ko ? '브라우저 기본 설정값을 불러왔습니다.' : 'Loaded browser default conditions.');
+    setTimeout(() => setConfigToast(''), 3000);
+  };
+  const saveAsBrowserDefaults = () => {
+    if (!conditions) return;
+    try {
+      saveValuationConfig(conditions);
+      setConfigToast(ko ? '현재 조건을 브라우저 기본값으로 저장했습니다.' : 'Saved current conditions as browser defaults.');
+      setTimeout(() => setConfigToast(''), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
   const chart = [1, 2, 3, 4, 5].map(year => ({ year, value: result?.periods[String(year)]?.dcf.scenarios?.base.intrinsicValuePerShare ?? null }));
   const grade = stock ? getCoreGradeInfo(stock, language) : null;
   const valuation = getValuationStatusInfo(dcf?.status ?? 'N/A', language);
@@ -125,7 +143,24 @@ export function StockValuationPage({ ticker: panelTicker, market: panelMarket, y
         <div className="flex flex-wrap gap-4 text-[11px] font-mono tabular-nums text-[#86868B] mt-3 pt-3 border-t border-black/[0.04] dark:border-white/[0.06]">{chart.map(point => <span key={point.year}>{point.year}{ko ? '개년' : 'y'}: {money(point.value)}</span>)}</div>
       </section>
       <section className="grid sm:grid-cols-3 gap-4">{(['conservative', 'base', 'optimistic'] as const).map((key, i) => <div className={box} key={key}><h2 className="text-xs font-semibold text-[#86868B]">{(ko ? ['보수적', '기준', '낙관적'] : ['Conservative', 'Base', 'Optimistic'])[i]}</h2><p className="text-xl sm:text-2xl font-mono font-bold tracking-tight tabular-nums text-[#0071E3] dark:text-[#2997FF] mt-2">{money(dcf?.scenarios?.[key].intrinsicValuePerShare)}</p><p className="text-[11px] text-[#86868B] mt-3 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] font-mono">{ko ? '성장률' : 'Growth'} {valuationPercent(dcf?.scenarios?.[key].growthRate)}</p></div>)}</section>
-      <section className={box}><h2 className="text-sm font-bold tracking-tight mb-4">{ko ? '계산 조건' : 'Calculation conditions'}</h2>
+      <section className={box}>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h2 className="text-sm font-bold tracking-tight">{ko ? '계산 조건' : 'Calculation conditions'}</h2>
+          <Link
+            to="/config"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] hover:underline"
+            title={ko ? '브라우저 계산 조건 기본값 설정' : 'Configure browser default conditions'}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>{ko ? '기본값 설정' : 'Defaults Config'}</span>
+          </Link>
+        </div>
+        {configToast && (
+          <div className="mb-4 p-3 rounded-2xl bg-[#34C759]/10 border border-[#34C759]/20 flex items-center gap-2 text-xs font-semibold text-[#34C759] animate-fade-in">
+            <Check className="w-3.5 h-3.5" />
+            <span>{configToast}</span>
+          </div>
+        )}
         <fieldset disabled={busy} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
           <label>{ko ? '재무자료 기간' : 'History period'}<select className={input} value={selectedYears} onChange={e => edit({ normalizationYears: Number(e.target.value) as 1|2|3|4|5 })}>{[1, 2, 3, 4, 5].map(y => <option key={y} value={y}>{y}{ko ? '개년' : ' years'}</option>)}</select></label>
           <label>{financial ? (ko ? '순이익·ROE 정상화' : 'Earnings and ROE normalization') : (ko ? '주주이익 정상화' : 'Owner earnings normalization')}<select className={input} value={conditions.normalizationMethod} onChange={e => edit({ normalizationMethod: e.target.value as 'CONSERVATIVE'|'MEAN' })}><option value="CONSERVATIVE">{ko ? '최근값·중간값 중 낮은 값' : 'Lower of latest and median'}</option><option value="MEAN">{ko ? '평균' : 'Mean'}</option></select></label>
@@ -134,7 +169,28 @@ export function StockValuationPage({ ticker: panelTicker, market: panelMarket, y
           <label>{ko ? '성장률 상한 (%)' : 'Growth cap (%)'}<input className={input} type="number" min={0} max={100} step="any" value={Number(conditions.growthRateCap) * 100} onChange={e => edit({ growthRateCap: String(Number(e.target.value) / 100) })}/></label>
           <label>{ko ? '성장률 하한 (%, 빈칸은 제한 없음)' : 'Growth floor (%, blank = none)'}<input className={input} type="number" min={-99.99} max={100} step="any" value={conditions.growthRateFloor == null ? '' : Number(conditions.growthRateFloor) * 100} onChange={e => edit({ growthRateFloor: e.target.value === '' ? null : String(Number(e.target.value) / 100) })}/></label>
         </fieldset>
-        <div className="flex flex-wrap gap-3 mt-5"><button className={button} disabled={busy} onClick={() => run('preview')}>{ko ? '임시 재계산' : 'Recalculate preview'}</button>{result.canApply && <button className={button} disabled={busy || Boolean(dirty) || !dcf?.scenarios} onClick={() => run('apply')}>{ko ? '공식 목록에 적용' : 'Apply to official screener'}</button>}</div>
+        <div className="flex flex-wrap items-center gap-3 mt-5">
+          <button className={button} disabled={busy} onClick={() => run('preview')}>{ko ? '임시 재계산' : 'Recalculate preview'}</button>
+          {result.canApply && <button className={button} disabled={busy || Boolean(dirty) || !dcf?.scenarios} onClick={() => run('apply')}>{ko ? '공식 목록에 적용' : 'Apply to official screener'}</button>}
+          <button
+            type="button"
+            className="rounded-full bg-[#F5F5F7] dark:bg-[#2C2C2E] hover:bg-[#EBEBED] dark:hover:bg-[#3A3A3C] text-[#1D1D1F] dark:text-[#F5F5F7] text-xs font-semibold px-4 py-2 border border-black/[0.06] dark:border-white/[0.08] transition-colors cursor-pointer"
+            disabled={busy}
+            onClick={applyBrowserDefaults}
+            title={ko ? '설정 페이지에서 저장한 기본값을 현재 폼에 적용' : 'Load default conditions saved in Config'}
+          >
+            {ko ? '내 기본값 불러오기' : 'Load My Defaults'}
+          </button>
+          <button
+            type="button"
+            className="rounded-full bg-[#F5F5F7] dark:bg-[#2C2C2E] hover:bg-[#EBEBED] dark:hover:bg-[#3A3A3C] text-[#1D1D1F] dark:text-[#F5F5F7] text-xs font-semibold px-4 py-2 border border-black/[0.06] dark:border-white/[0.08] transition-colors cursor-pointer"
+            disabled={busy || !conditions}
+            onClick={saveAsBrowserDefaults}
+            title={ko ? '현재 입력된 계산 조건을 브라우저의 기본값으로 저장' : 'Save current form conditions as browser default'}
+          >
+            {ko ? '내 기본값으로 저장' : 'Save as My Defaults'}
+          </button>
+        </div>
         <p className="text-xs text-[#86868B] mt-3">{ko ? '게시된 입력만 사용합니다. 임시 재계산은 공식 목록을 변경하지 않습니다.' : 'Uses published inputs. Preview calculations leave official values unchanged.'}</p>
       </section>
       <section className={box}><h2 className="text-sm font-bold tracking-tight mb-3">{ko ? '계산 대상 및 실제 사용 연도' : 'Target and used fiscal years'}</h2>

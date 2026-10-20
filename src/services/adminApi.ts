@@ -1,5 +1,6 @@
 import { apiFetch } from './http';
 import type { components } from '../types/openapi.generated';
+import type { ValuationConditions } from './valuationApi';
 import { normalizeScientificNotation, parseNumeric } from '../utils/numberFormatters';
 
 export type AdminStock = components['schemas']['AdminStock'];
@@ -109,5 +110,71 @@ export function changedValues(draft: Draft, original: Draft): Draft {
     Object.entries(draft).filter(
       ([key, value]) => value !== (original[key] ?? null),
     ),
+  );
+}
+
+export interface BulkRecalculateRequest {
+  conditions?: ValuationConditions;
+  apply?: boolean;
+}
+
+export interface BulkRecalculateItem {
+  ticker: string;
+  name: string;
+  market: string;
+  changed: boolean;
+  status: string;
+  intrinsicValuePerShare: string | number | null;
+  conservativeMarginOfSafety: string | number | null;
+  epsGrowth: string | number | null;
+  oepsGrowth: string | number | null;
+  periodStatus?: Record<string, string> | null;
+  error?: string | null;
+}
+
+export interface BulkRecalculateResponse {
+  totalStocks: number;
+  recalculatedCount: number;
+  appliedCount: number;
+  skippedCount?: number;
+  failedCount: number;
+  conditions: ValuationConditions;
+  items: BulkRecalculateItem[];
+}
+
+export async function bulkRecalculateValuation(
+  payload: BulkRecalculateRequest,
+  signal?: AbortSignal,
+): Promise<BulkRecalculateResponse> {
+  return adminRequest<BulkRecalculateResponse>('/valuation/recalculate-all', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    signal,
+  });
+}
+
+export interface BulkFillMaintenanceCapexRequest {
+  overwrite_existing?: boolean;
+}
+
+export interface BulkFillMaintenanceCapexResponse {
+  total_rows_checked: number;
+  updated_rows_count: number;
+  skipped_rows_count: number;
+}
+
+export async function bulkFillMaintenanceCapex(
+  payload: BulkFillMaintenanceCapexRequest = {},
+  signal?: AbortSignal,
+): Promise<BulkFillMaintenanceCapexResponse> {
+  return adminRequest<BulkFillMaintenanceCapexResponse>(
+    '/facts/annual_financial_fact/bulk-fill-maintenance-capex',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal,
+    },
   );
 }

@@ -782,6 +782,80 @@ export function AdminValuationPage() {
       setBusy(false);
     }
   }
+  function getSuggestedMaintenanceCapex(row: FactRow | Draft | null): number | null {
+    if (!row) return null;
+    const dep = parseNumeric((row as Record<string, unknown>).depreciation_ppe);
+    const tangible = parseNumeric((row as Record<string, unknown>).tangible_capex);
+    const intangible = parseNumeric((row as Record<string, unknown>).intangible_capex);
+    const reportedTotal = parseNumeric((row as Record<string, unknown>).reported_total_capex);
+
+    let total: number | null = null;
+    if (tangible !== null && intangible !== null) {
+      total = tangible + intangible;
+    } else if (reportedTotal !== null) {
+      total = reportedTotal;
+    } else if (tangible !== null) {
+      total = tangible;
+    }
+
+    if (dep === null && total === null) return null;
+    if (dep !== null && total !== null) return Math.max(0, Math.min(dep, total));
+    return dep !== null ? Math.max(0, dep) : Math.max(0, total!);
+  }
+
+  async function saveBulkMaintenanceCapexFromDepreciation() {
+    const selectedRows = rows.filter((row) => bulkSelectedIds.includes(row.id));
+    if (selectedRows.length === 0) return;
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const updates = selectedRows
+        .map((row) => {
+          const suggested = getSuggestedMaintenanceCapex(row);
+          if (suggested === null) return null;
+          return { row, value: suggested };
+        })
+        .filter((item): item is { row: FactRow; value: number } => item !== null);
+
+      if (updates.length === 0) {
+        setError('선택한 연도 중 감가상각비 또는 CAPEX 정보가 있는 행이 없습니다.');
+        return;
+      }
+
+      const results = await Promise.allSettled(
+        updates.map(({ row, value }) =>
+          adminRequest(`/facts/annual_financial_fact/${row.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              expected_updated_at: row.updated_at,
+              maintenance_capex_estimate: value,
+            }),
+          }),
+        ),
+      );
+      const savedCount = results.filter((result) => result.status === 'fulfilled').length;
+      const failedCount = results.length - savedCount;
+      resetBulkSelection();
+      setRevision((old) => old + 1);
+      setLoadingRows(true);
+      if (savedCount > 0) {
+        setStale(true);
+        setNotice(
+          `${savedCount}개 연도의 유지보수 CAPEX를 감가상각비 기준으로 일괄 저장했습니다. 계산 버튼으로 결과를 갱신하세요.`,
+        );
+      }
+      if (failedCount > 0) {
+        setError(
+          `${failedCount}개 연도는 다른 수정과 충돌해 저장하지 못했습니다. 다시 조회한 뒤 재시도하세요.`,
+        );
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function calculate() {
     if (!stock) return;
     setBusy(true);
@@ -1838,14 +1912,27 @@ export function AdminValuationPage() {
                       )}
                     </label>
                   )}
-                  <button
-                    type="button"
-                    className={button}
-                    disabled={busy || dirty || collecting || bulkSelectedIds.length === 0}
-                    onClick={() => void saveBulkField()}
-                  >
-                    선택한 {bulkSelectedIds.length}개 연도 일괄 저장
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className={button}
+                      disabled={busy || dirty || collecting || bulkSelectedIds.length === 0}
+                      onClick={() => void saveBulkField()}
+                    >
+                      선택한 {bulkSelectedIds.length}개 연도 일괄 저장
+                    </button>
+                    {table === 'annual_financial_fact' && (
+                      <button
+                        type="button"
+                        className="rounded-lg border border-blue-600/30 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50 dark:border-blue-500/30 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/60"
+                        disabled={busy || dirty || collecting || bulkSelectedIds.length === 0}
+                        title="선택한 연도의 유지보수 CAPEX 추정치를 min(유형자산 감가상각, 총 CAPEX) 값으로 일괄 저장합니다"
+                        onClick={() => void saveBulkMaintenanceCapexFromDepreciation()}
+                      >
+                        선택 연도 유지보수 CAPEX를 감가상각비 기준으로 일괄 채우기
+                      </button>
+                    )}
+                  </div>
                   <p className="w-full text-xs text-gray-500">
                     빈 값을 적용하면 선택한 연도의 해당 값이 삭제됩니다. 필수 항목이나 서로 의존하는 값은 저장 시 검증됩니다.
                   </p>
@@ -1989,6 +2076,31 @@ export function AdminValuationPage() {
                               </span>
                             )}
                           </div>
+                          {table === 'annual_financial_fact' && field.name === 'maintenance_capex_estimate' && (() => {
+                            const suggested = getSuggestedMaintenanceCapex(draft);
+                            if (suggested === null) return null;
+                            return (
+                              <div className="flex items-center justify-between text-xs pt-0.5">
+                                <span className="text-gray-500 font-mono">
+                                  감가상각 기준 제안: {fmt(suggested)}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium underline"
+                                  disabled={disabled}
+                                  onClick={() => {
+                                    setDraft({
+                                      ...draft,
+                                      maintenance_capex_estimate: suggested,
+                                    });
+                                    setReview(false);
+                                  }}
+                                >
+                                  적용
+                                </button>
+                              </div>
+                            );
+                          })()}
                           {field.kind === 'select' || field.kind === 'boolean' ? (
                             <select
                               className={control}

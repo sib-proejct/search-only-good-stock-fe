@@ -35,6 +35,11 @@ const CommunityWritePage = lazy(() =>
     default: module.CommunityWritePage,
   }))
 );
+const ConfigPage = lazy(() =>
+  import('./pages/ConfigPage').then((module) => ({
+    default: module.ConfigPage,
+  }))
+);
 
 function RouteFallback() {
   return (
@@ -114,6 +119,16 @@ function AppContent() {
             element={<CommunityWritePage />}
           />
 
+          {/* Valuation Conditions Config */}
+          <Route
+            path="/config"
+            element={<ConfigPage />}
+          />
+          <Route
+            path="/settings"
+            element={<ConfigPage />}
+          />
+
           {/* Fallback */}
           <Route
             path="*"
@@ -134,8 +149,11 @@ function AppContent() {
           {/* Right: Links & Controls on the Same Single Line */}
           <div className="flex flex-wrap items-center gap-5 sm:gap-6">
             <nav className="flex items-center space-x-5 sm:space-x-6 text-[#86868B]">
-              {user?.role === 'admin' && <Link to="/admin/valuation" className="text-[#0071E3] dark:text-[#2997FF] font-semibold hover:underline transition-colors">
-                {language === 'ko' ? '내재가치 계산기 (원자료 관리)' : 'Valuation calculator (fact editor)'}
+              <Link to="/config" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">
+                {language === 'ko' ? '계산 조건 설정 (Config)' : 'Valuation Settings (Config)'}
+              </Link>
+              {user?.role === 'admin' && <Link to="/admin/valuation" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">
+                {language === 'ko' ? '내재가치 계산기 (원자료)' : 'Valuation editor'}
               </Link>}
               <a href="#privacy" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('privacy')}</a>
               <a href="#terms" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('terms')}</a>
