@@ -285,7 +285,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
             </button>
 
             {isSortDropdownOpen && (
-              <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-xl border border-black/[0.08] dark:border-white/[0.12] p-1.5 z-50 animate-fade-in">
+              <div className="absolute right-0 top-full mt-2 w-max min-w-44 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-xl border border-black/[0.08] dark:border-white/[0.12] p-1.5 z-50 animate-fade-in">
                 {sortOptions.map((opt) => {
                   const isSelected = sortField === opt.id;
                   return (
@@ -295,13 +295,13 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                         setSortField(opt.id);
                         setIsSortDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer select-none ${isSelected
+                      className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-3 whitespace-nowrap transition-colors cursor-pointer select-none ${isSelected
                           ? 'bg-[#F2F4F6] dark:bg-[#2C2C2E] font-bold text-[#0071E3] dark:text-[#2997FF]'
                           : 'text-[#191F28] dark:text-[#F5F5F7] hover:bg-[#F9FAFB] dark:hover:bg-[#252528]'
                         }`}
                     >
                       <span>{opt.label}</span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF] stroke-[2.5]" />}
+                      {isSelected && <Check className="w-3.5 h-3.5 shrink-0 text-[#0071E3] dark:text-[#2997FF] stroke-[2.5]" />}
                     </button>
                   );
                 })}
