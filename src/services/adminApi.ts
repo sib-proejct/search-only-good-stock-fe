@@ -1,3 +1,4 @@
+import { apiFetch } from './http';
 import type { components } from '../types/openapi.generated';
 import { normalizeScientificNotation, parseNumeric } from '../utils/numberFormatters';
 
@@ -27,7 +28,7 @@ export async function adminRequest<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(`${base}/api/admin${path}`, init);
+  const response = await apiFetch(`${base}/api/admin${path}`, init);
   const body = await response.json();
   if (!response.ok) {
     const detail = body.detail;

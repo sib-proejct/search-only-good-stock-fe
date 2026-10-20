@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAccount } from '../../context/AccountContext';
 import { Search, X } from 'lucide-react';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
 
@@ -25,7 +26,9 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { t } = useAppConfig();
+  const { t, language } = useAppConfig();
+  const { user, loading, logout } = useAccount();
+  const [logoutError, setLogoutError] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
@@ -229,6 +232,18 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
 
             {/* Right side: Search Pill */}
               <div className="flex items-center space-x-1.5 sm:space-x-4 shrink-0">
+                <Link to="/favorites" className="text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] whitespace-nowrap">{language === 'ko' ? '즐겨찾기' : 'Favorites'}</Link>
+                {loading ? <span className="text-xs text-[#86868B]">…</span> : user ? <div className="relative">
+                  <details key={location.pathname} className="text-xs">
+                    <summary className="cursor-pointer font-semibold max-w-24 truncate">{user.username}</summary>
+                    <div className="absolute right-0 top-full mt-2 p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 shadow-lg min-w-40 space-y-3">
+                      {user.role === 'admin' && <Link className="block" to="/admin/valuation">{language === 'ko' ? '종목 관리' : 'Stock management'}</Link>}
+                      <Link className="block" to="/account/password">{language === 'ko' ? '비밀번호 변경' : 'Change password'}</Link>
+                      <button onClick={() => { setLogoutError(false); void logout().catch(() => setLogoutError(true)); }}>{language === 'ko' ? '로그아웃' : 'Log out'}</button>
+                      {logoutError && <p role="alert" className="text-[#FF3B30]">{language === 'ko' ? '로그아웃하지 못했습니다. 다시 시도해 주세요.' : 'Could not log out. Please retry.'}</p>}
+                    </div>
+                  </details>
+                </div> : <Link to={location.pathname === "/login" ? location.pathname + location.search : `/login?next=${encodeURIComponent(location.pathname + location.search)}`} className="text-xs whitespace-nowrap">{language === 'ko' ? '로그인' : 'Log in'}</Link>}
                 {/* Desktop Search */}
                 <div className="relative hidden md:block">
                   <input

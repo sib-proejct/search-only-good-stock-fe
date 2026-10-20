@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { FavoriteButton } from '../components/common/FavoriteButton';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   RuleDefinitionDTO,
@@ -531,6 +532,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
               <h1 className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
                 {detail.name}
               </h1>
+              <FavoriteButton stockId={detail.id} name={detail.name} />
               <span className="font-mono text-base font-semibold text-[#86868B]">
                 {detail.ticker}
               </span>

@@ -1,4 +1,6 @@
 import { MarketFilter } from '../components/common/MarketFilter';
+import { FavoriteButton } from '../components/common/FavoriteButton';
+import { useAccount } from '../context/AccountContext';
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -29,11 +31,13 @@ import { periodNote, valuationPrice, valuationMarketCap, valuationPercent } from
 interface ScreenerPageProps {
   onSelectStock?: (stockId: string) => void;
   searchQuery: string;
+  favoritesOnly?: boolean;
 }
 
-export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalSearchQuery }) => {
+export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalSearchQuery, favoritesOnly = false }) => {
   const navigate = useNavigate();
   const { t, language } = useAppConfig();
+  const { user, revision, favoritesError, reloadFavorites } = useAccount();
   const {
     years, setYears, valuationStatus, setValuationStatus,
     stocks,
@@ -55,7 +59,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
     loadMore,
     retry,
     resetFilters,
-  } = useStocks();
+  } = useStocks(favoritesOnly, favoritesOnly ? revision : 0);
 
   const ko = language === 'ko';
   const [counts, setCounts] = useState<{ total: number; passed: number; margin: number } | null>(null);
@@ -64,7 +68,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
     const controller = new AbortController();
     setCounts(null);
     const timer = setTimeout(() => {
-      const query = { limit: 1, years, search: searchQuery.trim() || undefined, market: market.length ? market : undefined };
+      const query = { limit: 1, years, favoritesOnly, search: searchQuery.trim() || undefined, market: market.length ? market : undefined };
       Promise.all([
         stockApi.getStocks(query, controller.signal),
         stockApi.getStocks({ ...query, coreStatus: 'PASS' }, controller.signal),
@@ -74,7 +78,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
       }).catch(() => { /* Counts remain unavailable when the request fails. */ });
     }, 300);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [searchQuery, market, years]);
+  }, [searchQuery, market, years, favoritesOnly, revision]);
   const [drawerStockId, setDrawerStockId] = useState<string | null>(null);
   const drawerStock = stocks.find(stock => stock.id === drawerStockId) ?? null;
   const drawerPeriod = drawerStock?.periodValuations?.[String(years)];
@@ -136,6 +140,11 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-5 sm:space-y-6 animate-fade-in">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-bold">{favoritesOnly ? (ko ? '내 즐겨찾기' : 'My favorites') : (ko ? '종목 스크리너' : 'Stock screener')}</h1>
+        <button onClick={() => navigate(favoritesOnly ? '/' : '/favorites')} className="rounded-full px-4 py-2 text-xs font-semibold bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF]">{favoritesOnly ? (ko ? '전체 종목 보기' : 'All stocks') : (ko ? '즐겨찾기만 보기' : 'Favorites only')}</button>
+      </div>
+      {favoritesError && <div role="alert" className="text-xs text-[#FF3B30]">{ko ? '즐겨찾기 상태를 불러오지 못했습니다.' : 'Could not load favorites.'} <button onClick={() => void reloadFavorites().catch(() => {})} className="underline">{t('retry')}</button></div>}
       {/* 1. Hero Bento Grid (3 Cards Row) */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-5">
         {/* Card 1: Current Market Scan & Total Passed */}
@@ -200,7 +209,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
               <span className="text-xs font-medium text-[#86868B] block truncate">
                 {t('loadedAsOfDateLabel')}
               </span>
-              {import.meta.env.DEV && <a href="/admin/valuation" className="text-xs text-blue-600">{ko ? '종목 추가 · 원자료 관리' : 'Add stocks · Edit facts'}</a>}
+              {import.meta.env.DEV && user?.role === 'admin' && <a href="/admin/valuation" className="text-xs text-blue-600">{ko ? '종목 추가 · 원자료 관리' : 'Add stocks · Edit facts'}</a>}
             </div>
             <div className="flex items-baseline gap-1.5 mt-2 whitespace-nowrap">
               <span className="text-lg sm:text-xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
@@ -351,10 +360,10 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
           </div>
           <div className="space-y-1">
             <h3 className="text-base font-bold text-[#1D1D1F] dark:text-[#F5F5F7]">
-              {t('noStocksFound')}
+              {favoritesOnly ? (ko ? '표시할 즐겨찾기 종목이 없습니다.' : 'No favorite stocks to show.') : t('noStocksFound')}
             </h3>
             <p className="text-xs text-[#86868B]">
-              {ko ? '다른 시장이나 상태 필터를 선택하거나 검색어를 변경해보세요.' : 'Try a different market, status filter, or search.'}
+              {favoritesOnly ? (ko ? '전체 종목에서 별표를 눌러 추가하거나 검색·필터를 확인해 주세요.' : 'Add stocks using the star, or adjust your search and filters.') : (ko ? '다른 시장이나 상태 필터를 선택하거나 검색어를 변경해보세요.' : 'Try a different market, status filter, or search.')}
             </p>
           </div>
           <button
@@ -385,6 +394,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                 >
                   {/* Left: Rank & Ticker & Name & Grade */}
                   <div className="flex items-center gap-3 min-w-0">
+                    <FavoriteButton stockId={stock.id} name={stock.name} />
                     <span className="font-mono text-xs font-semibold text-[#86868B] w-4 shrink-0 tabular-nums">
                       {rank}
                     </span>
@@ -464,6 +474,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                         {/* Company */}
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-2">
+                            <FavoriteButton stockId={stock.id} name={stock.name} />
                             <span className="font-bold text-[#1D1D1F] dark:text-[#F5F5F7] group-hover:text-[#0071E3] dark:group-hover:text-[#2997FF] transition-colors font-mono whitespace-nowrap">
                               {stock.ticker}
                             </span>

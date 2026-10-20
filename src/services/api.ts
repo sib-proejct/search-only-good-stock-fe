@@ -1,3 +1,4 @@
+import { apiFetch } from './http';
 import {
   BatchRunStatusDTO,
   Market,
@@ -27,7 +28,7 @@ async function parseErrorMessage(response: Response): Promise<string> {
 
 export const stockApi = {
   async getRules(signal?: AbortSignal): Promise<RuleListResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/rules`, { signal });
+    const response = await apiFetch(`${API_BASE_URL}/api/rules`, { signal });
 
     if (!response.ok) {
       throw new Error(await parseErrorMessage(response));
@@ -44,6 +45,7 @@ export const stockApi = {
 
     if (query) {
       if (query.years) params.set('years', String(query.years));
+      if (query.favoritesOnly) params.set('favoritesOnly', 'true');
       if (query.search && query.search.trim() !== '') {
         params.set('search', query.search.trim());
       }
@@ -78,7 +80,7 @@ export const stockApi = {
       ? `${API_BASE_URL}/api/stocks?${queryString}`
       : `${API_BASE_URL}/api/stocks`;
 
-    const response = await fetch(url, { signal });
+    const response = await apiFetch(url, { signal });
 
     if (!response.ok) {
       throw new Error(await parseErrorMessage(response));
@@ -106,7 +108,7 @@ export const stockApi = {
     const url = `${API_BASE_URL}/api/stocks/${encodedTicker}${
       queryString ? `?${queryString}` : ''
     }`;
-    const response = await fetch(url, { signal });
+    const response = await apiFetch(url, { signal });
 
     if (!response.ok) {
       throw new Error(await parseErrorMessage(response));
@@ -116,7 +118,7 @@ export const stockApi = {
   },
 
   async triggerBatchRefresh(signal?: AbortSignal): Promise<BatchRunStatusDTO> {
-    const response = await fetch(`${API_BASE_URL}/api/batch/refresh`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/batch/refresh`, {
       method: 'POST',
       signal,
     });
@@ -129,7 +131,7 @@ export const stockApi = {
   },
 
   async cancelBatchRefresh(signal?: AbortSignal): Promise<BatchRunStatusDTO> {
-    const response = await fetch(`${API_BASE_URL}/api/batch/cancel`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/batch/cancel`, {
       method: 'POST',
       signal,
     });
@@ -142,7 +144,7 @@ export const stockApi = {
   },
 
   async getBatchStatus(signal?: AbortSignal): Promise<BatchRunStatusDTO> {
-    const response = await fetch(`${API_BASE_URL}/api/batch/status`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/batch/status`, {
       signal,
     });
 
