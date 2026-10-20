@@ -139,14 +139,15 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
     : 'LIVE';
 
   return (
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-5 sm:space-y-6 animate-fade-in">
+    <>
+    <div className="screener-page screener-container max-w-[1600px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-5 sm:space-y-6 animate-fade-in">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold">{favoritesOnly ? (ko ? '내 즐겨찾기' : 'My favorites') : (ko ? '종목 스크리너' : 'Stock screener')}</h1>
         <button onClick={() => navigate(favoritesOnly ? '/' : '/favorites')} className="rounded-full px-4 py-2 text-xs font-semibold bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF]">{favoritesOnly ? (ko ? '전체 종목 보기' : 'All stocks') : (ko ? '즐겨찾기만 보기' : 'Favorites only')}</button>
       </div>
       {favoritesError && <div role="alert" className="text-xs text-[#FF3B30]">{ko ? '즐겨찾기 상태를 불러오지 못했습니다.' : 'Could not load favorites.'} <button onClick={() => void reloadFavorites().catch(() => {})} className="underline">{t('retry')}</button></div>}
       {/* 1. Hero Bento Grid (3 Cards Row) */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-5">
+      <div className="screener-summary grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-5">
         {/* Card 1: Current Market Scan & Total Passed */}
         <div className="md:col-span-5 bg-white dark:bg-[#1C1C1E] rounded-3xl p-5 sm:p-6 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between transition-colors duration-300">
           <div>
@@ -242,7 +243,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
       </div>
 
       {/* 2. Toss/Apple Style Filter Ribbon */}
-      <div className="flex flex-wrap items-center justify-between gap-3 py-1">
+      <div className="screener-filters flex flex-wrap items-center justify-between gap-3 py-1">
         {/* Left: Markets + Core Status Capsule Ribbon */}
         <div className="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
           {/* Market multi-select buttons */}
@@ -311,7 +312,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
           {/* Sort Order Toggle */}
           <button
             onClick={toggleSortOrder}
-            className="h-10 w-10 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] flex items-center justify-center border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer select-none focus:outline-none"
+            className="screener-sort-order h-10 w-10 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] flex items-center justify-center border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer select-none focus:outline-none"
             title={sortOrder === 'asc' ? t('sortOrderAsc') : t('sortOrderDesc')}
             aria-label="Toggle sort order"
           >
@@ -572,6 +573,8 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
         </>
       )}
 
+    </div>
+
       <StockDetailDrawer
         stock={selectedDrawerStock}
         years={years}
@@ -585,6 +588,6 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
         stockList={stocks}
         onSelectStock={stock => setDrawerStockId(stock.id)}
       />
-    </div>
+    </>
   );
 };

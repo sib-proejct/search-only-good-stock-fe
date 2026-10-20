@@ -48,9 +48,11 @@ function AppContent() {
   const { user } = useAccount();
   const { t, theme, toggleTheme, language, toggleLanguage } = useAppConfig();
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const { pathname } = useLocation();
+  const isScreener = pathname === '/' || pathname === '/favorites';
 
   return (
-    <div className="min-h-screen bg-[#FBFBFD] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7] flex flex-col font-sans selection:bg-[#0071E3]/15 selection:text-[#0071E3] transition-colors duration-300">
+    <div className={`${isScreener ? 'screener-shell ' : ''}min-h-screen bg-[#FBFBFD] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7] flex flex-col font-sans selection:bg-[#0071E3]/15 selection:text-[#0071E3] transition-colors duration-300`}>
       {/* 1. Frosted Glass Top Navigation Bar */}
       <TopNavBar
         searchQuery={searchQuery}
@@ -124,8 +126,8 @@ function AppContent() {
       </main>
 
       {/* 3. Apple Minimalist Footer with Inline Controls on a Single Line */}
-      <footer className="border-t border-black/[0.04] dark:border-white/[0.08] bg-[#FBFBFD] dark:bg-black py-8 px-6 sm:px-8 text-xs text-[#86868B] font-sans transition-colors duration-300">
-        <div className="max-w-[1600px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="screener-chrome border-t border-black/[0.04] dark:border-white/[0.08] bg-[#FBFBFD] dark:bg-black py-8 px-6 sm:px-8 text-xs text-[#86868B] font-sans transition-colors duration-300">
+        <div className="screener-container max-w-[1600px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Left: Copyright */}
           <div className="font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">
             {t('footerCopyright')}

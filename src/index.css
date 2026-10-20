@@ -236,3 +236,158 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Keep laptop sizing intact; scale only the screener and its shared chrome. */
+@media (min-width: 1920px) {
+  .screener-shell {
+    --screener-width: 1840px;
+    --screener-body: 16px;
+    --screener-label: 17px;
+    --screener-small: 14px;
+    --screener-title: 30px;
+    --screener-total: 40px;
+    --screener-date: 26px;
+    --screener-control: 44px;
+    --screener-icon: 18px;
+    --screener-cell-y: 16px;
+    --screener-cell-x: 12px;
+    --screener-card-padding: 28px;
+    --screener-gap: 28px;
+    --screener-company-width: 200px;
+  }
+
+  .screener-shell .screener-container {
+    max-width: var(--screener-width);
+  }
+
+  .screener-page {
+    padding-top: var(--screener-gap);
+    padding-bottom: var(--screener-gap);
+  }
+
+  .screener-page > :not([hidden]) ~ :not([hidden]) {
+    margin-top: var(--screener-gap);
+  }
+
+  :is(.screener-page, .screener-shell .screener-chrome) .text-xs,
+  .screener-shell footer.screener-chrome {
+    font-size: var(--screener-body);
+    line-height: 1.5;
+  }
+
+  :is(.screener-page, .screener-shell .screener-chrome) :is(.text-\[9px\], .text-\[10px\], .text-\[11px\]) {
+    font-size: var(--screener-small);
+    line-height: 1.5;
+  }
+
+  :is(.screener-page, .screener-shell .screener-chrome) :is(.text-sm, .sm\:text-sm, .sm\:text-\[13px\]) {
+    font-size: var(--screener-label);
+    line-height: 1.5;
+  }
+
+  .screener-page h1 {
+    font-size: var(--screener-title);
+    line-height: 1.25;
+  }
+
+  .screener-summary {
+    gap: var(--screener-gap);
+  }
+
+  .screener-summary > div {
+    min-width: 0;
+    padding: var(--screener-card-padding);
+  }
+
+  .screener-summary .sm\:text-3xl {
+    font-size: var(--screener-total);
+  }
+
+  .screener-summary .sm\:text-xl {
+    font-size: var(--screener-date);
+  }
+
+  .screener-filters :is(button, select) {
+    min-height: var(--screener-control);
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .screener-filters select {
+    padding-right: 36px;
+  }
+
+  .screener-filters .screener-sort-order {
+    width: var(--screener-control);
+    padding: 0;
+  }
+
+  .screener-page > div:first-child button {
+    height: var(--screener-control);
+  }
+
+  :is(.screener-page, .screener-shell .screener-chrome) svg {
+    width: var(--screener-icon);
+    height: var(--screener-icon);
+  }
+
+  .screener-page :is(th, td) {
+    padding-top: var(--screener-cell-y);
+    padding-bottom: var(--screener-cell-y);
+  }
+
+  .screener-page :is(th, td).px-2\.5 {
+    padding-left: var(--screener-cell-x);
+    padding-right: var(--screener-cell-x);
+  }
+
+  .screener-page td.pl-2 {
+    padding-left: var(--screener-cell-x);
+  }
+
+  .screener-page td .truncate {
+    max-width: var(--screener-company-width);
+  }
+
+  .screener-page td button {
+    width: var(--screener-control);
+    height: var(--screener-control);
+  }
+
+  .screener-shell header.screener-chrome > .screener-container {
+    height: 84px;
+  }
+
+  .screener-shell header.screener-chrome input {
+    width: 280px;
+    min-height: var(--screener-control);
+    padding-left: 40px;
+  }
+}
+
+@media (min-width: 2560px) {
+  .screener-shell {
+    --screener-width: 2240px;
+    --screener-body: 18px;
+    --screener-label: 19px;
+    --screener-small: 15px;
+    --screener-title: 36px;
+    --screener-total: 44px;
+    --screener-date: 30px;
+    --screener-control: 48px;
+    --screener-icon: 20px;
+    --screener-cell-y: 20px;
+    --screener-cell-x: 16px;
+    --screener-card-padding: 32px;
+    --screener-gap: 32px;
+    --screener-company-width: 240px;
+  }
+
+  .screener-shell header.screener-chrome > .screener-container {
+    height: 92px;
+  }
+
+  .screener-shell header.screener-chrome input {
+    width: 320px;
+  }
+}
