@@ -34,6 +34,24 @@ export function valuationMarketCap(value: number | null | undefined, currency: s
 export function valuationPercent(value: number | null | undefined) {
   return value == null ? '—' : `${(value * 100).toFixed(1)}%`;
 }
+export function valuationPriceToValueRatio(
+  currentPrice: number | null | undefined,
+  intrinsicValue: number | null | undefined
+): string {
+  if (currentPrice == null || intrinsicValue == null || intrinsicValue <= 0) return '—';
+  return `${((currentPrice / intrinsicValue) * 100).toFixed(1)}%`;
+}
+export function priceToValueColor(
+  currentPrice: number | null | undefined,
+  intrinsicValue: number | null | undefined
+): string {
+  if (currentPrice == null || intrinsicValue == null || intrinsicValue <= 0) return 'text-[#86868B]';
+  const ratio = currentPrice / intrinsicValue;
+  if (ratio <= 0.8) return 'text-[#34C759]';
+  if (ratio <= 1.0) return 'text-[#0071E3] dark:text-[#2997FF]';
+  return 'text-[#FF3B30]';
+}
+
 export function periodNote(period: PeriodValuation | undefined, ko: boolean): string {
   if (!period) return ko ? '기간별 결과 보충이 필요합니다.' : 'Period results require supplementation.';
   const reasons = [...period.dcf.reasonCodes, ...period.missingReasons, ...period.dcf.warnings];

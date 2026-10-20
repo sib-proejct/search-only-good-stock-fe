@@ -19,6 +19,7 @@ import {
   Search,
   Check,
   ChevronRight,
+  Star,
 } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import { StockSort } from '../types/api';
@@ -26,7 +27,7 @@ import { getCoreGradeInfo } from '../utils/ruleFormatters';
 import { StockDetailDrawer } from '../components/screener/StockDetailDrawer';
 import { StockValuationPage } from './StockValuationPage';
 import { stockApi } from '../services/api';
-import { periodNote, valuationPrice, valuationMarketCap, valuationPercent } from '../utils/valuationFormatters';
+import { periodNote, priceToValueColor, valuationMarketCap, valuationPrice, valuationPriceToValueRatio } from '../utils/valuationFormatters';
 
 interface ScreenerPageProps {
   onSelectStock?: (stockId: string) => void;
@@ -141,9 +142,19 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
   return (
     <>
     <div className="screener-page page-container max-w-[1600px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-5 sm:space-y-6 animate-fade-in">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold">{favoritesOnly ? (ko ? '내 즐겨찾기' : 'My favorites') : (ko ? '종목 스크리너' : 'Stock screener')}</h1>
-        <button onClick={() => navigate(favoritesOnly ? '/' : '/favorites')} className="rounded-full px-4 py-2 text-xs font-semibold bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF]">{favoritesOnly ? (ko ? '전체 종목 보기' : 'All stocks') : (ko ? '즐겨찾기만 보기' : 'Favorites only')}</button>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7]">{favoritesOnly ? (ko ? '내 즐겨찾기' : 'My favorites') : (ko ? '종목 스크리너' : 'Stock screener')}</h1>
+        <button
+          type="button"
+          aria-pressed={favoritesOnly}
+          onClick={() => navigate(favoritesOnly ? '/' : '/favorites')}
+          className={`inline-flex items-center gap-1.5 h-8 rounded-full pl-3 pr-3.5 text-xs font-semibold border transition-all duration-200 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071E3] ${favoritesOnly
+            ? 'bg-[#FFD60A]/15 border-[#D97706]/25 text-[#B45309] dark:bg-[#FFD60A]/15 dark:border-[#FFD60A]/30 dark:text-[#FFD60A] hover:bg-[#FFD60A]/25'
+            : 'bg-white dark:bg-[#1C1C1E] border-black/[0.08] dark:border-white/[0.12] text-[#1D1D1F] dark:text-[#F5F5F7] shadow-sm hover:border-[#D97706]/30 hover:text-[#B45309] dark:hover:text-[#FFD60A]'}`}
+        >
+          <Star aria-hidden="true" className="w-3.5 h-3.5" fill={favoritesOnly ? 'currentColor' : 'none'} strokeWidth={2.25} />
+          {ko ? '즐겨찾기만 보기' : 'Favorites only'}
+        </button>
       </div>
       {favoritesError && <div role="alert" className="text-xs text-[#FF3B30]">{ko ? '즐겨찾기 상태를 불러오지 못했습니다.' : 'Could not load favorites.'} <button onClick={() => void reloadFavorites().catch(() => {})} className="underline">{t('retry')}</button></div>}
       {/* 1. Hero Bento Grid (3 Cards Row) */}
@@ -232,16 +243,6 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-xs font-medium text-[#86868B]">{ko ? '재무자료 기간' : 'Financial history'}</span>
-        <div className="inline-flex bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 rounded-2xl border border-black/[0.04] dark:border-white/[0.06] gap-1">
-          {[1, 2, 3, 4, 5].map(year => <button key={year} aria-pressed={years === year} onClick={() => setYears(year)} className={`px-3.5 py-2 text-xs rounded-xl transition-all ${years === year ? 'bg-white dark:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-bold shadow-sm' : 'text-[#8B95A1] dark:text-[#86868B] font-medium'}`}>{year}{ko ? '개년' : ' years'}</button>)}
-        </div>
-        <label className="text-xs text-[#86868B]">{ko ? '가치평가 ' : 'Valuation '}<select aria-label={ko ? '가치평가' : 'Valuation'} value={valuationStatus} onChange={event => setValuationStatus(event.target.value as typeof valuationStatus)} className="h-10 px-3 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] text-[#191F28] dark:text-[#F5F5F7] font-medium">
-          <option value="ALL">{ko ? '전체' : 'All'}</option><option value="PASS_WITH_MARGIN">{ko ? '안전마진 확보' : 'With margin'}</option><option value="WATCH">{ko ? '관찰' : 'Watch'}</option><option value="NO_MARGIN">{ko ? '안전마진 부족' : 'No margin'}</option><option value="N/A">{ko ? '계산 불가' : 'Unavailable'}</option>
-        </select></label>
-      </div>
-
       {/* 2. Toss/Apple Style Filter Ribbon */}
       <div className="screener-filters flex flex-wrap items-center justify-between gap-3 py-1">
         {/* Left: Markets + Core Status Capsule Ribbon */}
@@ -267,57 +268,90 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
               );
             })}
           </div>
+          <div className="relative shrink-0">
+            <select
+              aria-label={ko ? '가치평가' : 'Valuation'}
+              value={valuationStatus}
+              onChange={event => setValuationStatus(event.target.value as typeof valuationStatus)}
+              className="h-10 pl-3.5 pr-8 appearance-none rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-xs border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071E3]"
+            >
+              <option value="ALL">{ko ? '가치평가: 전체' : 'Valuation: All'}</option>
+              <option value="PASS_WITH_MARGIN">{ko ? '가치평가: 안전마진 확보' : 'Valuation: With margin'}</option>
+              <option value="WATCH">{ko ? '가치평가: 관찰' : 'Valuation: Watch'}</option>
+              <option value="NO_MARGIN">{ko ? '가치평가: 안전마진 부족' : 'Valuation: No margin'}</option>
+              <option value="N/A">{ko ? '가치평가: 계산 불가' : 'Valuation: Unavailable'}</option>
+            </select>
+            <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[#86868B]" />
+          </div>
         </div>
 
-        {/* Right: Sorting Selector & Order Toggle */}
-        <div className="flex items-center gap-2">
-          {/* Sort Selector Dropdown */}
-          <div className="relative" ref={sortDropdownRef}>
-            <button
-              onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-              className="h-10 px-3.5 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-xs flex items-center gap-1.5 border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer select-none focus:outline-none"
+        {/* Right: History Period, Sorting Selector & Order Toggle */}
+        <div className="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
+          <div className="relative shrink-0">
+            <select
+              aria-label={ko ? '재무자료 기간' : 'Financial history'}
+              value={years}
+              onChange={event => setYears(Number(event.target.value))}
+              className="h-10 pl-3.5 pr-8 appearance-none rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-xs border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071E3]"
             >
-              <ArrowUpDown className="w-3.5 h-3.5 text-[#86868B]" />
-              <span>{currentSortOption.label}</span>
-              <ChevronDown
-                className={`w-3 h-3 text-[#86868B] transition-transform ${isSortDropdownOpen ? 'rotate-180' : ''}`}
-              />
-            </button>
-
-            {isSortDropdownOpen && (
-              <div className="absolute right-0 top-full mt-2 w-max min-w-44 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-xl border border-black/[0.08] dark:border-white/[0.12] p-1.5 z-50 animate-fade-in">
-                {sortOptions.map((opt) => {
-                  const isSelected = sortField === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => {
-                        setSortField(opt.id);
-                        setIsSortDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-3 whitespace-nowrap transition-colors cursor-pointer select-none ${isSelected
-                          ? 'bg-[#F2F4F6] dark:bg-[#2C2C2E] font-bold text-[#0071E3] dark:text-[#2997FF]'
-                          : 'text-[#191F28] dark:text-[#F5F5F7] hover:bg-[#F9FAFB] dark:hover:bg-[#252528]'
-                        }`}
-                    >
-                      <span>{opt.label}</span>
-                      {isSelected && <Check className="w-3.5 h-3.5 shrink-0 text-[#0071E3] dark:text-[#2997FF] stroke-[2.5]" />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+              {[1, 2, 3, 4, 5].map(year => (
+                <option key={year} value={year}>
+                  {ko ? `재무자료 기간: ${year}개년` : `History: ${year}y`}
+                </option>
+              ))}
+            </select>
+            <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[#86868B]" />
           </div>
+          {/* Sort Selector & Order Toggle stay together when wrapping */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Sort Selector Dropdown */}
+            <div className="relative" ref={sortDropdownRef}>
+              <button
+                onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+                className="h-10 px-3.5 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-xs flex items-center gap-1.5 border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer select-none focus:outline-none"
+              >
+                <ArrowUpDown className="w-3.5 h-3.5 text-[#86868B]" />
+                <span>{currentSortOption.label}</span>
+                <ChevronDown
+                  className={`w-3 h-3 text-[#86868B] transition-transform ${isSortDropdownOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
 
-          {/* Sort Order Toggle */}
-          <button
-            onClick={toggleSortOrder}
-            className="screener-sort-order h-10 w-10 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] flex items-center justify-center border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer select-none focus:outline-none"
-            title={sortOrder === 'asc' ? t('sortOrderAsc') : t('sortOrderDesc')}
-            aria-label="Toggle sort order"
-          >
-            {sortOrder === 'asc' ? <ArrowUp className="w-4 h-4 text-[#0071E3] dark:text-[#2997FF]" /> : <ArrowDown className="w-4 h-4 text-[#0071E3] dark:text-[#2997FF]" />}
-          </button>
+              {isSortDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-max min-w-44 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-xl border border-black/[0.08] dark:border-white/[0.12] p-1.5 z-50 animate-fade-in">
+                  {sortOptions.map((opt) => {
+                    const isSelected = sortField === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => {
+                          setSortField(opt.id);
+                          setIsSortDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-3 whitespace-nowrap transition-colors cursor-pointer select-none ${isSelected
+                            ? 'bg-[#F2F4F6] dark:bg-[#2C2C2E] font-bold text-[#0071E3] dark:text-[#2997FF]'
+                            : 'text-[#191F28] dark:text-[#F5F5F7] hover:bg-[#F9FAFB] dark:hover:bg-[#252528]'
+                          }`}
+                      >
+                        <span>{opt.label}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 shrink-0 text-[#0071E3] dark:text-[#2997FF] stroke-[2.5]" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Sort Order Toggle */}
+            <button
+              onClick={toggleSortOrder}
+              className="screener-sort-order h-10 w-10 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] flex items-center justify-center border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer select-none focus:outline-none"
+              title={sortOrder === 'asc' ? t('sortOrderAsc') : t('sortOrderDesc')}
+              aria-label="Toggle sort order"
+            >
+              {sortOrder === 'asc' ? <ArrowUp className="w-4 h-4 text-[#0071E3] dark:text-[#2997FF]" /> : <ArrowDown className="w-4 h-4 text-[#0071E3] dark:text-[#2997FF]" />}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -395,7 +429,6 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                 >
                   {/* Left: Rank & Ticker & Name & Grade */}
                   <div className="flex items-center gap-3 min-w-0">
-                    <FavoriteButton stockId={stock.id} name={stock.name} />
                     <span className="font-mono text-xs font-semibold text-[#86868B] w-4 shrink-0 tabular-nums">
                       {rank}
                     </span>
@@ -420,16 +453,19 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                     </div>
                   </div>
 
-                  {/* Right: Current Price & Intrinsic Value */}
-                  <div className="text-right shrink-0 space-y-0.5">
+                  {/* Right: Current Price & Intrinsic Value & Favorite */}
+                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="text-right space-y-0.5">
                     <div className="font-mono font-bold text-sm text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
                       {formatPrice(stock.currentPrice, stock.currency)}
                     </div>
                     <div className="text-[10px] font-mono text-[#86868B]">{ko ? '시총' : 'Cap'} {formatMarketCap(stock.marketCap, stock.currency)}</div>
                       <div title={periodNote(selected, ko)} className="text-[11px] font-mono font-medium text-[#0071E3] dark:text-[#2997FF] tabular-nums">
-                        {years}{ko ? '개년' : 'y'} · {formatPrice(selected?.dcf.scenarios?.base.intrinsicValuePerShare, stock.currency)} · {valuationPercent(selected?.dcf.conservativeMarginOfSafety)}
+                        {years}{ko ? '개년' : 'y'} · {formatPrice(selected?.dcf.scenarios?.base.intrinsicValuePerShare, stock.currency)} · {valuationPriceToValueRatio(stock.currentPrice, selected?.dcf.scenarios?.base.intrinsicValuePerShare)}
                       </div>
                       <p className="text-[10px] text-[#86868B] max-w-[180px]">{selected?.dcf.confidence ?? '—'}{!selected?.dcf.scenarios || selected.dcf.warnings.length > 0 ? ` · ${periodNote(selected, ko)}` : ''}</p>
+                  </div>
+                  <FavoriteButton stockId={stock.id} name={stock.name} />
                   </div>
                 </div>
               );
@@ -443,16 +479,20 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-black/[0.05] dark:border-white/[0.06] text-xs font-medium text-[#86868B] whitespace-nowrap">
-                    <th className="py-4 pl-6 sm:pl-7 pr-3 w-16 sm:w-20 whitespace-nowrap">{t('rank')}</th>
-                    <th className="py-4 px-4 min-w-[150px] whitespace-nowrap">{t('company')}</th>
-                    <th className="py-4 px-4 text-right whitespace-nowrap">{t('price')}</th>
-                    <th className="py-4 px-4 text-right whitespace-nowrap">{t('marketCapLabel')}</th>
-                    <th className="py-4 px-4 text-center whitespace-nowrap">{t('coreStatusLabel')}</th>
-                    <th className="py-4 px-4 text-center whitespace-nowrap">{t('coreRulesLabel')}</th>
-                    {[1, 2, 3, 4, 5].map(year => <th key={year} className={`py-4 px-4 text-right whitespace-nowrap ${year === years ? 'text-[#0071E3] dark:text-[#2997FF]' : ''}`}>{year}{ko ? '개년 내재가치' : 'y value'}</th>)}
-                    <th className="py-4 px-4 text-right whitespace-nowrap">{ko ? '안전마진' : 'Margin of safety'}</th>
-                    <th className="py-4 pr-6 sm:pr-7 pl-4 text-center whitespace-nowrap">{t('confidence')}</th>
+                  <tr className="text-xs font-medium text-[#86868B] whitespace-nowrap">
+                    <th rowSpan={2} className="py-3 pl-3 sm:pl-4 pr-0 w-9 border-b border-black/[0.05] dark:border-white/[0.06]"><span className="sr-only">{ko ? '즐겨찾기' : 'Favorite'}</span></th>
+                    <th rowSpan={2} className="py-3 px-1.5 w-10 border-b border-black/[0.05] dark:border-white/[0.06]">{t('rank')}</th>
+                    <th rowSpan={2} className="py-3 px-2.5 min-w-[110px] border-b border-black/[0.05] dark:border-white/[0.06]">{t('company')}</th>
+                    <th rowSpan={2} className="py-3 px-2.5 text-right border-b border-black/[0.05] dark:border-white/[0.06]">{t('price')}</th>
+                    <th rowSpan={2} className="py-3 px-2.5 text-right border-b border-black/[0.05] dark:border-white/[0.06]">{t('marketCapLabel')}</th>
+                    <th rowSpan={2} className="py-3 px-2.5 text-center border-b border-black/[0.05] dark:border-white/[0.06]">{t('coreStatusLabel')}</th>
+                    <th rowSpan={2} className="py-3 px-2.5 text-center border-b border-black/[0.05] dark:border-white/[0.06]">{t('coreRulesLabel')}</th>
+                    <th colSpan={5} className="pt-3 pb-1 px-2 text-center">{ko ? '내재가치' : 'Intrinsic value'}</th>
+                    <th rowSpan={2} className="py-3 px-2.5 text-right border-b border-black/[0.05] dark:border-white/[0.06]">{ko ? '주가/내재가치' : 'Price / Value'}</th>
+                    <th rowSpan={2} className="py-3 pr-4 sm:pr-5 pl-2.5 text-center border-b border-black/[0.05] dark:border-white/[0.06]">{t('confidence')}</th>
+                  </tr>
+                  <tr className="text-[11px] font-medium text-[#A1A1A6] whitespace-nowrap border-b border-black/[0.05] dark:border-white/[0.06]">
+                    {[1, 2, 3, 4, 5].map(year => <th key={year} className={`pt-1 pb-3 pl-2 pr-4 text-right font-mono ${year === years ? 'text-[#0071E3] dark:text-[#2997FF] font-semibold' : ''}`}>{year}{ko ? '년' : 'Y'}</th>)}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.06] text-xs">
@@ -467,22 +507,23 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                         onClick={() => setDrawerStockId(stock.id)}
                         className="hover:bg-[#F5F5F7]/80 dark:hover:bg-[#2C2C2E]/60 transition-colors cursor-pointer group"
                       >
+                        {/* Favorite */}
+                        <td className="py-3 pl-3 sm:pl-4 pr-0">
+                          <FavoriteButton stockId={stock.id} name={stock.name} />
+                        </td>
+
                         {/* Rank */}
-                        <td className="py-4 pl-6 sm:pl-7 pr-3 font-mono text-[#86868B] tabular-nums whitespace-nowrap">
+                        <td className="py-3 px-1.5 font-mono text-[#86868B] tabular-nums whitespace-nowrap">
                           {rank}
                         </td>
 
                         {/* Company */}
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-2">
-                            <FavoriteButton stockId={stock.id} name={stock.name} />
-                            <span className="font-bold text-[#1D1D1F] dark:text-[#F5F5F7] group-hover:text-[#0071E3] dark:group-hover:text-[#2997FF] transition-colors font-mono whitespace-nowrap">
+                        <td className="py-3 px-2.5">
+                          <div className="flex items-center gap-1.5 whitespace-nowrap">
+                            <span className="font-bold text-[#1D1D1F] dark:text-[#F5F5F7] group-hover:text-[#0071E3] dark:group-hover:text-[#2997FF] transition-colors font-mono">
                               {stock.ticker}
                             </span>
-                            <span className="text-[#86868B] font-normal text-xs truncate max-w-[100px] lg:max-w-[140px]">
-                              {stock.name}
-                            </span>
-                            <span className="text-[10px] font-mono text-[#86868B] px-1.5 py-0.5 bg-black/[0.04] dark:bg-white/[0.06] rounded">
+                            <span className="text-[10px] font-mono text-[#A1A1A6]">
                               {stock.market}
                             </span>
                             {stock.isStale && (
@@ -494,20 +535,23 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                               </span>
                             )}
                           </div>
+                          <div className="text-[#86868B] font-normal text-[11px] truncate max-w-[160px]" title={stock.name}>
+                            {stock.name}
+                          </div>
                         </td>
 
                         {/* Price */}
-                        <td className="py-4 px-4 text-right font-mono font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums whitespace-nowrap">
+                        <td className="py-3 px-2.5 text-right font-mono font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums whitespace-nowrap">
                           {formatPrice(stock.currentPrice, stock.currency)}
                         </td>
 
                         {/* Market Cap */}
-                        <td className="py-4 px-4 text-right font-mono text-[#86868B] tabular-nums whitespace-nowrap">
+                        <td className="py-3 px-2.5 text-right font-mono text-[#86868B] tabular-nums whitespace-nowrap">
                           {formatMarketCap(stock.marketCap, stock.currency)}
                         </td>
 
                         {/* 1. Core Status (등급제: 점 + 등급명만 표시) */}
-                        <td className="py-4 px-4 text-center whitespace-nowrap">
+                        <td className="py-3 px-2.5 text-center whitespace-nowrap">
                           <div className="inline-flex items-center justify-center gap-1.5" title={gradeInfo.desc}>
                             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${gradeInfo.dotClass}`} />
                             <span className={`font-mono font-bold text-xs tabular-nums ${gradeInfo.textClass}`}>
@@ -517,7 +561,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                         </td>
 
                         {/* Core Rules Breakdown (P / F / NA) */}
-                        <td className="py-4 px-4 text-center whitespace-nowrap font-mono text-xs tabular-nums">
+                        <td className="py-3 px-2.5 text-center whitespace-nowrap font-mono text-xs tabular-nums">
                           <span className="font-semibold text-[#34C759]">{stock.corePassCount}</span>
                           <span className="text-[#86868B] dark:text-[#636366]">/</span>
                           <span className="font-semibold text-[#FF3B30]">{stock.coreFailCount}</span>
@@ -527,15 +571,15 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
 
                         {[1, 2, 3, 4, 5].map(year => {
                           const period = stock.periodValuations?.[String(year)];
-                          return <td key={year} title={periodNote(period, ko)} className={`py-4 px-4 text-right font-mono tabular-nums whitespace-nowrap ${year === years ? 'font-semibold text-[#0071E3] dark:text-[#2997FF]' : 'text-[#86868B]'}`}>
+                          return <td key={year} title={periodNote(period, ko)} className={`py-3 pl-2 pr-1 text-right font-mono tabular-nums whitespace-nowrap ${year === years ? 'font-semibold text-[#0071E3] dark:text-[#2997FF]' : 'text-[#86868B]'}`}>
                             {formatPrice(period?.dcf.scenarios?.base.intrinsicValuePerShare, stock.currency)}
-                            {period?.dcf.warnings.includes('INCOMPLETE_GROWTH_HISTORY') && <span className="ml-1 text-[#FF9500]">⚠</span>}
+                            <span aria-hidden={!period?.dcf.warnings.includes('INCOMPLETE_GROWTH_HISTORY')} className="inline-block w-3 ml-0.5 text-left text-[#FF9500]">{period?.dcf.warnings.includes('INCOMPLETE_GROWTH_HISTORY') ? '⚠' : ''}</span>
                           </td>;
                         })}
-                        <td title={periodNote(selected, ko)} className="py-4 px-4 text-right font-mono tabular-nums whitespace-nowrap">{valuationPercent(selected?.dcf.conservativeMarginOfSafety)}</td>
+                        <td title={periodNote(selected, ko)} className={`py-3 px-2.5 text-right font-mono tabular-nums whitespace-nowrap ${priceToValueColor(stock.currentPrice, selected?.dcf.scenarios?.base.intrinsicValuePerShare)}`}>{valuationPriceToValueRatio(stock.currentPrice, selected?.dcf.scenarios?.base.intrinsicValuePerShare)}</td>
 
                         {/* Confidence */}
-                        <td className="py-4 pr-6 sm:pr-7 pl-4 text-center font-mono whitespace-nowrap">
+                        <td className="py-3 pr-4 sm:pr-5 pl-2.5 text-center font-mono whitespace-nowrap">
                           <span
                             className={`text-[10px] font-bold ${
                               selected?.dcf.confidence === 'HIGH'

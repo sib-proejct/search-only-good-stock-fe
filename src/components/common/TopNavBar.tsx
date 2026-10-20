@@ -232,7 +232,6 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
 
             {/* Right side: Search Pill */}
               <div className="flex items-center space-x-1.5 sm:space-x-4 shrink-0">
-                <Link to="/favorites" className="text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] whitespace-nowrap">{language === 'ko' ? '즐겨찾기' : 'Favorites'}</Link>
                 {loading ? <span className="text-xs text-[#86868B]">…</span> : user ? <div className="relative">
                   <details key={location.pathname} className="text-xs">
                     <summary className="cursor-pointer font-semibold max-w-24 truncate">{user.username}</summary>
