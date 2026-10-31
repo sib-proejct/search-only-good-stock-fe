@@ -542,6 +542,29 @@ export function AdminValuationPage() {
     void reloadManagedStocks().catch((e) => setError(e.message));
   }, [pickStock, reloadManagedStocks]);
 
+  const onDeleted = useCallback(() => {
+    const removedName = stock ? `${stock.name} (${stock.ticker})` : '선택한 종목';
+    setStock(null);
+    setRows([]);
+    setResult(null);
+    resetEditor();
+    resetBulkSelection();
+    setNotice(`${removedName} 종목을 관리 목록에서 삭제했습니다.`);
+    void reloadManagedStocks().catch((e) => setError(e.message));
+  }, [stock, resetEditor, resetBulkSelection, reloadManagedStocks]);
+
+  const onBulkDeleted = useCallback((deletedIds: number[]) => {
+    if (stock && deletedIds.includes(stock.id)) {
+      setStock(null);
+      setRows([]);
+      setResult(null);
+      resetEditor();
+      resetBulkSelection();
+    }
+    setNotice(`${deletedIds.length}개 종목을 관리 목록에서 삭제했습니다.`);
+    void reloadManagedStocks().catch((e) => setError(e.message));
+  }, [stock, resetEditor, resetBulkSelection, reloadManagedStocks]);
+
   useEffect(() => {
     if (!stock) {
       setLatestPrice(null);
@@ -1214,6 +1237,7 @@ export function AdminValuationPage() {
             disabled={busy || dirty || (singleCollecting && !multiCollecting)}
             onCollecting={setMultiCollecting}
             onCollected={onCollected}
+            onBulkDeleted={onBulkDeleted}
           />
           {stock && (
             <StockDataCollector
@@ -1221,6 +1245,7 @@ export function AdminValuationPage() {
               disabled={busy || dirty || collecting}
               onCollected={onCollected}
               onCollecting={setCollecting}
+              onDeleted={onDeleted}
             />
           )}
         </div>

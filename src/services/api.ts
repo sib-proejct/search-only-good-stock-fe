@@ -47,6 +47,7 @@ export const stockApi = {
     if (query) {
       if (query.years) params.set('years', String(query.years));
       if (query.favoritesOnly) params.set('favoritesOnly', 'true');
+      if (query.hiddenOnly) params.set('hiddenOnly', 'true');
       if (query.search && query.search.trim() !== '') {
         params.set('search', query.search.trim());
       }

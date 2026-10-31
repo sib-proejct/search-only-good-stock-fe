@@ -5,22 +5,11 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5174,
-    host: true,
-    watch: {
-      usePolling: true,
-    },
+    host: '0.0.0.0', // 모든 네트워크 인터페이스 허용
+    port: 5173,
     proxy: {
       '/api': {
-        target: process.env.VITE_BACKEND_PROXY_URL || 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/health': {
-        target: process.env.VITE_BACKEND_PROXY_URL || 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/readiness': {
-        target: process.env.VITE_BACKEND_PROXY_URL || 'http://localhost:8000',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
     },

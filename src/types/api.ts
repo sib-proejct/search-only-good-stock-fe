@@ -58,7 +58,9 @@ export interface StockMemoDTO {
 
 export type StockListQuery = NonNullable<
   operations['list_stocks_api_stocks_get']['parameters']['query']
->;
+> & {
+  hiddenOnly?: boolean;
+};
 
 export interface BatchRunStatusDTO {
   batchRunId?: number | null;

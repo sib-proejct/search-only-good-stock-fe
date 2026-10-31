@@ -1,8 +1,13 @@
-import { Check, ListChecks, Zap } from 'lucide-react';
+import { Check, ListChecks, Trash2, Zap } from 'lucide-react';
 import { MarketFilter } from '../common/MarketFilter';
 import type { Market } from '../../types/api';
 import { useEffect, useRef, useState } from 'react';
-import { adminRequest, refreshStockPrices, type AdminStock } from '../../services/adminApi';
+import {
+  adminRequest,
+  bulkDeleteAdminStocks,
+  refreshStockPrices,
+  type AdminStock,
+} from '../../services/adminApi';
 import type { components } from '../../types/openapi.generated';
 
 type Collection = components['schemas']['CollectionStatus'];
@@ -23,12 +28,14 @@ export function MultiStockCollector({
   disabled,
   onCollecting,
   onCollected,
+  onBulkDeleted,
 }: {
   stocks: AdminStock[];
   currentId?: number;
   disabled: boolean;
   onCollecting: (value: boolean) => void;
   onCollected: () => void;
+  onBulkDeleted?: (deletedIds: number[]) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<number[]>([]);
@@ -37,6 +44,7 @@ export function MultiStockCollector({
   const [items, setItems] = useState<Collection[]>([]);
   const [busy, setBusy] = useState(false);
   const [priceBusy, setPriceBusy] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const [priceNotice, setPriceNotice] = useState('');
   const [error, setError] = useState('');
   const [pollError, setPollError] = useState('');
@@ -44,7 +52,7 @@ export function MultiStockCollector({
   const restored = useRef(false);
   const button = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
-  const running = busy || priceBusy || items.some((item) => active(item.status));
+  const running = busy || priceBusy || deleteBusy || items.some((item) => active(item.status));
   const pendingKey = items
     .filter((item) => active(item.status))
     .map((item) => `${item.stock_id}:${item.batch_run_id}`)
@@ -178,6 +186,33 @@ export function MultiStockCollector({
       setError(e instanceof Error ? e.message : '현재가 일괄 업데이트 실패');
     } finally {
       setPriceBusy(false);
+    }
+  }
+
+  async function removeStocks(ids: number[]) {
+    if (!ids.length) return;
+    if (
+      !window.confirm(
+        `선택한 ${ids.length}개 종목을 관리 목록에서 일괄 삭제(제외)하시겠습니까?\n(기존 수집된 원자료는 보존되며 언제든 다시 추가할 수 있습니다.)`,
+      )
+    ) {
+      return;
+    }
+    setDeleteBusy(true);
+    setError('');
+    setPriceNotice('');
+    setPollError('');
+    try {
+      const res = await bulkDeleteAdminStocks(ids);
+      setSelected((prev) => prev.filter((id) => !ids.includes(id)));
+      setItems((prev) => prev.filter((item) => !ids.includes(item.stock_id)));
+      setPriceNotice(`${res.deleted_count}개 종목을 관리 목록에서 삭제했습니다.`);
+      if (onBulkDeleted) onBulkDeleted(ids);
+      else onCollected();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '종목 일괄 삭제 실패');
+    } finally {
+      setDeleteBusy(false);
     }
   }
   const actionClass = 'h-10 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold bg-white dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#2C2C2E] border border-black/15 dark:border-white/20 transition-colors cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071E3] disabled:opacity-50 disabled:cursor-not-allowed';
@@ -334,6 +369,16 @@ export function MultiStockCollector({
               >
                 <Zap className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
                 {priceBusy ? '현재가 갱신 중…' : `선택한 ${selected.length}개 현재가만 업데이트`}
+              </button>
+              <button
+                type="button"
+                className="h-10 px-4 rounded-xl inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950/70 border border-red-200 dark:border-red-900/50 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#1C1C1E] disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={running || disabled || !selected.length}
+                onClick={() => void removeStocks(selected)}
+                title="선택한 종목들을 관리 대상 및 스크리너 노출에서 일괄 제외합니다"
+              >
+                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                {deleteBusy ? '삭제 중…' : `선택한 ${selected.length}개 종목 삭제`}
               </button>
               {failed.length > 0 && (
                 <button

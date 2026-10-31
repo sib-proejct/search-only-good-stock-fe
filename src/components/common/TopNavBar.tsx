@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAccount } from '../../context/AccountContext';
-import { Search, X } from 'lucide-react';
+import { Search, X, Globe, Moon, Sun, Settings } from 'lucide-react';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
 
 export type NavTab = 'screener' | 'detail' | 'guide' | 'community';
@@ -26,7 +26,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { t, language } = useAppConfig();
+  const { t, language, theme, toggleTheme, toggleLanguage } = useAppConfig();
   const { user, loading, logout } = useAccount();
   const [logoutError, setLogoutError] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
@@ -74,6 +74,34 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const renderThemeLanguageControls = (withDivider = true) => (
+    <div className={`flex items-center justify-between gap-2 ${withDivider ? 'pb-2 mb-2 border-b border-black/[0.06] dark:border-white/[0.08]' : ''}`}>
+      <button
+        type="button"
+        onClick={toggleLanguage}
+        className="h-7 px-2.5 rounded-full flex items-center gap-1 text-[11px] font-bold bg-[#F5F5F7] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#EBEBED] dark:hover:bg-[#3A3A3C] border border-black/[0.06] dark:border-white/[0.08] transition-all focus:outline-none select-none cursor-pointer"
+        title={language === 'ko' ? 'Switch to English' : '한국어로 전환'}
+      >
+        <Globe className="w-3 h-3 text-[#0071E3] dark:text-[#2997FF]" />
+        <span>{language === 'ko' ? 'EN' : 'KO'}</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="w-7 h-7 rounded-full flex items-center justify-center text-[#1D1D1F] dark:text-[#F5F5F7] bg-[#F5F5F7] dark:bg-[#2C2C2E] hover:bg-[#EBEBED] dark:hover:bg-[#3A3A3C] border border-black/[0.06] dark:border-white/[0.08] transition-all focus:outline-none select-none cursor-pointer"
+        title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+        aria-label="Toggle Theme"
+      >
+        {theme === 'light' ? (
+          <Moon className="w-3.5 h-3.5 text-[#1D1D1F]" />
+        ) : (
+          <Sun className="w-3.5 h-3.5 text-[#FFD60A]" />
+        )}
+      </button>
+    </div>
+  );
 
   return (
     <header className="display-chrome sticky top-0 z-40 bg-[#FBFBFD]/90 dark:bg-black/85 backdrop-blur-xl border-b border-black/[0.04] dark:border-white/[0.08] transition-colors duration-300">
@@ -231,18 +259,82 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
             </nav>
 
             {/* Right side: Search Pill */}
-              <div className="flex items-center space-x-1.5 sm:space-x-4 shrink-0">
-                {loading ? <span className="text-xs text-[#86868B]">…</span> : user ? <div className="relative">
-                  <details key={location.pathname} className="text-xs">
-                    <summary className="cursor-pointer font-semibold max-w-24 truncate">{user.username}</summary>
-                    <div className="absolute right-0 top-full mt-2 p-3 rounded-xl bg-white dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 shadow-lg min-w-40 space-y-3">
-                      {user.role === 'admin' && <Link className="block" to="/admin/valuation">{language === 'ko' ? '종목 관리' : 'Stock management'}</Link>}
-                      <Link className="block" to="/account/password">{language === 'ko' ? '비밀번호 변경' : 'Change password'}</Link>
-                      <button onClick={() => { setLogoutError(false); void logout().catch(() => setLogoutError(true)); }}>{language === 'ko' ? '로그아웃' : 'Log out'}</button>
-                      {logoutError && <p role="alert" className="text-[#FF3B30]">{language === 'ko' ? '로그아웃하지 못했습니다. 다시 시도해 주세요.' : 'Could not log out. Please retry.'}</p>}
+              <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
+                {loading ? (
+                  <span className="text-xs text-[#86868B]">…</span>
+                ) : user ? (
+                  <div className="relative">
+                    <details key={location.pathname} className="text-xs group">
+                      <summary className="cursor-pointer font-semibold max-w-32 truncate list-none [&::-webkit-details-marker]:hidden flex items-center gap-1.5 text-[#1D1D1F] dark:text-[#F5F5F7] hover:text-[#0071E3] dark:hover:text-[#2997FF] py-1 px-1.5 rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors">
+                        <span className="truncate">{user.username}</span>
+                        <Settings className="w-3.5 h-3.5 text-[#6E6E73] dark:text-[#86868B] shrink-0" />
+                      </summary>
+                      <div className="absolute right-0 top-full mt-2 p-2.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 shadow-xl w-max whitespace-nowrap z-50 animate-fade-in">
+                        {renderThemeLanguageControls(true)}
+                        <div className="space-y-2 text-xs px-0.5">
+                          {user.role === 'admin' && (
+                            <Link
+                              className="block text-[#1D1D1F] dark:text-[#F5F5F7] hover:text-[#0071E3] dark:hover:text-[#2997FF] transition-colors"
+                              to="/admin/valuation"
+                            >
+                              {language === 'ko' ? '종목 관리' : 'Stock management'}
+                            </Link>
+                          )}
+                          <Link
+                            className="block text-[#1D1D1F] dark:text-[#F5F5F7] hover:text-[#0071E3] dark:hover:text-[#2997FF] transition-colors"
+                            to="/account/password"
+                          >
+                            {language === 'ko' ? '비밀번호 변경' : 'Change password'}
+                          </Link>
+                          <button
+                            type="button"
+                            className="block w-full text-left text-[#FF3B30] hover:opacity-80 transition-opacity cursor-pointer"
+                            onClick={() => {
+                              setLogoutError(false);
+                              void logout().catch(() => setLogoutError(true));
+                            }}
+                          >
+                            {language === 'ko' ? '로그아웃' : 'Log out'}
+                          </button>
+                          {logoutError && (
+                            <p role="alert" className="text-[11px] text-[#FF3B30]">
+                              {language === 'ko'
+                                ? '로그아웃하지 못했습니다. 다시 시도해 주세요.'
+                                : 'Could not log out. Please retry.'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <Link
+                      to={
+                        location.pathname === '/login'
+                          ? location.pathname + location.search
+                          : `/login?next=${encodeURIComponent(location.pathname + location.search)}`
+                      }
+                      className="text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] hover:text-[#0071E3] dark:hover:text-[#2997FF] whitespace-nowrap transition-colors py-1 px-1.5"
+                    >
+                      {language === 'ko' ? '로그인' : 'Log in'}
+                    </Link>
+                    <div className="relative">
+                      <details key={location.pathname} className="text-xs">
+                        <summary
+                          className="p-1.5 rounded-lg text-[#6E6E73] dark:text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] cursor-pointer list-none [&::-webkit-details-marker]:hidden flex items-center transition-colors"
+                          title={language === 'ko' ? '화면 설정' : 'Preferences'}
+                          aria-label="Preferences"
+                        >
+                          <Settings className="w-4 h-4" />
+                        </summary>
+                        <div className="absolute right-0 top-full mt-2 p-2.5 rounded-2xl bg-white dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 shadow-xl z-50 animate-fade-in">
+                          {renderThemeLanguageControls(false)}
+                        </div>
+                      </details>
                     </div>
-                  </details>
-                </div> : <Link to={location.pathname === "/login" ? location.pathname + location.search : `/login?next=${encodeURIComponent(location.pathname + location.search)}`} className="text-xs whitespace-nowrap">{language === 'ko' ? '로그인' : 'Log in'}</Link>}
+                  </div>
+                )}
                 {/* Desktop Search */}
                 <div className="relative hidden md:block">
                   <input

@@ -41,7 +41,11 @@ export interface UseStocksReturn {
   updateStockMemoLocal: (stockId: string, memo: string | null) => void;
 }
 
-export function useStocks(favoritesOnly = false, favoritesRevision = 0): UseStocksReturn {
+export function useStocks(
+  favoritesOnly = false,
+  favoritesRevision = 0,
+  hiddenOnly = false,
+): UseStocksReturn {
   const [years, setYearsState] = useState(5);
   const setYears = useCallback((value: number) => { setYearsState(value); setOffset(0); }, []);
   const [stocks, setStocks] = useState<StockSummaryDTO[]>([]);
@@ -110,7 +114,7 @@ export function useStocks(favoritesOnly = false, favoritesRevision = 0): UseStoc
   const requestIdRef = useRef(0);
   const loadedQueryRef = useRef('');
 
-  useEffect(() => { setOffset(0); }, [favoritesOnly, favoritesRevision]);
+  useEffect(() => { setOffset(0); }, [favoritesOnly, hiddenOnly, favoritesRevision]);
 
   // Fetch stocks function
   const fetchStocks = useCallback(
@@ -131,6 +135,7 @@ export function useStocks(favoritesOnly = false, favoritesRevision = 0): UseStoc
       try {
         const query: StockListQuery = {
           favoritesOnly,
+          hiddenOnly,
           limit,
           offset: isLoadMore ? offset : 0,
         };
@@ -183,6 +188,7 @@ export function useStocks(favoritesOnly = false, favoritesRevision = 0): UseStoc
     },
     [
       favoritesOnly,
+      hiddenOnly,
       favoritesRevision,
       debouncedSearch,
       market,

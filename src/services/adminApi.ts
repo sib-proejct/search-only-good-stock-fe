@@ -30,9 +30,12 @@ export async function adminRequest<T>(
   init?: RequestInit,
 ): Promise<T> {
   const response = await apiFetch(`${base}/api/admin${path}`, init);
-  const body = await response.json();
+  const body =
+    response.status === 204
+      ? null
+      : await response.json().catch(() => ({}));
   if (!response.ok) {
-    const detail = body.detail;
+    const detail = body?.detail;
     throw new Error(
       typeof detail === 'string'
         ? detail
@@ -42,6 +45,28 @@ export async function adminRequest<T>(
     );
   }
   return body as T;
+}
+
+export async function deleteAdminStock(
+  stockId: number | string,
+  signal?: AbortSignal,
+): Promise<void> {
+  await adminRequest<void>(`/stocks/${encodeURIComponent(String(stockId))}`, {
+    method: 'DELETE',
+    signal,
+  });
+}
+
+export async function bulkDeleteAdminStocks(
+  stockIds: Array<number | string>,
+  signal?: AbortSignal,
+): Promise<{ deleted_count: number }> {
+  return adminRequest<{ deleted_count: number }>('/stocks/bulk-delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stock_ids: stockIds }),
+    signal,
+  });
 }
 
 export async function calculateAdminValuation(

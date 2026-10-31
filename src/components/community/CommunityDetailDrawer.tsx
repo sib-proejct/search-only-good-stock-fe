@@ -12,6 +12,7 @@ import {
   Bookmark,
   Send,
   ArrowRight,
+  Trash2,
 } from 'lucide-react';
 
 interface CommunityDetailDrawerProps {
@@ -24,6 +25,8 @@ interface CommunityDetailDrawerProps {
   onToggleBookmark: (postId: string) => void;
   isBookmarked: boolean;
   onAddComment: (postId: string, commentText: string) => void;
+  onDeletePost?: (postId: string) => void;
+  onDeleteComment?: (postId: string, commentId: string) => void;
   onSelectStock?: (ticker: string) => void;
   showToast?: (msg: string) => void;
   onWidthChange?: (width: number) => void;
@@ -40,6 +43,8 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
   onToggleBookmark,
   isBookmarked,
   onAddComment,
+  onDeletePost,
+  onDeleteComment,
   onSelectStock,
   showToast,
   onWidthChange,
@@ -357,6 +362,17 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
 
           {/* Right: Actions & Close Button */}
           <div className="flex items-center gap-2">
+            {onDeletePost && post.canDelete !== false && (
+              <button
+                onClick={() => onDeletePost(post.id)}
+                className="p-1.5 rounded-full text-[#86868B] hover:text-[#FF3B30] bg-white dark:bg-[#1C1C1E] border border-black/[0.08] dark:border-white/[0.08] transition-colors cursor-pointer"
+                title="게시글 삭제"
+                aria-label="게시글 삭제"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+
             <button
               onClick={() => onToggleBookmark(post.id)}
               className={`p-1.5 rounded-full border transition-colors cursor-pointer ${isBookmarked
@@ -572,11 +588,22 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
                           {c.content}
                         </div>
 
-                        {/* 작성 시각 */}
-                        <div className="w-12 sm:w-14 text-right shrink-0 pt-0.5">
+                        {/* 작성 시각 & 삭제 */}
+                        <div className="flex items-center justify-end gap-1.5 shrink-0 pt-0.5">
                           <span className="text-[11px] text-[#6E6E73] dark:text-[#86868B] whitespace-nowrap">
                             {c.createdAt}
                           </span>
+                          {onDeleteComment && c.canDelete !== false && (
+                            <button
+                              type="button"
+                              onClick={() => onDeleteComment(post.id, c.id)}
+                              className="p-0.5 text-[#86868B] hover:text-[#FF3B30] transition-colors cursor-pointer"
+                              title="댓글 삭제"
+                              aria-label="댓글 삭제"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

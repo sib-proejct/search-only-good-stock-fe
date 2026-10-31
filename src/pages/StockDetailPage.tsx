@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FavoriteButton } from '../components/common/FavoriteButton';
+import { HideStockButton } from '../components/common/HideStockButton';
+import { useAccount } from '../context/AccountContext';
+import { deleteAdminStock } from '../services/adminApi';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   RuleDefinitionDTO,
@@ -29,6 +32,7 @@ import {
   Calendar,
   RotateCcw,
   Search,
+  Trash2,
   X,
 } from 'lucide-react';
 
@@ -39,6 +43,7 @@ interface StockDetailPageProps {
   onSelectStock?: (ticker: string) => void;
   market?: Market;
   embedded?: boolean;
+  onDeleted?: () => void;
 }
 
 export const StockDetailPage: React.FC<StockDetailPageProps> = ({
@@ -48,6 +53,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   onSelectStock,
   market: propMarket,
   embedded = false,
+  onDeleted,
 }) => {
   const { ticker: urlTicker } = useParams<{ ticker?: string }>();
   const navigate = useNavigate();
@@ -58,6 +64,8 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
     ['NASDAQ', 'NYSE', 'KOSPI', 'KOSDAQ'] as const
   ).find((market) => market === marketParam);
   const { t, language } = useAppConfig();
+  const { user } = useAccount();
+  const [deleting, setDeleting] = useState(false);
 
   const [detail, setDetail] = useState<StockDetailDTO | null>(null);
   const [rulesMap, setRulesMap] = useState<Map<string, RuleDefinitionDTO>>(new Map());
@@ -539,6 +547,45 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
                 {detail.name}
               </h1>
               <FavoriteButton stockId={detail.id} name={detail.name} />
+              <HideStockButton stockId={detail.id} name={detail.name} />
+              {user?.role === 'admin' && (
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={async () => {
+                    const confirmMsg =
+                      language === 'ko'
+                        ? `[관리자] ${detail.name} (${detail.ticker}) 종목을 전체 관리 목록에서 삭제(제외)하시겠습니까?\n(기존 수집된 원자료는 보존되며 언제든 다시 추가할 수 있습니다.)`
+                        : `[Admin] Remove ${detail.name} (${detail.ticker}) from managed stocks?`;
+                    if (!window.confirm(confirmMsg)) return;
+                    setDeleting(true);
+                    try {
+                      await deleteAdminStock(detail.id);
+                      if (onDeleted) onDeleted();
+                      else handleBack();
+                    } catch (err) {
+                      window.alert(
+                        err instanceof Error
+                          ? err.message
+                          : language === 'ko'
+                            ? '종목 삭제에 실패했습니다.'
+                            : 'Failed to remove stock.',
+                      );
+                    } finally {
+                      setDeleting(false);
+                    }
+                  }}
+                  title={
+                    language === 'ko'
+                      ? '관리자: 서비스 전체 관리 목록에서 이 종목 제외'
+                      : 'Admin: Remove stock from managed list'
+                  }
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-[#FF3B30] bg-[#FF3B30]/10 hover:bg-[#FF3B30]/20 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>{language === 'ko' ? '관리 제외' : 'Unmanage'}</span>
+                </button>
+              )}
               <span className="font-mono text-base font-semibold text-[#86868B]">
                 {detail.ticker}
               </span>
