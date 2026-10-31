@@ -1,4 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { FavoriteButton } from '../components/common/FavoriteButton';
+import { HideStockButton } from '../components/common/HideStockButton';
+import { useAccount } from '../context/AccountContext';
+import { deleteAdminStock } from '../services/adminApi';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   RuleDefinitionDTO,
@@ -28,6 +32,7 @@ import {
   Calendar,
   RotateCcw,
   Search,
+  Trash2,
   X,
 } from 'lucide-react';
 
@@ -36,6 +41,9 @@ interface StockDetailPageProps {
   ticker?: string | null;
   onBack?: () => void;
   onSelectStock?: (ticker: string) => void;
+  market?: Market;
+  embedded?: boolean;
+  onDeleted?: () => void;
 }
 
 export const StockDetailPage: React.FC<StockDetailPageProps> = ({
@@ -43,16 +51,21 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   ticker: propTicker,
   onBack,
   onSelectStock,
+  market: propMarket,
+  embedded = false,
+  onDeleted,
 }) => {
   const { ticker: urlTicker } = useParams<{ ticker?: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const currentTicker = urlTicker || propTicker || stockId;
   const marketParam = searchParams.get('market');
-  const currentMarket = (
+  const currentMarket = propMarket ?? (
     ['NASDAQ', 'NYSE', 'KOSPI', 'KOSDAQ'] as const
   ).find((market) => market === marketParam);
   const { t, language } = useAppConfig();
+  const { user } = useAccount();
+  const [deleting, setDeleting] = useState(false);
 
   const [detail, setDetail] = useState<StockDetailDTO | null>(null);
   const [rulesMap, setRulesMap] = useState<Map<string, RuleDefinitionDTO>>(new Map());
@@ -369,8 +382,9 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-6 animate-fade-in">
-      {/* 1. Sub Header: Back Button & Stock Switcher Dropdown */}
+    <div className={embedded ? 'space-y-6 animate-fade-in' : 'max-w-[1600px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-6 animate-fade-in'}>
+      {/* 1. Sub Header: Back Button & Stock Switcher Dropdown (드로어에서는 드로어 헤더가 대신한다) */}
+      {!embedded && (
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <button
           onClick={handleBack}
@@ -521,6 +535,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
           </div>
         </div>
       </div>
+      )}
 
       {/* 2. Hero Section: Stock Identity & Status Badges & Price */}
       <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-6 sm:p-8 border border-black/[0.06] dark:border-white/[0.08] shadow-sm transition-colors duration-300">
@@ -528,9 +543,49 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
           {/* Left: Ticker, Name, Status & Tags */}
           <div className="space-y-2">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
+              <h1 id={embedded ? 'drawer-stock-title' : undefined} className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
                 {detail.name}
               </h1>
+              <FavoriteButton stockId={detail.id} name={detail.name} />
+              <HideStockButton stockId={detail.id} name={detail.name} />
+              {user?.role === 'admin' && (
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={async () => {
+                    const confirmMsg =
+                      language === 'ko'
+                        ? `[관리자] ${detail.name} (${detail.ticker}) 종목을 전체 관리 목록에서 삭제(제외)하시겠습니까?\n(기존 수집된 원자료는 보존되며 언제든 다시 추가할 수 있습니다.)`
+                        : `[Admin] Remove ${detail.name} (${detail.ticker}) from managed stocks?`;
+                    if (!window.confirm(confirmMsg)) return;
+                    setDeleting(true);
+                    try {
+                      await deleteAdminStock(detail.id);
+                      if (onDeleted) onDeleted();
+                      else handleBack();
+                    } catch (err) {
+                      window.alert(
+                        err instanceof Error
+                          ? err.message
+                          : language === 'ko'
+                            ? '종목 삭제에 실패했습니다.'
+                            : 'Failed to remove stock.',
+                      );
+                    } finally {
+                      setDeleting(false);
+                    }
+                  }}
+                  title={
+                    language === 'ko'
+                      ? '관리자: 서비스 전체 관리 목록에서 이 종목 제외'
+                      : 'Admin: Remove stock from managed list'
+                  }
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-[#FF3B30] bg-[#FF3B30]/10 hover:bg-[#FF3B30]/20 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>{language === 'ko' ? '관리 제외' : 'Unmanage'}</span>
+                </button>
+              )}
               <span className="font-mono text-base font-semibold text-[#86868B]">
                 {detail.ticker}
               </span>

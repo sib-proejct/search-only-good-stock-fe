@@ -1,4 +1,5 @@
-import { DiscussionPost, SentimentPoll, TopContributor } from '../types/community';
+import { Comment, DiscussionPost, SentimentPoll, TopContributor } from '../types/community';
+import { API_BASE_URL, apiFetch } from './http';
 
 export const INITIAL_DISCUSSIONS: DiscussionPost[] = [
   {
@@ -281,6 +282,8 @@ export const TRENDING_TICKERS = [
 
 const STORAGE_KEY_DISCUSSIONS = 'sogs_discussions';
 const STORAGE_KEY_DRAFT = 'sogs_community_write_draft';
+const STORAGE_KEY_VOTES = 'sogs_community_user_votes';
+const LEGACY_SAMPLE_IDS = new Set(['post-1', 'post-2', 'post-3', 'post-4', 'post-5', 'post-6']);
 
 export interface WritePostDraft {
   title: string;
@@ -290,59 +293,174 @@ export interface WritePostDraft {
   savedAt: string;
 }
 
-export function applyDiscussionVote(
-  post: DiscussionPost,
-  direction: 'up' | 'down'
-): DiscussionPost {
-  let upvotes = post.upvotes;
-  let downvotes = post.downvotes;
-  let userVote: 'up' | 'down' | null = direction;
-
-  if (post.userVote === direction) {
-    userVote = null;
-    if (direction === 'up') upvotes -= 1;
-    else downvotes -= 1;
-  } else if (post.userVote) {
-    if (direction === 'up') {
-      upvotes += 1;
-      downvotes -= 1;
-    } else {
-      downvotes += 1;
-      upvotes -= 1;
-    }
-  } else if (direction === 'up') {
-    upvotes += 1;
-  } else {
-    downvotes += 1;
+function getLocalVotes(): Record<string, 'up' | 'down'> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_VOTES);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
   }
+}
 
-  return { ...post, upvotes, downvotes, userVote };
+function setLocalVote(postId: string, vote: 'up' | 'down' | null): void {
+  try {
+    const votes = getLocalVotes();
+    if (vote) {
+      votes[postId] = vote;
+    } else {
+      delete votes[postId];
+    }
+    localStorage.setItem(STORAGE_KEY_VOTES, JSON.stringify(votes));
+  } catch {
+    // ignore
+  }
+}
+
+function hydratePost(post: DiscussionPost): DiscussionPost {
+  const votes = getLocalVotes();
+  const matchedTrending = post.ticker
+    ? TRENDING_TICKERS.find((t) => t.ticker.toUpperCase() === post.ticker!.toUpperCase())
+    : undefined;
+  return {
+    ...post,
+    userVote: post.userVote ?? votes[post.id] ?? null,
+    buffettScore: post.buffettScore ?? matchedTrending?.score,
+    stockPassStatus: post.stockPassStatus ?? (matchedTrending ? (matchedTrending.pass ? 'pass' : 'watch') : undefined),
+  };
+}
+
+async function parseApiError(response: Response): Promise<string> {
+  const body = await response.json().catch(() => null);
+  if (typeof body?.detail === 'string' && body.detail.trim()) {
+    return body.detail;
+  }
+  return `HTTP ${response.status}`;
+}
+
+export async function fetchCommunityPosts(signal?: AbortSignal): Promise<DiscussionPost[]> {
+  const response = await apiFetch(`${API_BASE_URL}/api/community/posts`, { signal });
+  if (!response.ok) {
+    throw new Error(await parseApiError(response));
+  }
+  const data = (await response.json()) as { items?: DiscussionPost[] };
+  return (data.items ?? []).map(hydratePost);
+}
+
+export async function createCommunityPost(payload: {
+  title: string;
+  category: string;
+  ticker?: string;
+  content: string;
+  authorName?: string;
+}): Promise<DiscussionPost> {
+  const response = await apiFetch(`${API_BASE_URL}/api/community/posts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(await parseApiError(response));
+  }
+  const created = (await response.json()) as DiscussionPost;
+  setLocalVote(created.id, 'up');
+  return hydratePost(created);
+}
+
+export async function deleteCommunityPost(postId: string): Promise<void> {
+  const response = await apiFetch(`${API_BASE_URL}/api/community/posts/${encodeURIComponent(postId)}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error(await parseApiError(response));
+  }
+  setLocalVote(postId, null);
+}
+
+export async function voteCommunityPost(
+  postId: string,
+  direction: 'up' | 'down',
+  previousVote?: 'up' | 'down' | null
+): Promise<DiscussionPost> {
+  const response = await apiFetch(`${API_BASE_URL}/api/community/posts/${encodeURIComponent(postId)}/vote`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      direction,
+      previousVote: previousVote ?? null,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(await parseApiError(response));
+  }
+  const updated = (await response.json()) as DiscussionPost;
+  setLocalVote(postId, updated.userVote ?? null);
+  return hydratePost(updated);
+}
+
+export async function createCommunityComment(
+  postId: string,
+  payload: { content: string; authorName?: string }
+): Promise<Comment> {
+  const response = await apiFetch(`${API_BASE_URL}/api/community/posts/${encodeURIComponent(postId)}/comments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(await parseApiError(response));
+  }
+  return (await response.json()) as Comment;
+}
+
+export async function deleteCommunityComment(postId: string, commentId: string): Promise<void> {
+  const response = await apiFetch(
+    `${API_BASE_URL}/api/community/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`,
+    { method: 'DELETE' }
+  );
+  if (!response.ok) {
+    throw new Error(await parseApiError(response));
+  }
+}
+
+export async function migrateLocalDiscussionsToDb(): Promise<void> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_DISCUSSIONS);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      const customPosts = (parsed as DiscussionPost[])
+        .filter((p) => p && typeof p.id === 'string' && !LEGACY_SAMPLE_IDS.has(p.id) && p.title && p.content)
+        .reverse();
+      for (const post of customPosts) {
+        const created = await createCommunityPost({
+          title: post.title,
+          category: post.category || '기타',
+          ticker: post.ticker,
+          content: post.content,
+          authorName: post.author?.name,
+        });
+        if (Array.isArray(post.comments)) {
+          for (const comment of post.comments) {
+            if (comment?.content) {
+              await createCommunityComment(created.id, {
+                content: comment.content,
+                authorName: comment.author?.name,
+              });
+            }
+          }
+        }
+      }
+    }
+    localStorage.removeItem(STORAGE_KEY_DISCUSSIONS);
+  } catch {
+    // Keep local storage intact if backend is unreachable so no user data is lost
+  }
 }
 
 export function getStoredDiscussions(): DiscussionPost[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_DISCUSSIONS);
-    if (!raw) return INITIAL_DISCUSSIONS;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_DISCUSSIONS;
-  } catch {
-    return INITIAL_DISCUSSIONS;
-  }
-}
-
-export function saveDiscussions(discussions: DiscussionPost[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY_DISCUSSIONS, JSON.stringify(discussions));
-  } catch (e) {
-    console.error('Failed to save discussions to localStorage', e);
-  }
-}
-
-export function addDiscussionPost(newPost: DiscussionPost): DiscussionPost[] {
-  const current = getStoredDiscussions();
-  const updated = [newPost, ...current];
-  saveDiscussions(updated);
-  return updated;
+  return [];
 }
 
 export function saveWriteDraft(draft: { title: string; category: string; ticker: string; content: string }): void {

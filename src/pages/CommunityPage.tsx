@@ -4,20 +4,22 @@ import {
   MessageSquare, Clock, Calendar,
   ThumbsUp, ThumbsDown, MessageCircle, Share2, Bookmark,
   Plus, Search, CheckCircle2, Tag, ChevronDown, Check,
-  ArrowRight, X, Send, LayoutList, PanelRight
+  ArrowRight, X, Send, LayoutList, PanelRight, Trash2
 } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import {
   DiscussionCategory,
   DiscussionSort,
   DiscussionPost,
-  Comment
 } from '../types/community';
 import {
   TRENDING_TICKERS,
-  applyDiscussionVote,
-  getStoredDiscussions,
-  saveDiscussions
+  createCommunityComment,
+  deleteCommunityComment,
+  deleteCommunityPost,
+  fetchCommunityPosts,
+  migrateLocalDiscussionsToDb,
+  voteCommunityPost,
 } from '../services/communityData';
 import { CommunityDetailDrawer } from '../components/community/CommunityDetailDrawer';
 import { MarkdownRenderer } from '../components/common/MarkdownRenderer';
@@ -59,15 +61,29 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
   };
 
   // State
-  const [discussions, setDiscussions] = useState<DiscussionPost[]>(() => getStoredDiscussions());
+  const [discussions, setDiscussions] = useState<DiscussionPost[]>([]);
 
-  // Re-sync discussions on window focus (e.g. returning from write page)
   useEffect(() => {
+    const controller = new AbortController();
+    const loadPosts = async () => {
+      await migrateLocalDiscussionsToDb();
+      try {
+        const items = await fetchCommunityPosts(controller.signal);
+        setDiscussions(items);
+      } catch {
+        // ignore abort/network error on initial load
+      }
+    };
+    void loadPosts();
+
     const handleFocus = () => {
-      setDiscussions(getStoredDiscussions());
+      void fetchCommunityPosts().then(setDiscussions).catch(() => {});
     };
     window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    return () => {
+      controller.abort();
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const [activeCategory, setActiveCategory] = useState<DiscussionCategory>('all');
@@ -211,14 +227,33 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
   };
 
   // Upvote / Downvote Handler
-  const handleVote = (postId: string, type: 'up' | 'down') => {
-    setDiscussions((prev) => {
-      const updated = prev.map((post) =>
-        post.id === postId ? applyDiscussionVote(post, type) : post
+  const handleVote = async (postId: string, type: 'up' | 'down') => {
+    const target = discussions.find((p) => p.id === postId);
+    if (!target) return;
+    try {
+      const updated = await voteCommunityPost(postId, type, target.userVote);
+      setDiscussions((prev) =>
+        prev.map((post) => (post.id === postId ? updated : post))
       );
-      saveDiscussions(updated);
-      return updated;
-    });
+    } catch {
+      showToast('투표 처리에 실패했습니다.');
+    }
+  };
+
+  // Delete Post Handler
+  const handleDeletePost = async (postId: string) => {
+    if (!window.confirm('이 내재가치 분석 게시글을 삭제하시겠습니까?')) {
+      return;
+    }
+    try {
+      await deleteCommunityPost(postId);
+      setDiscussions((prev) => prev.filter((post) => post.id !== postId));
+      if (expandedPostId === postId) setExpandedPostId(null);
+      if (selectedPanelPostId === postId) setSelectedPanelPostId(null);
+      showToast('게시글이 삭제되었습니다.');
+    } catch {
+      showToast('게시글 삭제 권한이 없거나 실패했습니다.');
+    }
   };
 
   // Bookmark Handler
@@ -236,38 +271,50 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
     });
   };
 
-  const addComment = (postId: string, rawText: string) => {
+  const addComment = async (postId: string, rawText: string) => {
     const text = rawText.trim();
     if (!text) return;
 
-    const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    try {
+      const newComment = await createCommunityComment(postId, { content: text });
+      setDiscussions((prev) =>
+        prev.map((post) => {
+          if (post.id !== postId) return post;
+          return {
+            ...post,
+            commentsCount: post.commentsCount + 1,
+            comments: [...(post.comments || []), newComment],
+          };
+        })
+      );
+      setNewCommentText((prev) => ({ ...prev, [postId]: '' }));
+      showToast('댓글이 등록되었습니다.');
+    } catch {
+      showToast('댓글 등록에 실패했습니다.');
+    }
+  };
 
-    const newComment: Comment = {
-      id: `c-${Date.now()}`,
-      author: {
-        name: '나',
-      },
-      createdAt: currentTime,
-      content: text,
-      likes: 0,
-    };
-
-    setDiscussions((prev) => {
-      const updated = prev.map((post) => {
-        if (post.id !== postId) return post;
-        return {
-          ...post,
-          commentsCount: post.commentsCount + 1,
-          comments: [...(post.comments || []), newComment],
-        };
-      });
-      saveDiscussions(updated);
-      return updated;
-    });
-
-    setNewCommentText((prev) => ({ ...prev, [postId]: '' }));
-    showToast('댓글이 등록되었습니다.');
+  const handleDeleteComment = async (postId: string, commentId: string) => {
+    if (!window.confirm('이 댓글을 삭제하시겠습니까?')) {
+      return;
+    }
+    try {
+      await deleteCommunityComment(postId, commentId);
+      setDiscussions((prev) =>
+        prev.map((post) => {
+          if (post.id !== postId) return post;
+          const nextComments = (post.comments || []).filter((c) => c.id !== commentId);
+          return {
+            ...post,
+            commentsCount: nextComments.length,
+            comments: nextComments,
+          };
+        })
+      );
+      showToast('댓글이 삭제되었습니다.');
+    } catch {
+      showToast('댓글 삭제에 실패했습니다.');
+    }
   };
 
   // Add Comment Handler
@@ -745,7 +792,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                         </button>
                       </div>
 
-                      {/* Tier 1: 댓글 수 및 작성 시각 (컨테이너 너비 >= 480px) */}
+                      {/* Tier 1: 댓글 수, 작성 시각 및 삭제 */}
                       <div className="cq-tier-1 items-center gap-2 sm:gap-2.5 shrink-0">
                         {/* 댓글 수 */}
                         <button
@@ -765,6 +812,21 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                         <span className="text-[11px] text-[#86868B] dark:text-[#86868B] whitespace-nowrap">
                           {post.createdAt}
                         </span>
+
+                        {post.canDelete !== false && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleDeletePost(post.id);
+                            }}
+                            className="p-1 text-[#86868B] hover:text-[#FF3B30] transition-colors cursor-pointer"
+                            title="게시글 삭제"
+                            aria-label="게시글 삭제"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -824,11 +886,11 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                       {/* Post Content */}
                       <MarkdownRenderer content={post.content} />
 
-                      {/* Centered Upvote & Downvote Button Bar */}
-                      <div className="flex justify-center pt-2 pb-0.5">
+                      {/* Centered Upvote, Downvote & Delete Button Bar */}
+                      <div className="flex items-center justify-center gap-2 pt-2 pb-0.5">
                         <div className="flex items-center bg-[#F5F5F7] dark:bg-[#2C2C2E] rounded-xl p-0.5 border border-black/[0.04] dark:border-white/[0.08]">
                           <button
-                            onClick={() => handleVote(post.id, 'up')}
+                            onClick={() => void handleVote(post.id, 'up')}
                             className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] transition-all cursor-pointer ${post.userVote === 'up'
                               ? 'bg-[#34C759]/15 dark:bg-[#34C759]/25 text-[#34C759] dark:text-[#30D158] font-bold'
                               : 'hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] text-[#86868B]'
@@ -840,7 +902,7 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                           </button>
                           <div className="w-px h-3 bg-black/[0.06] dark:bg-white/[0.1] mx-0.5" />
                           <button
-                            onClick={() => handleVote(post.id, 'down')}
+                            onClick={() => void handleVote(post.id, 'down')}
                             className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] transition-all cursor-pointer ${post.userVote === 'down'
                               ? 'bg-[#FF3B30]/15 dark:bg-[#FF3B30]/25 text-[#FF3B30] dark:text-[#FF453A] font-bold'
                               : 'hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] text-[#86868B]'
@@ -851,6 +913,18 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                             <span className="tabular-nums font-semibold">{post.downvotes}</span>
                           </button>
                         </div>
+
+                        {post.canDelete !== false && (
+                          <button
+                            type="button"
+                            onClick={() => void handleDeletePost(post.id)}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-semibold bg-[#FF3B30]/10 text-[#FF3B30] hover:bg-[#FF3B30]/20 border border-[#FF3B30]/20 transition-all cursor-pointer"
+                            title="게시글 삭제"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>삭제</span>
+                          </button>
+                        )}
                       </div>
 
                       {/* Embedded Comments Section */}
@@ -886,10 +960,21 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
                                         {comment.content}
                                       </div>
 
-                                      <div className="w-12 sm:w-14 text-right shrink-0 pt-0.5">
+                                      <div className="flex items-center justify-end gap-1.5 shrink-0 pt-0.5">
                                         <span className="text-[11px] text-[#6E6E73] dark:text-[#86868B] whitespace-nowrap">
                                           {comment.createdAt}
                                         </span>
+                                        {comment.canDelete !== false && (
+                                          <button
+                                            type="button"
+                                            onClick={() => void handleDeleteComment(post.id, comment.id)}
+                                            className="p-0.5 text-[#86868B] hover:text-[#FF3B30] transition-colors cursor-pointer"
+                                            title="댓글 삭제"
+                                            aria-label="댓글 삭제"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -951,6 +1036,8 @@ export const CommunityPage: React.FC<CommunityPageProps> = ({ onSelectStock }) =
         onToggleBookmark={handleToggleBookmark}
         isBookmarked={selectedPanelPostId ? bookmarkedIds.has(selectedPanelPostId) : false}
         onAddComment={addComment}
+        onDeletePost={handleDeletePost}
+        onDeleteComment={handleDeleteComment}
         onSelectStock={handleStockClick}
         showToast={showToast}
       />

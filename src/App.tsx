@@ -1,5 +1,7 @@
-import { lazy, Suspense, useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense, useState, type ReactNode } from 'react';
+import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import { AccountProvider, useAccount } from './context/AccountContext';
+import { LoginPage } from './pages/LoginPage';
 import { ThemeLanguageProvider, useAppConfig } from './context/ThemeLanguageContext';
 import { TopNavBar } from './components/common/TopNavBar';
 import { Sun, Moon, Globe } from 'lucide-react';
@@ -33,6 +35,11 @@ const CommunityWritePage = lazy(() =>
     default: module.CommunityWritePage,
   }))
 );
+const ConfigPage = lazy(() =>
+  import('./pages/ConfigPage').then((module) => ({
+    default: module.ConfigPage,
+  }))
+);
 
 function RouteFallback() {
   return (
@@ -43,11 +50,12 @@ function RouteFallback() {
 }
 
 function AppContent() {
+  const { user } = useAccount();
   const { t, theme, toggleTheme, language, toggleLanguage } = useAppConfig();
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   return (
-    <div className="min-h-screen bg-[#FBFBFD] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7] flex flex-col font-sans selection:bg-[#0071E3]/15 selection:text-[#0071E3] transition-colors duration-300">
+    <div className="display-shell min-h-screen bg-[#FBFBFD] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7] flex flex-col font-sans selection:bg-[#0071E3]/15 selection:text-[#0071E3] transition-colors duration-300">
       {/* 1. Frosted Glass Top Navigation Bar */}
       <TopNavBar
         searchQuery={searchQuery}
@@ -55,14 +63,18 @@ function AppContent() {
       />
 
       {/* 2. Main Body Content with Client-Side Routing */}
-      <main className="flex-1 w-full pb-16">
+      <main className="display-content flex-1 w-full pb-16">
         <Suspense fallback={<RouteFallback />}>
           <Routes>
-          <Route path="/admin/valuation" element={<AdminValuationPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/account/password" element={<LoginPage key="password" passwordChange />} />
+          <Route path="/favorites" element={<RequireAccount><ScreenerPage key="favorites" searchQuery={searchQuery} favoritesOnly /></RequireAccount>} />
+          <Route path="/hidden" element={<RequireAccount><ScreenerPage key="hidden" searchQuery={searchQuery} hiddenOnly /></RequireAccount>} />
+          <Route path="/admin/valuation" element={<RequireAccount admin><AdminValuationPage /></RequireAccount>} />
           {/* Screener (Home) */}
           <Route
             path="/"
-            element={<ScreenerPage searchQuery={searchQuery} />}
+            element={<ScreenerPage key="all" searchQuery={searchQuery} />}
           />
           <Route
             path="/screener"
@@ -108,6 +120,16 @@ function AppContent() {
             element={<CommunityWritePage />}
           />
 
+          {/* Valuation Conditions Config */}
+          <Route
+            path="/config"
+            element={<ConfigPage />}
+          />
+          <Route
+            path="/settings"
+            element={<ConfigPage />}
+          />
+
           {/* Fallback */}
           <Route
             path="*"
@@ -117,9 +139,9 @@ function AppContent() {
         </Suspense>
       </main>
 
-      {/* 3. Apple Minimalist Footer with Inline Controls on a Single Line */}
-      <footer className="border-t border-black/[0.04] dark:border-white/[0.08] bg-[#FBFBFD] dark:bg-black py-8 px-6 sm:px-8 text-xs text-[#86868B] font-sans transition-colors duration-300">
-        <div className="max-w-[1600px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      {/* 3. Minimalist Footer with Inline Controls on a Single Line */}
+      <footer className="display-chrome border-t border-black/[0.04] dark:border-white/[0.08] bg-[#FBFBFD] dark:bg-black py-8 px-6 sm:px-8 text-xs text-[#86868B] font-sans transition-colors duration-300">
+        <div className="page-container max-w-[1600px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Left: Copyright */}
           <div className="font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">
             {t('footerCopyright')}
@@ -128,9 +150,12 @@ function AppContent() {
           {/* Right: Links & Controls on the Same Single Line */}
           <div className="flex flex-wrap items-center gap-5 sm:gap-6">
             <nav className="flex items-center space-x-5 sm:space-x-6 text-[#86868B]">
-              <a href="/admin/valuation" className="text-[#0071E3] dark:text-[#2997FF] font-semibold hover:underline transition-colors">
-                {language === 'ko' ? '내재가치 계산기 (원자료 관리)' : 'Valuation calculator (fact editor)'}
-              </a>
+              <Link to="/config" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">
+                {language === 'ko' ? '계산 조건 설정 (Config)' : 'Valuation Settings (Config)'}
+              </Link>
+              {user?.role === 'admin' && <Link to="/admin/valuation" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">
+                {language === 'ko' ? '내재가치 계산기 (원자료)' : 'Valuation editor'}
+              </Link>}
               <a href="#privacy" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('privacy')}</a>
               <a href="#terms" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('terms')}</a>
               <a href="#disclosure" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('disclosure')}</a>
@@ -173,9 +198,20 @@ function AppContent() {
 export function App() {
   return (
     <ThemeLanguageProvider>
-      <AppContent />
+      <AccountProvider><AppContent /></AccountProvider>
     </ThemeLanguageProvider>
   );
+}
+
+function RequireAccount({ children, admin = false }: { children: ReactNode; admin?: boolean }) {
+  const { user, loading, error, reload } = useAccount();
+  const { language } = useAppConfig();
+  const location = useLocation();
+  if (loading) return <RouteFallback />;
+  if (error) return <div role="alert" className="text-center py-16 space-y-3"><p>{error}</p><button onClick={() => void reload()}>{language === 'ko' ? '다시 시도' : 'Retry'}</button></div>;
+  if (!user) return <Navigate to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`} replace />;
+  if (admin && user.role !== 'admin') return <p role="alert" className="text-center py-16">{language === 'ko' ? '관리자 권한이 필요합니다.' : 'Administrator access required.'}</p>;
+  return children;
 }
 
 export default App;

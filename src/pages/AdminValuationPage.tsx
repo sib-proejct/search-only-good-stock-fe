@@ -30,6 +30,7 @@ import {
   formatPerShare,
   parseNumeric,
 } from '../utils/numberFormatters';
+import { getMarketGroup, loadValuationConfig } from '../utils/valuationConfig';
 
 interface FieldMeta {
   ko: string;
@@ -173,15 +174,19 @@ const valuationOptionsStorageKey = (stockId: number) =>
   `admin-valuation-options:${stockId}`;
 
 function defaultValuationOptions(stock: AdminStockItem): ValuationOptions {
+  const regional = loadValuationConfig(getMarketGroup(stock.currency ?? stock.market));
   return {
     publish: true,
     as_of: today(),
-    capex_mode: 'TOTAL',
-    normalization_years: 5,
-    normalization_method: 'CONSERVATIVE',
-    growth_method: 'OEPS_WEIGHTED',
-    growth_rate_cap: stock.growth_rate_cap ?? '0.20',
-    growth_rate_floor: stock.growth_rate_floor ?? '0.05',
+    capex_mode: regional.capexMode ?? 'TOTAL',
+    normalization_years: regional.normalizationYears ?? 5,
+    normalization_method: regional.normalizationMethod ?? 'CONSERVATIVE',
+    growth_method: regional.growthMethod ?? 'OEPS_WEIGHTED',
+    growth_rate_cap: stock.growth_rate_cap ?? regional.growthRateCap ?? '0.20',
+    growth_rate_floor:
+      stock.growth_rate_floor !== undefined
+        ? stock.growth_rate_floor
+        : (regional.growthRateFloor ?? '0.05'),
     statement_scope: stock.currency === 'USD' ? 'CONSOLIDATED_US_GAAP' : 'CFS',
   };
 }
@@ -240,8 +245,13 @@ const isMissing = (value: unknown) => value === null || value === undefined || v
 function missingAnnualInputs(
   row: Draft,
   capexMode: ValuationOptions['capex_mode'],
+  financial = false,
 ): MissingValuationInput | null {
   const missing: string[] = [];
+  if (financial) {
+    const fields = ['net_income_common', 'common_equity'].filter(name => isMissing(row[name]));
+    return fields.length ? { fields, message: fields.map(name => getFieldMeta(name).ko).join(', ') } : null;
+  }
   if (isMissing(row.cfo)) missing.push('cfo');
 
   const interestScope = row.interest_paid_classification;
@@ -461,6 +471,7 @@ export function AdminValuationPage() {
   const dirty =
     draft !== null && (selected === null || Object.keys(changes).length > 0);
 
+  const financial = stock?.industry_type === 'FINANCIAL';
   const displayPrice = latestPrice ?? stock?.currentPrice ?? stock?.current_price;
 
   const filteredStocks = stocks.filter((s) => {
@@ -530,6 +541,29 @@ export function AdminValuationPage() {
     pickStock({ ...added, currentPrice: added.current_price, marketCap: added.market_cap });
     void reloadManagedStocks().catch((e) => setError(e.message));
   }, [pickStock, reloadManagedStocks]);
+
+  const onDeleted = useCallback(() => {
+    const removedName = stock ? `${stock.name} (${stock.ticker})` : '선택한 종목';
+    setStock(null);
+    setRows([]);
+    setResult(null);
+    resetEditor();
+    resetBulkSelection();
+    setNotice(`${removedName} 종목을 관리 목록에서 삭제했습니다.`);
+    void reloadManagedStocks().catch((e) => setError(e.message));
+  }, [stock, resetEditor, resetBulkSelection, reloadManagedStocks]);
+
+  const onBulkDeleted = useCallback((deletedIds: number[]) => {
+    if (stock && deletedIds.includes(stock.id)) {
+      setStock(null);
+      setRows([]);
+      setResult(null);
+      resetEditor();
+      resetBulkSelection();
+    }
+    setNotice(`${deletedIds.length}개 종목을 관리 목록에서 삭제했습니다.`);
+    void reloadManagedStocks().catch((e) => setError(e.message));
+  }, [stock, resetEditor, resetBulkSelection, reloadManagedStocks]);
 
   useEffect(() => {
     if (!stock) {
@@ -776,6 +810,80 @@ export function AdminValuationPage() {
       setBusy(false);
     }
   }
+  function getSuggestedMaintenanceCapex(row: FactRow | Draft | null): number | null {
+    if (!row) return null;
+    const dep = parseNumeric((row as Record<string, unknown>).depreciation_ppe);
+    const tangible = parseNumeric((row as Record<string, unknown>).tangible_capex);
+    const intangible = parseNumeric((row as Record<string, unknown>).intangible_capex);
+    const reportedTotal = parseNumeric((row as Record<string, unknown>).reported_total_capex);
+
+    let total: number | null = null;
+    if (tangible !== null && intangible !== null) {
+      total = tangible + intangible;
+    } else if (reportedTotal !== null) {
+      total = reportedTotal;
+    } else if (tangible !== null) {
+      total = tangible;
+    }
+
+    if (dep === null && total === null) return null;
+    if (dep !== null && total !== null) return Math.max(0, Math.min(dep, total));
+    return dep !== null ? Math.max(0, dep) : Math.max(0, total!);
+  }
+
+  async function saveBulkMaintenanceCapexFromDepreciation() {
+    const selectedRows = rows.filter((row) => bulkSelectedIds.includes(row.id));
+    if (selectedRows.length === 0) return;
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const updates = selectedRows
+        .map((row) => {
+          const suggested = getSuggestedMaintenanceCapex(row);
+          if (suggested === null) return null;
+          return { row, value: suggested };
+        })
+        .filter((item): item is { row: FactRow; value: number } => item !== null);
+
+      if (updates.length === 0) {
+        setError('선택한 연도 중 감가상각비 또는 CAPEX 정보가 있는 행이 없습니다.');
+        return;
+      }
+
+      const results = await Promise.allSettled(
+        updates.map(({ row, value }) =>
+          adminRequest(`/facts/annual_financial_fact/${row.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              expected_updated_at: row.updated_at,
+              maintenance_capex_estimate: value,
+            }),
+          }),
+        ),
+      );
+      const savedCount = results.filter((result) => result.status === 'fulfilled').length;
+      const failedCount = results.length - savedCount;
+      resetBulkSelection();
+      setRevision((old) => old + 1);
+      setLoadingRows(true);
+      if (savedCount > 0) {
+        setStale(true);
+        setNotice(
+          `${savedCount}개 연도의 유지보수 CAPEX를 감가상각비 기준으로 일괄 저장했습니다. 계산 버튼으로 결과를 갱신하세요.`,
+        );
+      }
+      if (failedCount > 0) {
+        setError(
+          `${failedCount}개 연도는 다른 수정과 충돌해 저장하지 못했습니다. 다시 조회한 뒤 재시도하세요.`,
+        );
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function calculate() {
     if (!stock) return;
     setBusy(true);
@@ -828,10 +936,18 @@ export function AdminValuationPage() {
     const selectedRows = eligibleRows.filter((row) =>
       selectedYears.has(Number((row as unknown as Draft).fiscal_year)),
     );
+    if (financial && latestYear > 0) {
+      const openingYear = latestYear - options.normalization_years;
+      const opening = eligibleRows.find(row => Number((row as unknown as Draft).fiscal_year) === openingYear);
+      if (!opening || isMissing((opening as unknown as Draft).common_equity)) {
+        valuationMissingNotices.push(`${openingYear}년 기초 보통주 자본이 필요합니다.`);
+      }
+    }
     selectedRows.forEach((row) => {
       const missing = missingAnnualInputs(
         row as unknown as Draft,
         options.capex_mode,
+        financial,
       );
       if (missing) valuationMissingByRow.set(row.id, missing);
     });
@@ -924,7 +1040,7 @@ export function AdminValuationPage() {
         <p className="text-sm text-blue-600 font-semibold">LOCAL ADMIN</p>
         <h1 className="text-3xl font-bold mt-2">내재가치 계산 · 원자료 관리</h1>
         <p className="text-sm text-gray-500 mt-3">
-          기본 10개와 직접 추가한 종목을 관리합니다. 종목별로 자료를 수집하고 확인·수정한 뒤, 계산 및 반영을 누르면 목록과 상세에도 결과가 저장됩니다.
+          기본 10개와 직접 추가한 종목을 관리합니다. 자료를 수집하면 기본값으로 자동 계산되어 목록과 상세에 반영됩니다. 원자료나 옵션을 수정한 뒤에는 계산 및 반영을 눌러 다시 계산할 수 있습니다.
         </p>
       </header>
       <RegisterStockCard disabled={busy || dirty || collecting} onRegistered={onRegistered} />
@@ -1121,6 +1237,7 @@ export function AdminValuationPage() {
             disabled={busy || dirty || (singleCollecting && !multiCollecting)}
             onCollecting={setMultiCollecting}
             onCollected={onCollected}
+            onBulkDeleted={onBulkDeleted}
           />
           {stock && (
             <StockDataCollector
@@ -1128,6 +1245,7 @@ export function AdminValuationPage() {
               disabled={busy || dirty || collecting}
               onCollected={onCollected}
               onCollecting={setCollecting}
+              onDeleted={onDeleted}
             />
           )}
         </div>
@@ -1158,10 +1276,33 @@ export function AdminValuationPage() {
       {stock && (
         <>
           <section aria-labelledby="valuation-options-heading" className="overflow-hidden rounded-2xl border border-black/10 bg-white dark:border-white/15 dark:bg-[#1C1C1E]">
-            <div className="border-b border-black/5 px-4 py-5 dark:border-white/10 sm:px-6">
-              <p className="mb-1 text-xs font-semibold text-blue-600 dark:text-blue-400">{stock.name} · {stock.ticker}</p>
-              <h2 id="valuation-options-heading" className="text-xl font-bold">계산 조건</h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">기준 자료와 산정 방식을 선택한 뒤 내재가치를 계산하세요.</p>
+            <div className="border-b border-black/5 px-4 py-5 dark:border-white/10 sm:px-6 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="mb-1 text-xs font-semibold text-blue-600 dark:text-blue-400">{stock.name} · {stock.ticker}</p>
+                <h2 id="valuation-options-heading" className="text-xl font-bold">계산 조건</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">기준 자료와 산정 방식을 선택한 뒤 내재가치를 계산하세요.</p>
+              </div>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  const group = getMarketGroup(stock.currency ?? stock.market);
+                  const cfg = loadValuationConfig(group);
+                  changeOption({
+                    capex_mode: cfg.capexMode,
+                    normalization_years: cfg.normalizationYears,
+                    normalization_method: cfg.normalizationMethod,
+                    growth_method: cfg.growthMethod,
+                    growth_rate_cap: cfg.growthRateCap,
+                    growth_rate_floor: cfg.growthRateFloor ?? undefined,
+                  });
+                }}
+                className="rounded-xl border border-black/15 dark:border-white/20 bg-[#F5F5F7] dark:bg-[#2C2C2E] hover:bg-[#EBEBED] dark:hover:bg-[#3A3A3C] px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {getMarketGroup(stock.currency ?? stock.market) === 'kr'
+                  ? '🇰🇷 한국(KR) 기본 설정값 불러오기'
+                  : '🇺🇸 미국(US) 기본 설정값 불러오기'}
+              </button>
             </div>
             <div className="grid grid-cols-1 gap-4 p-4 sm:p-6 lg:grid-cols-2">
               <fieldset className="min-w-0 lg:col-span-2 rounded-xl border border-black/5 bg-[#F5F5F7]/70 p-4 dark:border-white/10 dark:bg-white/[0.03]">
@@ -1209,12 +1350,12 @@ export function AdminValuationPage() {
                   </label>
                   <label className="block min-w-0 space-y-2 text-sm">
                     <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs font-medium text-gray-600 dark:text-gray-300">
-                      <span>CAPEX</span>
+                      <span>{financial ? 'CAPEX (내재가치 미사용)' : 'CAPEX'}</span>
                       <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Mode</span>
                     </div>
                     <select
                       className={`${control} min-h-11 min-w-0 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
-                      disabled={busy}
+                      disabled={busy || financial}
                       value={options.capex_mode}
                       onChange={(e) =>
                         changeOption({
@@ -1230,12 +1371,12 @@ export function AdminValuationPage() {
                 </div>
               </fieldset>
               <fieldset className="min-w-0 rounded-xl border border-black/5 bg-[#F5F5F7]/70 p-4 dark:border-white/10 dark:bg-white/[0.03]">
-                <legend className="px-1 text-sm font-semibold">OE 정규화</legend>
-                <p className="mb-4 text-xs leading-relaxed text-gray-500 dark:text-gray-400">기간과 방식은 정규화 OE 계산에, 기간은 성장률 산정에도 적용됩니다.</p>
+                <legend className="px-1 text-sm font-semibold">{financial ? '순이익·ROE 정규화' : 'OE 정규화'}</legend>
+                <p className="mb-4 text-xs leading-relaxed text-gray-500 dark:text-gray-400">{financial ? '순이익과 ROE를 정상화합니다. ROE 계산에는 시작 연도 이전의 자기자본도 필요합니다.' : '기간과 방식은 정규화 OE 계산에, 기간은 성장률 산정에도 적용됩니다.'}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <label className="block min-w-0 space-y-2 text-sm">
                     <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs font-medium text-gray-600 dark:text-gray-300">
-                      <span>OE 정규화·성장률 기간</span>
+                      <span>{financial ? '순이익·ROE 정규화·성장률 기간' : 'OE 정규화·성장률 기간'}</span>
                       <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Period</span>
                     </div>
                     <select
@@ -1257,7 +1398,7 @@ export function AdminValuationPage() {
                   </label>
                   <label className="block min-w-0 space-y-2 text-sm">
                     <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs font-medium text-gray-600 dark:text-gray-300">
-                      <span>정규화 OE 방식</span>
+                      <span>{financial ? '순이익·ROE 정규화 방식' : '정규화 OE 방식'}</span>
                       <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Method</span>
                     </div>
                     <select
@@ -1288,8 +1429,8 @@ export function AdminValuationPage() {
                     </div>
                     <select
                       className={`${control} min-h-11 min-w-0 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
-                      disabled={busy}
-                      value={options.growth_method}
+                      disabled={busy || financial}
+                      value={financial ? 'OEPS_WEIGHTED' : options.growth_method}
                       onChange={(e) =>
                         changeOption({
                           growth_method: e.target
@@ -1298,7 +1439,7 @@ export function AdminValuationPage() {
                       }
                     >
                       <option value="LOWER_BOUND">min(EPS, OEPS)</option>
-                      <option value="OEPS_WEIGHTED">EPS 30% + OEPS 70%</option>
+                      <option value="OEPS_WEIGHTED">{financial ? 'EPS CAGR' : 'EPS 30% + OEPS 70%'}</option>
                       <option value="EQUAL_BLEND">EPS 50% + OEPS 50%</option>
                     </select>
                   </label>
@@ -1349,7 +1490,8 @@ export function AdminValuationPage() {
                   계산 방식 및 자료 적용 기준
                   <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 text-gray-500 transition-transform group-open:rotate-180" />
                 </summary>
-                <p className="mt-3 text-sm leading-7 text-gray-600 dark:text-gray-400">
+                {financial && <p className="mt-3 text-sm leading-7 text-gray-600 dark:text-gray-400">순이익 기반 FCFE를 할인합니다. 성장률은 EPS CAGR만 사용하고 ROE 이하로 제한합니다. 성장률÷ROE만큼의 이익을 유보하며 CAPEX와 지급이자 분류는 내재가치 계산에 사용하지 않습니다.</p>}
+                {!financial && <p className="mt-3 text-sm leading-7 text-gray-600 dark:text-gray-400">
                   {options.normalization_method === 'MEAN'
                     ? '선택 기간 OE 합계 ÷ 선택 연수'
                     : 'min(최근 연도 OE, 선택 기간 OE 중앙값)'}{' '}
@@ -1361,7 +1503,7 @@ export function AdminValuationPage() {
                       : '각 50%로 반영합니다.'}{' '}
                   음수 성장률도 선택한 방식으로 계산하고, 산정값을 성장률 하한{options.growth_rate_floor == null ? '(미적용)' : ` ${Number(options.growth_rate_floor) * 100}%`}과 상한 {Number(options.growth_rate_cap) * 100}% 범위로 제한합니다. 시작 연도를 포함한 {options.normalization_years + 1}개 연간 자료가 필요하며, 한 지표만 유효하면 해당 성장률과 이력 불완전 경고를 사용합니다.{' '}
                   · 총 CAPEX 추정치가 부족하면 공시 유형·무형 취득액 합계 또는 수집된 공시 총액을 사용하며, 유지보수 모드는 유지보수 추정치 또는 총 CAPEX에서 성장 CAPEX를 차감해 계산합니다.
-                </p>
+                </p>}
               </details>
             </div>
             <div className="flex flex-col gap-3 border-t border-black/5 bg-[#F5F5F7]/60 px-4 py-4 dark:border-white/10 dark:bg-white/[0.02] sm:flex-row sm:items-center sm:justify-between sm:px-6">
@@ -1407,7 +1549,7 @@ export function AdminValuationPage() {
                   ? '기간 평균 (Mean)'
                   : '보수적 기준 (Conservative)'}{' '}
                 ·{' '}
-                선택 방식: {result.options.growth_method === 'LOWER_BOUND'
+                선택 방식: {financial ? 'EPS CAGR (금융업)' : result.options.growth_method === 'LOWER_BOUND'
                   ? 'min(EPS, OEPS)'
                   : result.options.growth_method === 'OEPS_WEIGHTED'
                     ? 'OEPS 중심 (70% OEPS)'
@@ -1415,7 +1557,7 @@ export function AdminValuationPage() {
                 ·{' '}
                 성장률 상한 {Number(result.options.growth_rate_cap) * 100}% ·{' '}
                 성장률 하한 {result.options.growth_rate_floor == null ? '미적용' : `${Number(result.options.growth_rate_floor) * 100}%`} ·{' '}
-                {result.options.capex_mode === 'TOTAL'
+                {financial ? 'CAPEX 미사용' : result.options.capex_mode === 'TOTAL'
                   ? '유지보수+성장 (Total)'
                   : '유지보수 (Maintenance)'}
               </p>
@@ -1475,18 +1617,18 @@ export function AdminValuationPage() {
                   <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300">최종 계산 요약</h3>
                   <dl className="grid gap-3 md:grid-cols-3">
                     <div className="min-w-0 rounded-xl border border-black/5 bg-white p-4 dark:border-white/10 dark:bg-[#1C1C1E]">
-                      <dt className="text-xs font-medium text-gray-600 dark:text-gray-400">정규화 OE · Normalized OE</dt>
+                      <dt className="text-xs font-medium text-gray-600 dark:text-gray-400">{financial ? '정규화 순이익' : '정규화 OE · Normalized OE'}</dt>
                       <dd className="mt-2 text-2xl font-bold tracking-tight tabular-nums break-words">
-                        {formatMonetaryAmount(result.dcf.normalizedOwnerEarnings, stock.currency)}
+                        {formatMonetaryAmount((financial ? result.dcf.normalizedNetIncome : result.dcf.normalizedOwnerEarnings), stock.currency)}
                       </dd>
                       <dd className="mt-1 text-xs text-gray-500 dark:text-gray-400 font-mono break-all">
-                        {fmt(result.dcf.normalizedOwnerEarnings)} {stock.currency}
+                        {fmt(financial ? result.dcf.normalizedNetIncome : result.dcf.normalizedOwnerEarnings)} {stock.currency}
                       </dd>
                     </div>
                     <div className="min-w-0 rounded-xl border border-black/5 bg-white p-4 dark:border-white/10 dark:bg-[#1C1C1E]">
-                      <dt className="text-xs font-medium text-gray-600 dark:text-gray-400">주당 정규화 OE · OEPS</dt>
+                      <dt className="text-xs font-medium text-gray-600 dark:text-gray-400">{financial ? '주당 정규화 순이익 · EPS' : '주당 정규화 OE · OEPS'}</dt>
                       <dd className="mt-2 text-2xl font-bold tracking-tight tabular-nums break-words">
-                        {formatPerShare(result.dcf.normalizedOeps, stock.currency)}
+                        {formatPerShare((financial ? result.dcf.normalizedEps : result.dcf.normalizedOeps), stock.currency)}
                         <span className="ml-1 text-sm font-normal text-gray-500 dark:text-gray-400">/주</span>
                       </dd>
                     </div>
@@ -1823,14 +1965,27 @@ export function AdminValuationPage() {
                       )}
                     </label>
                   )}
-                  <button
-                    type="button"
-                    className={button}
-                    disabled={busy || dirty || collecting || bulkSelectedIds.length === 0}
-                    onClick={() => void saveBulkField()}
-                  >
-                    선택한 {bulkSelectedIds.length}개 연도 일괄 저장
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className={button}
+                      disabled={busy || dirty || collecting || bulkSelectedIds.length === 0}
+                      onClick={() => void saveBulkField()}
+                    >
+                      선택한 {bulkSelectedIds.length}개 연도 일괄 저장
+                    </button>
+                    {table === 'annual_financial_fact' && (
+                      <button
+                        type="button"
+                        className="rounded-lg border border-blue-600/30 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50 dark:border-blue-500/30 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/60"
+                        disabled={busy || dirty || collecting || bulkSelectedIds.length === 0}
+                        title="선택한 연도의 유지보수 CAPEX 추정치를 min(유형자산 감가상각, 총 CAPEX) 값으로 일괄 저장합니다"
+                        onClick={() => void saveBulkMaintenanceCapexFromDepreciation()}
+                      >
+                        선택 연도 유지보수 CAPEX를 감가상각비 기준으로 일괄 채우기
+                      </button>
+                    )}
+                  </div>
                   <p className="w-full text-xs text-gray-500">
                     빈 값을 적용하면 선택한 연도의 해당 값이 삭제됩니다. 필수 항목이나 서로 의존하는 값은 저장 시 검증됩니다.
                   </p>
@@ -1974,6 +2129,31 @@ export function AdminValuationPage() {
                               </span>
                             )}
                           </div>
+                          {table === 'annual_financial_fact' && field.name === 'maintenance_capex_estimate' && (() => {
+                            const suggested = getSuggestedMaintenanceCapex(draft);
+                            if (suggested === null) return null;
+                            return (
+                              <div className="flex items-center justify-between text-xs pt-0.5">
+                                <span className="text-gray-500 font-mono">
+                                  감가상각 기준 제안: {fmt(suggested)}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium underline"
+                                  disabled={disabled}
+                                  onClick={() => {
+                                    setDraft({
+                                      ...draft,
+                                      maintenance_capex_estimate: suggested,
+                                    });
+                                    setReview(false);
+                                  }}
+                                >
+                                  적용
+                                </button>
+                              </div>
+                            );
+                          })()}
                           {field.kind === 'select' || field.kind === 'boolean' ? (
                             <select
                               className={control}

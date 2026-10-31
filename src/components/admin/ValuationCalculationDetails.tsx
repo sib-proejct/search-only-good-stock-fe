@@ -1,4 +1,5 @@
 import { Calculator, Info } from 'lucide-react';
+import { FinancialValuationDetails } from '../detail/FinancialValuationDetails';
 import type { ValuationResult } from '../../services/adminApi';
 import {
   formatMonetaryAmount,
@@ -79,6 +80,7 @@ export function ValuationCalculationDetails({
 }: ValuationCalculationDetailsProps) {
   const dcf = result.dcf;
   if (!dcf) return null;
+  if (dcf.method === 'FINANCIAL_FCFE_DCF') return <FinancialValuationDetails dcf={dcf} currency={currency} annuals={result.annual_oe.map(row => ({ year: row.fiscal_year, netIncome: row.net_income_common, equity: row.common_equity }))} />;
 
   const selectedRows = result.annual_oe.filter((row) => row.selected);
   const ownerEarningsValues = selectedRows

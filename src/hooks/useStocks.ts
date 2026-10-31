@@ -38,9 +38,14 @@ export interface UseStocksReturn {
   loadMore: () => void;
   retry: () => void;
   resetFilters: () => void;
+  updateStockMemoLocal: (stockId: string, memo: string | null) => void;
 }
 
-export function useStocks(): UseStocksReturn {
+export function useStocks(
+  favoritesOnly = false,
+  favoritesRevision = 0,
+  hiddenOnly = false,
+): UseStocksReturn {
   const [years, setYearsState] = useState(5);
   const setYears = useCallback((value: number) => { setYearsState(value); setOffset(0); }, []);
   const [stocks, setStocks] = useState<StockSummaryDTO[]>([]);
@@ -107,6 +112,9 @@ export function useStocks(): UseStocksReturn {
   // Active abort controllers
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
+  const loadedQueryRef = useRef('');
+
+  useEffect(() => { setOffset(0); }, [favoritesOnly, hiddenOnly, favoritesRevision]);
 
   // Fetch stocks function
   const fetchStocks = useCallback(
@@ -126,7 +134,8 @@ export function useStocks(): UseStocksReturn {
 
       try {
         const query: StockListQuery = {
-          years,
+          favoritesOnly,
+          hiddenOnly,
           limit,
           offset: isLoadMore ? offset : 0,
         };
@@ -148,10 +157,14 @@ export function useStocks(): UseStocksReturn {
           query.order = sortOrder;
         }
 
+        const queryKey = JSON.stringify({ ...query, offset: 0, favoritesRevision });
+        const append = isLoadMore && loadedQueryRef.current === queryKey;
+        if (!append) query.offset = 0;
         const response = await stockApi.getStocks(query, controller.signal);
         if (requestId !== requestIdRef.current) return;
+        loadedQueryRef.current = queryKey;
 
-        if (isLoadMore) {
+        if (append) {
           setStocks((prev) => [...prev, ...response.items]);
         } else {
           setStocks(response.items);
@@ -174,7 +187,9 @@ export function useStocks(): UseStocksReturn {
       }
     },
     [
-      years,
+      favoritesOnly,
+      hiddenOnly,
+      favoritesRevision,
       debouncedSearch,
       market,
       coreGradeFilter,
@@ -228,6 +243,12 @@ export function useStocks(): UseStocksReturn {
     setOffset(0);
   }, []);
 
+  const updateStockMemoLocal = useCallback((stockId: string, memo: string | null) => {
+    setStocks((prev) =>
+      prev.map((s) => (s.id === stockId ? { ...s, memo } : s))
+    );
+  }, []);
+
   return {
     years, setYears,
     stocks,
@@ -252,5 +273,6 @@ export function useStocks(): UseStocksReturn {
     loadMore,
     retry,
     resetFilters,
+    updateStockMemoLocal,
   };
 }

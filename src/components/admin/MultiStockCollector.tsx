@@ -1,8 +1,13 @@
-import { Check, ListChecks } from 'lucide-react';
+import { Check, ListChecks, Trash2, Zap } from 'lucide-react';
 import { MarketFilter } from '../common/MarketFilter';
 import type { Market } from '../../types/api';
 import { useEffect, useRef, useState } from 'react';
-import { adminRequest, type AdminStock } from '../../services/adminApi';
+import {
+  adminRequest,
+  bulkDeleteAdminStocks,
+  refreshStockPrices,
+  type AdminStock,
+} from '../../services/adminApi';
 import type { components } from '../../types/openapi.generated';
 
 type Collection = components['schemas']['CollectionStatus'];
@@ -12,6 +17,8 @@ const stages: Record<string, string> = {
   COLLECT: '자료 수집 중',
   NORMALIZE: '자료 정리 중',
   SAVE: '저장 중',
+  CALCULATE: '계산 중',
+  PUBLISH: '계산 및 반영 완료',
   REVIEW: '완료',
 };
 
@@ -21,12 +28,14 @@ export function MultiStockCollector({
   disabled,
   onCollecting,
   onCollected,
+  onBulkDeleted,
 }: {
   stocks: AdminStock[];
   currentId?: number;
   disabled: boolean;
   onCollecting: (value: boolean) => void;
   onCollected: () => void;
+  onBulkDeleted?: (deletedIds: number[]) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<number[]>([]);
@@ -34,13 +43,16 @@ export function MultiStockCollector({
   const [markets, setMarkets] = useState<Market[]>([]);
   const [items, setItems] = useState<Collection[]>([]);
   const [busy, setBusy] = useState(false);
+  const [priceBusy, setPriceBusy] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [priceNotice, setPriceNotice] = useState('');
   const [error, setError] = useState('');
   const [pollError, setPollError] = useState('');
   const initialized = useRef(false);
   const restored = useRef(false);
   const button = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
-  const running = busy || items.some((item) => active(item.status));
+  const running = busy || priceBusy || deleteBusy || items.some((item) => active(item.status));
   const pendingKey = items
     .filter((item) => active(item.status))
     .map((item) => `${item.stock_id}:${item.batch_run_id}`)
@@ -142,6 +154,7 @@ export function MultiStockCollector({
   async function collect(ids: number[]) {
     setBusy(true);
     setError('');
+    setPriceNotice('');
     setPollError('');
     try {
       const response = await adminRequest<components['schemas']['StocksRefreshResponse']>('/stocks/refresh', {
@@ -155,6 +168,51 @@ export function MultiStockCollector({
       setError(e instanceof Error ? e.message : '수집 시작 실패');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function refreshPricesOnly(ids: number[]) {
+    setPriceBusy(true);
+    setError('');
+    setPriceNotice('');
+    setPollError('');
+    try {
+      const res = await refreshStockPrices({ stock_ids: ids });
+      setPriceNotice(
+        `현재가 갱신 완료: ${res.priceUpdatedCount}/${res.totalStocks}개 조회, 내재가치 ${res.valuationUpdatedCount}개 반영${res.failedCount > 0 ? ` (실패 ${res.failedCount}개)` : ''}`,
+      );
+      onCollected();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '현재가 일괄 업데이트 실패');
+    } finally {
+      setPriceBusy(false);
+    }
+  }
+
+  async function removeStocks(ids: number[]) {
+    if (!ids.length) return;
+    if (
+      !window.confirm(
+        `선택한 ${ids.length}개 종목을 관리 목록에서 일괄 삭제(제외)하시겠습니까?\n(기존 수집된 원자료는 보존되며 언제든 다시 추가할 수 있습니다.)`,
+      )
+    ) {
+      return;
+    }
+    setDeleteBusy(true);
+    setError('');
+    setPriceNotice('');
+    setPollError('');
+    try {
+      const res = await bulkDeleteAdminStocks(ids);
+      setSelected((prev) => prev.filter((id) => !ids.includes(id)));
+      setItems((prev) => prev.filter((item) => !ids.includes(item.stock_id)));
+      setPriceNotice(`${res.deleted_count}개 종목을 관리 목록에서 삭제했습니다.`);
+      if (onBulkDeleted) onBulkDeleted(ids);
+      else onCollected();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '종목 일괄 삭제 실패');
+    } finally {
+      setDeleteBusy(false);
     }
   }
   const actionClass = 'h-10 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold bg-white dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#2C2C2E] border border-black/15 dark:border-white/20 transition-colors cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071E3] disabled:opacity-50 disabled:cursor-not-allowed';
@@ -195,7 +253,7 @@ export function MultiStockCollector({
             role="dialog"
             aria-modal="true"
             aria-labelledby="multi-collection-title"
-            className="w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl bg-white dark:bg-[#1C1C1E] p-5 shadow-xl gap-4"
+            className="w-full max-w-2xl h-[90dvh] flex flex-col rounded-2xl bg-white dark:bg-[#1C1C1E] p-5 shadow-xl gap-4"
           >
             <div className="flex items-center justify-between">
               <h2 id="multi-collection-title" className="font-semibold text-lg">
@@ -241,10 +299,11 @@ export function MultiStockCollector({
               </button>
               <span className="ml-auto rounded-lg bg-[#0071E3]/10 dark:bg-[#2997FF]/15 px-3 py-1.5 text-xs font-semibold tabular-nums text-[#0071E3] dark:text-[#2997FF]">{selected.length}개 선택</span>
             </div>
-            <div className="overflow-y-auto min-h-0 border rounded-xl divide-y dark:divide-white/10">
+            <div className="flex-1 overflow-y-auto min-h-0 border rounded-xl divide-y dark:divide-white/10">
               {!visible.length && <p className="p-4 text-sm">검색 결과가 없습니다.</p>}
               {visible.map((stock) => {
                 const item = items.find((candidate) => candidate.stock_id === stock.id);
+                const collectedAt = item?.collected_at ?? stock.collected_at;
                 return (
                   <label key={stock.id} className={`flex gap-3 items-start p-3 text-sm transition-colors ${selected.includes(stock.id) ? 'bg-[#0071E3]/[0.05] dark:bg-[#2997FF]/[0.08]' : ''} ${running || disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-[#F5F5F7] dark:hover:bg-white/[0.04]'}`}>
                     <input
@@ -258,8 +317,15 @@ export function MultiStockCollector({
                         : previous.filter((id) => id !== stock.id))}
                     />
                     <span className={`${checkmarkClass} mt-0.5`} aria-hidden="true"><Check className="h-3.5 w-3.5" strokeWidth={3} /></span>
-                    <span className="flex-1">
-                      {stock.name} <span className="text-gray-500">{stock.ticker} · {stock.market}</span>
+                    <span className="flex-1 min-w-0">
+                      <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <span>{stock.name} <span className="text-gray-500">{stock.ticker} · {stock.market}</span></span>
+                        {collectedAt ? (
+                          <time dateTime={collectedAt} className="text-xs text-gray-500" title="최근 자료 수집 완료 시각 (한국 시간)">
+                            수신 {new Date(collectedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                          </time>
+                        ) : <span className="text-xs text-gray-500">{stock.collected_at === undefined ? '수신 시각 확인 불가' : '수신 기록 없음'}</span>}
+                      </span>
                       {item && (
                         <span className={`block text-xs mt-1 ${item.status === 'FAILED' ? 'text-red-600' : 'text-gray-500'}`}>
                           {item.status === 'FAILED'
@@ -268,7 +334,7 @@ export function MultiStockCollector({
                               ? '건너뜀'
                               : active(item.status)
                                 ? stages[item.stage] ?? '수집 중'
-                                : '완료'}
+                                : stages[item.stage] ?? '완료'}
                         </span>
                       )}
                     </span>
@@ -282,6 +348,7 @@ export function MultiStockCollector({
                 {running && ' · 창을 닫아도 수집은 계속됩니다.'}
               </p>
             )}
+            {priceNotice && <p role="status" className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{priceNotice}</p>}
             {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
             {pollError && <p role="status" className="text-sm text-amber-600">{pollError}</p>}
             <div className="flex flex-wrap gap-2">
@@ -291,7 +358,27 @@ export function MultiStockCollector({
                 disabled={running || disabled || !selected.length}
                 onClick={() => void collect(selected)}
               >
-                {running ? '수집 중…' : `선택한 ${selected.length}개 종목 자료 수집`}
+                {busy ? '수집 중…' : `선택한 ${selected.length}개 종목 자료 수집`}
+              </button>
+              <button
+                type="button"
+                className="h-10 px-4 rounded-xl inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#1C1C1E] disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={running || disabled || !selected.length}
+                onClick={() => void refreshPricesOnly(selected)}
+                title="선택한 종목의 최신 현재가만 빠르게 조회하여 시가총액 및 안전마진을 갱신합니다"
+              >
+                <Zap className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+                {priceBusy ? '현재가 갱신 중…' : `선택한 ${selected.length}개 현재가만 업데이트`}
+              </button>
+              <button
+                type="button"
+                className="h-10 px-4 rounded-xl inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950/70 border border-red-200 dark:border-red-900/50 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#1C1C1E] disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={running || disabled || !selected.length}
+                onClick={() => void removeStocks(selected)}
+                title="선택한 종목들을 관리 대상 및 스크리너 노출에서 일괄 제외합니다"
+              >
+                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                {deleteBusy ? '삭제 중…' : `선택한 ${selected.length}개 종목 삭제`}
               </button>
               {failed.length > 0 && (
                 <button

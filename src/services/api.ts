@@ -1,3 +1,4 @@
+import { apiFetch } from './http';
 import {
   BatchRunStatusDTO,
   Market,
@@ -5,6 +6,7 @@ import {
   StockDetailDTO,
   StockListQuery,
   StockListResponse,
+  StockMemoDTO,
 } from '../types/api';
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
@@ -27,7 +29,7 @@ async function parseErrorMessage(response: Response): Promise<string> {
 
 export const stockApi = {
   async getRules(signal?: AbortSignal): Promise<RuleListResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/rules`, { signal });
+    const response = await apiFetch(`${API_BASE_URL}/api/rules`, { signal });
 
     if (!response.ok) {
       throw new Error(await parseErrorMessage(response));
@@ -44,6 +46,8 @@ export const stockApi = {
 
     if (query) {
       if (query.years) params.set('years', String(query.years));
+      if (query.favoritesOnly) params.set('favoritesOnly', 'true');
+      if (query.hiddenOnly) params.set('hiddenOnly', 'true');
       if (query.search && query.search.trim() !== '') {
         params.set('search', query.search.trim());
       }
@@ -78,7 +82,7 @@ export const stockApi = {
       ? `${API_BASE_URL}/api/stocks?${queryString}`
       : `${API_BASE_URL}/api/stocks`;
 
-    const response = await fetch(url, { signal });
+    const response = await apiFetch(url, { signal });
 
     if (!response.ok) {
       throw new Error(await parseErrorMessage(response));
@@ -106,7 +110,7 @@ export const stockApi = {
     const url = `${API_BASE_URL}/api/stocks/${encodedTicker}${
       queryString ? `?${queryString}` : ''
     }`;
-    const response = await fetch(url, { signal });
+    const response = await apiFetch(url, { signal });
 
     if (!response.ok) {
       throw new Error(await parseErrorMessage(response));
@@ -116,7 +120,7 @@ export const stockApi = {
   },
 
   async triggerBatchRefresh(signal?: AbortSignal): Promise<BatchRunStatusDTO> {
-    const response = await fetch(`${API_BASE_URL}/api/batch/refresh`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/batch/refresh`, {
       method: 'POST',
       signal,
     });
@@ -129,7 +133,7 @@ export const stockApi = {
   },
 
   async cancelBatchRefresh(signal?: AbortSignal): Promise<BatchRunStatusDTO> {
-    const response = await fetch(`${API_BASE_URL}/api/batch/cancel`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/batch/cancel`, {
       method: 'POST',
       signal,
     });
@@ -142,7 +146,7 @@ export const stockApi = {
   },
 
   async getBatchStatus(signal?: AbortSignal): Promise<BatchRunStatusDTO> {
-    const response = await fetch(`${API_BASE_URL}/api/batch/status`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/batch/status`, {
       signal,
     });
 
@@ -151,5 +155,43 @@ export const stockApi = {
     }
 
     return response.json();
+  },
+
+  async getStockMemo(stockId: string, signal?: AbortSignal): Promise<StockMemoDTO> {
+    const response = await apiFetch(`${API_BASE_URL}/api/stocks/${encodeURIComponent(stockId)}/memo`, { signal });
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
+
+  async updateStockMemo(stockId: string, content: string, signal?: AbortSignal): Promise<StockMemoDTO> {
+    const response = await apiFetch(`${API_BASE_URL}/api/stocks/${encodeURIComponent(stockId)}/memo`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ content }),
+      signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
+
+  async deleteStockMemo(stockId: string, signal?: AbortSignal): Promise<void> {
+    const response = await apiFetch(`${API_BASE_URL}/api/stocks/${encodeURIComponent(stockId)}/memo`, {
+      method: 'DELETE',
+      signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
   },
 };

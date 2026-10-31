@@ -8,29 +8,29 @@
   }
 
   :root {
-    --apple-canvas: #FBFBFD;
-    --apple-surface: #FFFFFF;
-    --apple-text-primary: #1D1D1F;
-    --apple-text-secondary: #86868B;
-    --apple-blue: #0071E3;
-    --apple-green: #34C759;
-    --apple-red: #FF3B30;
-    --apple-orange: #FF9500;
+    --canvas-bg: #FBFBFD;
+    --surface-bg: #FFFFFF;
+    --text-primary: #1D1D1F;
+    --text-secondary: #86868B;
+    --accent-blue: #0071E3;
+    --accent-green: #34C759;
+    --accent-red: #FF3B30;
+    --accent-orange: #FF9500;
   }
 
   .dark {
-    --apple-canvas: #000000;
-    --apple-surface: #1C1C1E;
-    --apple-text-primary: #F5F5F7;
-    --apple-text-secondary: #86868B;
-    --apple-blue: #2997FF;
-    --apple-green: #30D158;
-    --apple-red: #FF453A;
-    --apple-orange: #FF9F0A;
+    --canvas-bg: #000000;
+    --surface-bg: #1C1C1E;
+    --text-primary: #F5F5F7;
+    --text-secondary: #86868B;
+    --accent-blue: #2997FF;
+    --accent-green: #30D158;
+    --accent-red: #FF453A;
+    --accent-orange: #FF9F0A;
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'SF Pro Text', 'Inter', 'Nanum Gothic', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Inter', 'Nanum Gothic', sans-serif;
     letter-spacing: -0.015em;
     background-color: #FBFBFD;
     color: #1D1D1F;
@@ -46,12 +46,12 @@
   }
 }
 
-/* Apple-grade Tabular Numbers */
+/* Tabular Numbers */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Apple Sleek Minimalist Scrollbar */
+/* Minimalist Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -183,8 +183,8 @@
   }
 }
 
-/* Apple Bento Card & Surface Utilities */
-.apple-card {
+/* Bento Card & Surface Utilities */
+.bento-card {
   background-color: #FFFFFF;
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 1.5rem;
@@ -193,36 +193,36 @@
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.dark .apple-card {
+.dark .bento-card {
   background-color: #1C1C1E;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.4);
 }
 
-.apple-card:hover {
+.bento-card:hover {
   border-color: rgba(0, 0, 0, 0.1);
   box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.06), 0 2px 6px 0 rgba(0, 0, 0, 0.02);
 }
 
-.dark .apple-card:hover {
+.dark .bento-card:hover {
   border-color: rgba(255, 255, 255, 0.15);
   box-shadow: 0 8px 28px 0 rgba(0, 0, 0, 0.6);
 }
 
-.apple-pill {
+.bento-pill {
   border-radius: 9999px;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Apple Frosted Glass Header */
-.apple-glass {
+/* Frosted Glass Header */
+.glass-panel {
   background-color: rgba(251, 251, 253, 0.88);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 }
 
-.dark .apple-glass {
+.dark .glass-panel {
   background-color: rgba(0, 0, 0, 0.85);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -235,4 +235,255 @@
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Large-display readability. Laptop and mobile sizes keep their existing styles. */
+@media (min-width: 1920px) {
+  .display-shell {
+    --display-width: 1720px;
+    --display-form-width: 520px;
+    --display-body: 15px;
+    --display-label: 15px;
+    --display-small: 13px;
+    --display-title: 28px;
+    --display-total: 36px;
+    --display-date: 24px;
+    --display-control: 42px;
+    --display-icon: 17px;
+    --display-cell-y: 14px;
+    --display-cell-x: 8px;
+    --display-card-padding: 26px;
+    --display-gap: 24px;
+    --display-company-width: 176px;
+  }
+
+  .display-shell .page-container {
+    max-width: var(--display-width);
+  }
+
+  .screener-page {
+    padding-top: var(--display-gap);
+    padding-bottom: var(--display-gap);
+  }
+
+  .screener-page > :not([hidden]) ~ :not([hidden]) {
+    margin-top: var(--display-gap);
+  }
+
+  .display-content,
+  .display-shell .display-chrome {
+    font-size: var(--display-body);
+    line-height: 1.5;
+  }
+
+  /* Panels keep their own compact typography, including embedded valuation. */
+  .display-content [role="dialog"] {
+    font-size: 1rem;
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-\[9px\], .text-\[10px\], .text-\[11px\], .sm\:text-\[11px\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: var(--display-small);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-xs, .sm\:text-xs):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: var(--display-body);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-\[13px\], .sm\:text-\[13px\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: var(--display-label);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-sm, .sm\:text-sm, .text-\[14px\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: var(--display-label);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-\[15px\], .sm\:text-\[15px\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: calc(var(--display-body) + 2px);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-base, .sm\:text-base, .sm\:text-\[16px\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: calc(var(--display-body) + 2px);
+  }
+
+  :is(.display-content, .display-chrome) :is(.sm\:text-\[17px\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: calc(var(--display-body) + 3px);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-lg, .sm\:text-lg):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: calc(var(--display-body) + 4px);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-xl, .sm\:text-xl):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: calc(var(--display-body) + 8px);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-2xl, .sm\:text-2xl):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: var(--display-title);
+  }
+
+  :is(.display-content, .display-chrome) :is(.text-3xl, .sm\:text-3xl):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: var(--display-total);
+  }
+
+  :is(.display-content, .display-chrome) :is(.lg\:text-\[34px\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: calc(var(--display-total) + 4px);
+  }
+
+  :is(.display-content, .display-chrome) [class*="text-"]:not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1.5;
+  }
+
+  :is(.display-content, .display-chrome) :is(.leading-none):not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1;
+  }
+
+  :is(.display-content, .display-chrome) :is(.leading-tight, .leading-\[1\.25\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1.25;
+  }
+
+  :is(.display-content, .display-chrome) :is(.leading-snug):not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1.375;
+  }
+
+  :is(.display-content, .display-chrome) :is(.leading-normal):not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1.5;
+  }
+
+  :is(.display-content, .display-chrome) :is(.leading-relaxed):not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1.625;
+  }
+
+  :is(.display-content, .display-chrome) :is(.leading-\[1\.7\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1.7;
+  }
+
+  :is(.display-content, .display-chrome) :is(.leading-7, .leading-\[1\.75\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1.75;
+  }
+
+  :is(.display-content, .display-chrome) :is(.leading-\[1\.8\]):not(:where([role="dialog"], [role="dialog"] *)) {
+    line-height: 1.8;
+  }
+
+  .display-content > .max-w-\[1600px\] {
+    max-width: var(--display-width);
+  }
+
+  .display-content > .max-w-\[1400px\] {
+    max-width: calc(var(--display-width) * 0.875);
+  }
+
+  .display-content > .max-w-\[1200px\] {
+    max-width: calc(var(--display-width) * 0.75);
+  }
+
+  .display-content > .max-w-md {
+    max-width: var(--display-form-width);
+  }
+
+  .display-content :is(input:not([type="checkbox"], [type="radio"], [type="range"]), select, button.h-8, button.h-9, button.h-10):not(:where([role="dialog"], [role="dialog"] *)) {
+    min-height: var(--display-control);
+  }
+
+  .display-content .recharts-text:not(:where([role="dialog"], [role="dialog"] *)) {
+    font-size: var(--display-small);
+  }
+
+  .screener-page h1[class] {
+    font-size: var(--display-title);
+    line-height: 1.25;
+  }
+
+  .screener-summary {
+    gap: var(--display-gap);
+  }
+
+  .screener-summary > div {
+    min-width: 0;
+    padding: var(--display-card-padding);
+  }
+
+  .screener-summary .sm\:text-3xl {
+    font-size: var(--display-total);
+  }
+
+  .screener-summary .sm\:text-xl {
+    font-size: var(--display-date);
+  }
+
+  .screener-filters :is(button, select) {
+    min-height: var(--display-control);
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .screener-filters select {
+    padding-right: 36px;
+  }
+
+  .screener-filters .screener-sort-order {
+    width: var(--display-control);
+    padding: 0;
+  }
+
+  .screener-page > div:first-child button {
+    height: var(--display-control);
+  }
+
+  :is(.display-content, .display-chrome) svg.lucide:not(:where([role="dialog"], [role="dialog"] *)) {
+    width: var(--display-icon);
+    height: var(--display-icon);
+  }
+
+  .screener-page :is(th, td) {
+    padding-top: var(--display-cell-y);
+    padding-bottom: var(--display-cell-y);
+  }
+
+  .screener-page :is(th, td):is(.px-2, .px-2\.5) {
+    padding-left: var(--display-cell-x);
+    padding-right: var(--display-cell-x);
+  }
+
+  .screener-page td .truncate {
+    max-width: var(--display-company-width);
+  }
+
+  .display-shell header.display-chrome > .page-container {
+    height: 84px;
+  }
+
+  .display-shell header.display-chrome input {
+    width: 280px;
+    min-height: var(--display-control);
+    padding-left: 40px;
+  }
+}
+
+@media (min-width: 2560px) {
+  .display-shell {
+    --display-width: 1880px;
+    --display-form-width: 580px;
+    --display-body: 16px;
+    --display-label: 16px;
+    --display-small: 14px;
+    --display-title: 32px;
+    --display-total: 40px;
+    --display-date: 28px;
+    --display-control: 44px;
+    --display-icon: 18px;
+    --display-cell-y: 16px;
+    --display-cell-x: 10px;
+    --display-card-padding: 30px;
+    --display-gap: 28px;
+    --display-company-width: 192px;
+  }
+
+  .display-shell header.display-chrome > .page-container {
+    height: 92px;
+  }
+
+  .display-shell header.display-chrome input {
+    width: 320px;
+  }
 }

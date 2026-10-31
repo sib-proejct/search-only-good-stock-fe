@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
-import { adminRequest, type AdminStock } from '../../services/adminApi';
+import { RefreshCw, Trash2, Zap } from 'lucide-react';
+import {
+  adminRequest,
+  deleteAdminStock,
+  refreshSingleStockPrice,
+  type AdminStock,
+} from '../../services/adminApi';
 import type { components } from '../../types/openapi.generated';
 
 type Collection = components['schemas']['CollectionStatus'];
@@ -12,6 +17,8 @@ const stages: Record<string, string> = {
   COLLECT: '자료 수집 중',
   NORMALIZE: '자료 정리 중',
   SAVE: '원자료 저장 중',
+  CALCULATE: '계산 중',
+  PUBLISH: '계산 및 반영 완료',
   REVIEW: '수집 완료',
 };
 
@@ -99,18 +106,24 @@ export function StockDataCollector({
   disabled,
   onCollected,
   onCollecting,
+  onDeleted,
 }: {
   stock: AdminStock;
   disabled: boolean;
   onCollected: () => void;
   onCollecting: (value: boolean) => void;
+  onDeleted?: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [priceBusy, setPriceBusy] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [priceNotice, setPriceNotice] = useState('');
   const [error, setError] = useState('');
   const [job, setJob] = useState<Collection | null>(null);
 
   useEffect(() => {
     setError('');
+    setPriceNotice('');
     setJob(
       stock.batch_run_id
         ? {
@@ -166,6 +179,7 @@ export function StockDataCollector({
   async function collect() {
     setBusy(true);
     setError('');
+    setPriceNotice('');
     try {
       setJob(
         await adminRequest<Collection>(`/stocks/${stock.id}/refresh`, {
@@ -179,12 +193,54 @@ export function StockDataCollector({
     }
   }
 
+  async function refreshPriceOnly() {
+    setPriceBusy(true);
+    setError('');
+    setPriceNotice('');
+    try {
+      const res = await refreshSingleStockPrice(stock.id);
+      if (res.error) {
+        setError(res.error);
+      } else {
+        setPriceNotice(
+          `현재가 갱신 완료 (${res.currentPrice != null ? Number(res.currentPrice).toLocaleString() : '—'} ${res.currency})`,
+        );
+        onCollected();
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '현재가 업데이트 실패');
+    } finally {
+      setPriceBusy(false);
+    }
+  }
+
+  async function removeStock() {
+    if (
+      !window.confirm(
+        `${stock.name} (${stock.ticker}) 종목을 관리 목록에서 삭제(제외)하시겠습니까?\n(기존 수집된 원자료는 보존되며 언제든 다시 추가할 수 있습니다.)`,
+      )
+    ) {
+      return;
+    }
+    setDeleteBusy(true);
+    setError('');
+    setPriceNotice('');
+    try {
+      await deleteAdminStock(stock.id);
+      onDeleted?.();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '종목 삭제 실패');
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
+
   return (
     <div className="flex items-center gap-2.5 flex-wrap">
       <button
         type="button"
         onClick={() => void collect()}
-        disabled={busy || disabled || running}
+        disabled={busy || priceBusy || deleteBusy || disabled || running}
         className={`h-10 px-4 rounded-xl flex items-center gap-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none focus:outline-none disabled:opacity-50 ${
           job?.status === 'FAILED'
             ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-sm'
@@ -200,6 +256,36 @@ export function StockDataCollector({
             : '선택 종목 자료 수집'}
         </span>
       </button>
+
+      <button
+        type="button"
+        onClick={() => void refreshPriceOnly()}
+        disabled={busy || priceBusy || deleteBusy || disabled || running}
+        className="h-10 px-3.5 rounded-xl flex items-center gap-1.5 text-xs sm:text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition-all cursor-pointer select-none focus:outline-none disabled:opacity-50"
+        title="재무제표 수집 없이 최신 현재가만 빠르게 가져와 내재가치·안전마진을 갱신합니다"
+      >
+        <Zap className={`w-3.5 h-3.5 ${priceBusy ? 'animate-pulse' : 'fill-current'}`} />
+        <span>{priceBusy ? '현재가 갱신 중…' : '현재가만 업데이트'}</span>
+      </button>
+
+      {onDeleted && (
+        <button
+          type="button"
+          onClick={() => void removeStock()}
+          disabled={busy || priceBusy || deleteBusy || disabled || running}
+          className="h-10 px-3.5 rounded-xl flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950/70 border border-red-200 dark:border-red-900/50 transition-all cursor-pointer select-none focus:outline-none disabled:opacity-50"
+          title="관리 대상 및 스크리너 노출에서 이 종목을 제외합니다 (수집된 원자료는 보존)"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          <span>{deleteBusy ? '삭제 중…' : '종목 삭제'}</span>
+        </button>
+      )}
+
+      {priceNotice && (
+        <span role="status" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+          {priceNotice}
+        </span>
+      )}
 
       {job && (
         <span
