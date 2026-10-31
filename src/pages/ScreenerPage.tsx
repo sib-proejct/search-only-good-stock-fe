@@ -1,5 +1,6 @@
 import { MarketFilter } from '../components/common/MarketFilter';
 import { FavoriteButton } from '../components/common/FavoriteButton';
+import { HideStockButton } from '../components/common/HideStockButton';
 import { StockMemoEditor } from '../components/common/StockMemoEditor';
 import { useAccount } from '../context/AccountContext';
 import React, { useState, useRef, useEffect } from 'react';
@@ -21,7 +22,11 @@ import {
   Check,
   ChevronRight,
   Star,
-  Zap,
+  Eye,
+  EyeOff,
+  ListChecks,
+  Trash2,
+  Sparkles,
   RefreshCw,
 } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
@@ -31,7 +36,7 @@ import { StockDetailDrawer } from '../components/screener/StockDetailDrawer';
 import { StockDetailPage } from './StockDetailPage';
 import { StockValuationPage } from './StockValuationPage';
 import { stockApi } from '../services/api';
-import { refreshStockPrices } from '../services/adminApi';
+import { bulkDeleteAdminStocks, refreshStockPrices } from '../services/adminApi';
 import { loadRegionalValuationConfigs } from '../utils/valuationConfig';
 import { getLowestIntrinsicValue, periodNote, priceToValueColor, valuationMarketCap, valuationPrice, valuationPriceToValueRatio } from '../utils/valuationFormatters';
 
@@ -47,12 +52,27 @@ interface ScreenerPageProps {
   onSelectStock?: (stockId: string) => void;
   searchQuery: string;
   favoritesOnly?: boolean;
+  hiddenOnly?: boolean;
 }
 
-export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalSearchQuery, favoritesOnly = false }) => {
+export const ScreenerPage: React.FC<ScreenerPageProps> = ({
+  searchQuery: globalSearchQuery,
+  favoritesOnly = false,
+  hiddenOnly = false,
+}) => {
   const navigate = useNavigate();
   const { t, language } = useAppConfig();
-  const { user, revision, favoritesError, reloadFavorites } = useAccount();
+  const {
+    user,
+    revision,
+    favoritesError,
+    reloadFavorites,
+    hiddenIds,
+    hiddenError,
+    reloadHidden,
+    bulkHideStocks,
+    bulkUnhideStocks,
+  } = useAccount();
   const {
     valuationStatus, setValuationStatus,
     stocks,
@@ -75,12 +95,109 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
     retry,
     resetFilters,
     updateStockMemoLocal,
-  } = useStocks(favoritesOnly, favoritesOnly ? revision : 0);
+  } = useStocks(favoritesOnly, user ? revision : 0, hiddenOnly);
 
   const ko = language === 'ko';
   const [counts, setCounts] = useState<{ total: number; passed: number; margin: number } | null>(null);
   const [quickPriceBusy, setQuickPriceBusy] = useState(false);
   const [quickPriceMessage, setQuickPriceMessage] = useState<string | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedStockIds, setSelectedStockIds] = useState<string[]>([]);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkMessage, setBulkMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedStockIds((prev) =>
+      prev.filter((id) => stocks.some((stock) => stock.id === id)),
+    );
+  }, [stocks]);
+
+  const toggleSelectStock = (stockId: string) => {
+    setSelectedStockIds((prev) =>
+      prev.includes(stockId) ? prev.filter((id) => id !== stockId) : [...prev, stockId],
+    );
+  };
+
+  const allLoadedSelected =
+    stocks.length > 0 && stocks.every((s) => selectedStockIds.includes(s.id));
+
+  const toggleSelectAllLoaded = () => {
+    if (allLoadedSelected) {
+      setSelectedStockIds([]);
+    } else {
+      setSelectedStockIds(stocks.map((s) => s.id));
+    }
+  };
+
+  const handleBulkHideOrUnhide = async () => {
+    if (bulkBusy || selectedStockIds.length === 0) return;
+    if (!user) {
+      navigate(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+      return;
+    }
+    setBulkBusy(true);
+    setBulkMessage(null);
+    try {
+      const count = selectedStockIds.length;
+      if (hiddenOnly) {
+        await bulkUnhideStocks(selectedStockIds);
+        setBulkMessage(
+          ko ? `${count}개 종목 숨김을 해제했습니다.` : `Unhid ${count} stocks.`,
+        );
+      } else {
+        await bulkHideStocks(selectedStockIds);
+        setBulkMessage(
+          ko ? `${count}개 종목을 숨겼습니다.` : `Hid ${count} stocks.`,
+        );
+      }
+      setSelectedStockIds([]);
+      setTimeout(() => setBulkMessage(null), 4000);
+    } catch (err) {
+      setBulkMessage(
+        err instanceof Error
+          ? err.message
+          : ko
+          ? '일괄 처리에 실패했습니다.'
+          : 'Bulk operation failed.',
+      );
+      setTimeout(() => setBulkMessage(null), 5000);
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const handleBulkAdminDelete = async () => {
+    if (bulkBusy || selectedStockIds.length === 0) return;
+    const count = selectedStockIds.length;
+    const confirmMsg = ko
+      ? `[관리자] 선택한 ${count}개 종목을 서비스 전체 관리 목록에서 일괄 삭제(제외)하시겠습니까?\n(기존 수집된 원자료는 보존되며 언제든 다시 추가할 수 있습니다.)`
+      : `[Admin] Remove ${count} selected stocks from managed list?`;
+    if (!window.confirm(confirmMsg)) return;
+    setBulkBusy(true);
+    setBulkMessage(null);
+    try {
+      const res = await bulkDeleteAdminStocks(selectedStockIds);
+      setSelectedStockIds([]);
+      setBulkMessage(
+        ko
+          ? `${res.deleted_count}개 종목을 관리 목록에서 삭제했습니다.`
+          : `Removed ${res.deleted_count} stocks from managed list.`,
+      );
+      retry();
+      setTimeout(() => setBulkMessage(null), 4000);
+    } catch (err) {
+      setBulkMessage(
+        err instanceof Error
+          ? err.message
+          : ko
+          ? '관리 종목 일괄 삭제 실패'
+          : 'Failed to remove stocks.',
+      );
+      setTimeout(() => setBulkMessage(null), 5000);
+    } finally {
+      setBulkBusy(false);
+    }
+  };
 
   const handleQuickRefreshPrices = async () => {
     if (quickPriceBusy) return;
@@ -120,7 +237,13 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
     const controller = new AbortController();
     setCounts(null);
     const timer = setTimeout(() => {
-      const query = { limit: 1, favoritesOnly, search: searchQuery.trim() || undefined, market: market.length ? market : undefined };
+      const query = {
+        limit: 1,
+        favoritesOnly,
+        hiddenOnly,
+        search: searchQuery.trim() || undefined,
+        market: market.length ? market : undefined,
+      };
       Promise.all([
         stockApi.getStocks(query, controller.signal),
         stockApi.getStocks({ ...query, coreStatus: 'PASS' }, controller.signal),
@@ -130,7 +253,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
       }).catch(() => { /* Counts remain unavailable when the request fails. */ });
     }, 300);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [searchQuery, market, favoritesOnly, revision]);
+  }, [searchQuery, market, favoritesOnly, hiddenOnly, revision]);
   const [drawerStockId, setDrawerStockId] = useState<string | null>(null);
   const [drawerView, setDrawerView] = useState<'detail' | 'valuation'>('detail');
   const drawerStock = stocks.find(stock => stock.id === drawerStockId) ?? null;
@@ -195,24 +318,189 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
 
   return (
     <>
-    <div className="screener-page page-container max-w-[1600px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-5 sm:space-y-6 animate-fade-in">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7]">{favoritesOnly ? (ko ? '내 즐겨찾기' : 'My favorites') : (ko ? '종목 스크리너' : 'Stock screener')}</h1>
-        <button
-          type="button"
-          aria-pressed={favoritesOnly}
-          onClick={() => navigate(favoritesOnly ? '/' : '/favorites')}
-          className={`inline-flex items-center gap-1.5 h-8 rounded-full pl-3 pr-3.5 text-xs font-semibold border transition-all duration-200 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071E3] ${favoritesOnly
-            ? 'bg-[#FFD60A]/15 border-[#D97706]/25 text-[#B45309] dark:bg-[#FFD60A]/15 dark:border-[#FFD60A]/30 dark:text-[#FFD60A] hover:bg-[#FFD60A]/25'
-            : 'bg-white dark:bg-[#1C1C1E] border-black/[0.08] dark:border-white/[0.12] text-[#1D1D1F] dark:text-[#F5F5F7] shadow-sm hover:border-[#D97706]/30 hover:text-[#B45309] dark:hover:text-[#FFD60A]'}`}
-        >
-          <Star aria-hidden="true" className="w-3.5 h-3.5" fill={favoritesOnly ? 'currentColor' : 'none'} strokeWidth={2.25} />
-          {ko ? '즐겨찾기만 보기' : 'Favorites only'}
-        </button>
+    <div className="screener-page page-container max-w-[1600px] mx-auto px-4 sm:px-8 py-3.5 sm:py-8 space-y-3 sm:space-y-6 animate-fade-in">
+      <div className="flex flex-wrap items-center justify-between sm:justify-start gap-2 sm:gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7]">
+          {hiddenOnly
+            ? (ko ? '숨긴 종목' : 'Hidden stocks')
+            : favoritesOnly
+            ? (ko ? '내 즐겨찾기' : 'My favorites')
+            : (ko ? '종목 스크리너' : 'Stock screener')}
+        </h1>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-pressed={favoritesOnly}
+            onClick={() => navigate(favoritesOnly ? '/' : '/favorites')}
+            className={`inline-flex items-center gap-1.5 h-8 rounded-full pl-3 pr-3.5 text-xs font-semibold border transition-all duration-200 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071E3] cursor-pointer ${favoritesOnly
+              ? 'bg-[#FFD60A]/15 border-[#D97706]/25 text-[#B45309] dark:bg-[#FFD60A]/15 dark:border-[#FFD60A]/30 dark:text-[#FFD60A] hover:bg-[#FFD60A]/25'
+              : 'bg-white dark:bg-[#1C1C1E] border-black/[0.08] dark:border-white/[0.12] text-[#1D1D1F] dark:text-[#F5F5F7] shadow-sm hover:border-[#D97706]/30 hover:text-[#B45309] dark:hover:text-[#FFD60A]'}`}
+          >
+            <Star aria-hidden="true" className="w-3.5 h-3.5" fill={favoritesOnly ? 'currentColor' : 'none'} strokeWidth={2.25} />
+            {ko ? '즐겨찾기만 보기' : 'Favorites only'}
+          </button>
+          <button
+            type="button"
+            aria-pressed={hiddenOnly}
+            onClick={() => navigate(hiddenOnly ? '/' : '/hidden')}
+            className={`inline-flex items-center gap-1.5 h-8 rounded-full pl-3 pr-3.5 text-xs font-semibold border transition-all duration-200 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071E3] cursor-pointer ${hiddenOnly
+              ? 'bg-[#FF3B30]/15 border-[#FF3B30]/30 text-[#FF3B30] hover:bg-[#FF3B30]/25'
+              : 'bg-white dark:bg-[#1C1C1E] border-black/[0.08] dark:border-white/[0.12] text-[#6E6E73] dark:text-[#A1A1A6] shadow-sm hover:border-[#FF3B30]/30 hover:text-[#FF3B30]'}`}
+          >
+            <EyeOff aria-hidden="true" className="w-3.5 h-3.5" strokeWidth={2.25} />
+            <span>
+              {ko ? '숨긴 종목' : 'Hidden'}
+              {hiddenIds.length > 0 ? ` (${hiddenIds.length})` : ''}
+            </span>
+          </button>
+          <button
+            type="button"
+            aria-pressed={selectionMode}
+            onClick={() => {
+              setSelectionMode((prev) => {
+                if (prev) setSelectedStockIds([]);
+                return !prev;
+              });
+            }}
+            className={`inline-flex items-center gap-1.5 h-8 rounded-full pl-3 pr-3.5 text-xs font-semibold border transition-all duration-200 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071E3] cursor-pointer ${selectionMode
+              ? 'bg-[#0071E3]/15 border-[#0071E3]/30 text-[#0071E3] dark:text-[#2997FF] hover:bg-[#0071E3]/25'
+              : 'bg-white dark:bg-[#1C1C1E] border-black/[0.08] dark:border-white/[0.12] text-[#6E6E73] dark:text-[#A1A1A6] shadow-sm hover:border-[#0071E3]/30 hover:text-[#0071E3] dark:hover:text-[#2997FF]'}`}
+          >
+            <ListChecks aria-hidden="true" className="w-3.5 h-3.5" strokeWidth={2.25} />
+            <span>{ko ? '여러 종목 선택' : 'Select multiple'}</span>
+          </button>
+        </div>
       </div>
+      {selectionMode && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-white dark:bg-[#1C1C1E] px-4 py-2.5 border border-[#0071E3]/25 dark:border-[#2997FF]/30 shadow-sm animate-fade-in">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={bulkBusy || stocks.length === 0}
+              onClick={toggleSelectAllLoaded}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#F2F4F6] dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#E5E8EB] dark:hover:bg-[#3A3A3C] transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <Check className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />
+              <span>{allLoadedSelected ? (ko ? '전체 해제' : 'Deselect all') : (ko ? '현재 목록 전체 선택' : 'Select all')}</span>
+            </button>
+            {selectedStockIds.length > 0 && (
+              <button
+                type="button"
+                disabled={bulkBusy}
+                onClick={() => setSelectedStockIds([])}
+                className="px-2.5 py-1.5 rounded-xl text-xs font-medium text-[#6E6E73] dark:text-[#A1A1A6] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] cursor-pointer"
+              >
+                {ko ? '선택 초기화' : 'Clear'}
+              </button>
+            )}
+            <span className="text-xs font-semibold font-mono text-[#0071E3] dark:text-[#2997FF] px-2 py-0.5 rounded-lg bg-[#0071E3]/10 dark:bg-[#2997FF]/15 tabular-nums">
+              {ko ? `${selectedStockIds.length}개 선택됨` : `${selectedStockIds.length} selected`}
+            </span>
+            {bulkMessage && (
+              <span role="status" className="text-xs font-medium text-[#34C759]">
+                {bulkMessage}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={bulkBusy || selectedStockIds.length === 0}
+              onClick={() => void handleBulkHideOrUnhide()}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-[#FF3B30] hover:bg-[#D70015] shadow-sm transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {hiddenOnly ? (
+                <Eye className="w-3.5 h-3.5" />
+              ) : (
+                <EyeOff className="w-3.5 h-3.5" />
+              )}
+              <span>
+                {bulkBusy
+                  ? (ko ? '처리 중…' : 'Processing…')
+                  : hiddenOnly
+                  ? (ko ? `선택 종목 숨김 해제 (${selectedStockIds.length})` : `Unhide selected (${selectedStockIds.length})`)
+                  : (ko ? `선택 종목 숨기기 (${selectedStockIds.length})` : `Hide selected (${selectedStockIds.length})`)}
+              </span>
+            </button>
+            {user?.role === 'admin' && (
+              <button
+                type="button"
+                disabled={bulkBusy || selectedStockIds.length === 0}
+                onClick={() => void handleBulkAdminDelete()}
+                title={ko ? '관리자: 선택한 종목들을 서비스 전체 관리 목록에서 일괄 제외합니다' : 'Admin: Remove selected stocks from managed list'}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-[#FF3B30] bg-[#FF3B30]/10 hover:bg-[#FF3B30]/20 border border-[#FF3B30]/25 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>
+                  {ko
+                    ? `[관리자] 영구 제외 (${selectedStockIds.length})`
+                    : `[Admin] Unmanage (${selectedStockIds.length})`}
+                </span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       {favoritesError && <div role="alert" className="text-xs text-[#FF3B30]">{ko ? '즐겨찾기 상태를 불러오지 못했습니다.' : 'Could not load favorites.'} <button onClick={() => void reloadFavorites().catch(() => {})} className="underline">{t('retry')}</button></div>}
-      {/* 1. Hero Bento Grid (3 Cards Row) */}
-      <div className="screener-summary grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-5">
+      {hiddenError && <div role="alert" className="text-xs text-[#FF3B30]">{ko ? '숨김 종목 상태를 불러오지 못했습니다.' : 'Could not load hidden stocks.'} <button onClick={() => void reloadHidden().catch(() => {})} className="underline">{t('retry')}</button></div>}
+      {/* 1-A. Mobile Compact Summary Bar (1 Row, 3 Columns) */}
+      <div className="md:hidden bg-white dark:bg-[#1C1C1E] rounded-2xl p-3.5 border border-black/[0.06] dark:border-white/[0.08] shadow-sm transition-colors duration-300">
+        <div className="grid grid-cols-3 divide-x divide-black/[0.06] dark:divide-white/[0.08] text-center">
+          <div className="px-1.5">
+            <span className="text-[11px] font-medium text-[#6E6E73] dark:text-[#A1A1A6] block truncate">
+              {ko ? '버핏 통과' : 'Passed'}
+            </span>
+            <div className="text-sm font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums mt-0.5">
+              {counts?.passed ?? '—'} <span className="text-[11px] font-normal text-[#86868B]">/ {counts?.total ?? '—'}</span>
+            </div>
+          </div>
+          <div className="px-1.5">
+            <span className="text-[11px] font-medium text-[#6E6E73] dark:text-[#A1A1A6] block truncate">
+              {ko ? '안전마진 확보' : 'With Margin'}
+            </span>
+            <div className="text-sm font-bold font-mono text-[#34C759] tabular-nums mt-0.5">
+              {counts?.margin ?? '—'}
+            </div>
+          </div>
+          <div className="px-1.5">
+            <span className="text-[11px] font-medium text-[#6E6E73] dark:text-[#A1A1A6] block truncate">
+              {ko ? '기준일' : 'As Of'}
+            </span>
+            <div className="text-xs font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums mt-1">
+              {latestLoadedDataAsOf?.slice(0, 10) ?? '—'}
+            </div>
+          </div>
+        </div>
+        {(user?.role === 'admin' || quickPriceMessage) && (
+          <div className="pt-2.5 mt-2.5 border-t border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between gap-2">
+            <span className="text-[11px] font-medium text-[#6E6E73] dark:text-[#A1A1A6] truncate font-mono">
+              {quickPriceMessage ??
+                t('loadedSnapshotStatus', {
+                  loaded: stocks.length,
+                  stale: loadedStaleCount,
+                })}
+            </span>
+            {user?.role === 'admin' && (
+              <button
+                type="button"
+                disabled={quickPriceBusy}
+                onClick={() => void handleQuickRefreshPrices()}
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6E6E73] hover:text-[#1D1D1F] dark:text-[#A1A1A6] dark:hover:text-[#F5F5F7] transition-colors cursor-pointer disabled:opacity-50 shrink-0"
+              >
+                {quickPriceBusy ? (
+                  <RefreshCw className="w-3 h-3 animate-spin text-amber-500" />
+                ) : (
+                  <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
+                )}
+                <span>{quickPriceBusy ? (ko ? '갱신 중…' : 'Updating…') : (ko ? '현재가 빠른 갱신' : 'Refresh Prices')}</span>
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 1-B. Desktop Hero Bento Grid (3 Cards Row) */}
+      <div className="screener-summary hidden md:grid md:grid-cols-12 gap-3 sm:gap-5">
         {/* Card 1: Current Market Scan & Total Passed */}
         <div className="md:col-span-5 bg-white dark:bg-[#1C1C1E] rounded-3xl p-5 sm:p-6 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between transition-colors duration-300">
           <div>
@@ -303,12 +591,12 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                     ? '토스증권에서 최신 현재가만 빠르게 가져와 시가총액·안전마진을 즉시 갱신합니다'
                     : 'Quickly refresh latest stock prices and recalculate margins'
                 }
-                className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50 shrink-0"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-[#6E6E73] hover:text-[#1D1D1F] dark:text-[#A1A1A6] dark:hover:text-[#F5F5F7] transition-colors cursor-pointer disabled:opacity-50 shrink-0"
               >
                 {quickPriceBusy ? (
-                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-500" />
                 ) : (
-                  <Zap className="w-3 h-3 fill-current" />
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
                 )}
                 <span>{quickPriceBusy ? (ko ? '갱신 중…' : 'Updating…') : (ko ? '현재가 빠른 갱신' : 'Refresh Prices')}</span>
               </button>
@@ -317,62 +605,80 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
         </div>
       </div>
 
-      {/* 2. Toss/Apple Style Filter Ribbon */}
-      <div className="screener-filters flex flex-wrap items-center justify-between gap-3 py-1">
-        {/* Left: Markets + Core Status Capsule Ribbon */}
-        <div className="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
-          {/* Market multi-select buttons */}
-          <MarketFilter markets={market} onChange={setMarket} />
+      {/* 2. Minimalist Filter Ribbon */}
+      <div className="screener-filters flex flex-wrap items-center justify-between gap-2 sm:gap-3 py-1">
+        {/* Market multi-select buttons (Row 1 on Mobile, Inline on Desktop) */}
+        <MarketFilter markets={market} onChange={setMarket} />
 
-          {/* Core Status Capsule Ribbon */}
-          <div className="inline-flex w-fit max-w-full bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 rounded-2xl border border-black/[0.04] dark:border-white/[0.06] items-center gap-1 overflow-x-auto scrollbar-none shrink-0">
-            {coreGradeFilterOptions.map((opt) => {
-              const isActive = coreGradeFilter === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  onClick={() => setCoreGradeFilter(opt.id)}
-                  className={`px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-[13px] rounded-xl whitespace-nowrap transition-all duration-200 select-none cursor-pointer focus:outline-none shrink-0 ${isActive
-                      ? 'bg-white dark:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-bold shadow-sm border border-black/[0.04] dark:border-white/[0.06]'
-                      : 'text-[#4E5968] dark:text-[#A1A1A6] hover:text-[#191F28] dark:hover:text-[#F5F5F7] font-medium hover:bg-white/40 dark:hover:bg-white/5'
-                    }`}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-          <div className="relative shrink-0">
-            <select
-              aria-label={ko ? '가치평가' : 'Valuation'}
-              value={valuationStatus}
-              onChange={event => setValuationStatus(event.target.value as typeof valuationStatus)}
-              className="h-10 pl-3.5 pr-8 appearance-none rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-[13px] border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071E3]"
-            >
-              <option value="ALL">{ko ? '가치평가: 전체' : 'Valuation: All'}</option>
-              <option value="PASS_WITH_MARGIN">{ko ? '가치평가: 안전마진 확보' : 'Valuation: With margin'}</option>
-              <option value="WATCH">{ko ? '가치평가: 관찰' : 'Valuation: Watch'}</option>
-              <option value="NO_MARGIN">{ko ? '가치평가: 안전마진 부족' : 'Valuation: No margin'}</option>
-              <option value="N/A">{ko ? '가치평가: 계산 불가' : 'Valuation: Unavailable'}</option>
-            </select>
-            <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[#86868B]" />
-          </div>
+        {/* Desktop Core Status Capsule Ribbon */}
+        <div className="hidden md:inline-flex w-fit max-w-full bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 rounded-2xl border border-black/[0.04] dark:border-white/[0.06] items-center gap-1 overflow-x-auto scrollbar-none shrink-0">
+          {coreGradeFilterOptions.map((opt) => {
+            const isActive = coreGradeFilter === opt.id;
+            return (
+              <button
+                key={opt.id}
+                onClick={() => setCoreGradeFilter(opt.id)}
+                className={`px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-[13px] rounded-xl whitespace-nowrap transition-all duration-200 select-none cursor-pointer focus:outline-none shrink-0 ${isActive
+                    ? 'bg-white dark:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-bold shadow-sm border border-black/[0.04] dark:border-white/[0.06]'
+                    : 'text-[#4E5968] dark:text-[#A1A1A6] hover:text-[#191F28] dark:hover:text-[#F5F5F7] font-medium hover:bg-white/40 dark:hover:bg-white/5'
+                  }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Right: Sorting Selector & Order Toggle */}
-        <div className="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
-          {/* Sort Selector & Order Toggle stay together when wrapping */}
-          <div className="flex items-center gap-2 shrink-0">
+        {/* Row 2 on Mobile (Grade + Valuation + Sort all in 1 line) / Remaining controls on Desktop */}
+        <div className="w-full md:w-auto flex-1 flex items-center justify-between gap-1.5 sm:gap-2 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 md:flex-none">
+            {/* Mobile Core Status Select */}
+            <div className="md:hidden relative shrink-0">
+              <select
+                aria-label={ko ? '핵심 등급' : 'Core Status'}
+                value={coreGradeFilter}
+                onChange={(event) => setCoreGradeFilter(event.target.value as CoreGradeFilterOption)}
+                className="h-9 pl-2.5 pr-6 appearance-none rounded-xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-xs border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071E3]"
+              >
+                {coreGradeFilterOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#86868B]" />
+            </div>
+
+            {/* Valuation Select */}
+            <div className="relative min-w-0 flex-1 md:flex-none">
+              <select
+                aria-label={ko ? '가치평가' : 'Valuation'}
+                value={valuationStatus}
+                onChange={event => setValuationStatus(event.target.value as typeof valuationStatus)}
+                className="w-full md:w-auto h-9 sm:h-10 pl-2.5 sm:pl-3.5 pr-6 sm:pr-8 truncate appearance-none rounded-xl sm:rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-xs sm:text-[13px] border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071E3]"
+              >
+                <option value="ALL">{ko ? '가치평가: 전체' : 'Valuation: All'}</option>
+                <option value="PASS_WITH_MARGIN">{ko ? '가치평가: 안전마진 확보' : 'Valuation: With margin'}</option>
+                <option value="WATCH">{ko ? '가치평가: 관찰' : 'Valuation: Watch'}</option>
+                <option value="NO_MARGIN">{ko ? '가치평가: 안전마진 부족' : 'Valuation: No margin'}</option>
+                <option value="N/A">{ko ? '가치평가: 계산 불가' : 'Valuation: Unavailable'}</option>
+              </select>
+              <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 sm:right-3.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[#86868B]" />
+            </div>
+          </div>
+
+          {/* Right: Sorting Selector & Order Toggle */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Sort Selector Dropdown */}
             <div className="relative" ref={sortDropdownRef}>
               <button
                 onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                className="h-10 px-3.5 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-[13px] flex items-center gap-1.5 border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer select-none focus:outline-none"
+                className="h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-xl sm:rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-xs sm:text-[13px] flex items-center gap-1 sm:gap-1.5 border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer select-none focus:outline-none whitespace-nowrap"
               >
-                <ArrowUpDown className="w-3.5 h-3.5 text-[#86868B]" />
+                <ArrowUpDown className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-[#86868B] shrink-0" />
                 <span>{currentSortOption.label}</span>
                 <ChevronDown
-                  className={`w-3 h-3 text-[#86868B] transition-transform ${isSortDropdownOpen ? 'rotate-180' : ''}`}
+                  className={`w-3 h-3 text-[#86868B] shrink-0 transition-transform ${isSortDropdownOpen ? 'rotate-180' : ''}`}
                 />
               </button>
 
@@ -404,11 +710,11 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
             {/* Sort Order Toggle */}
             <button
               onClick={toggleSortOrder}
-              className="screener-sort-order h-10 w-10 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] flex items-center justify-center border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer select-none focus:outline-none"
+              className="screener-sort-order h-9 w-9 sm:h-10 sm:w-10 rounded-xl sm:rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] flex items-center justify-center border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer select-none focus:outline-none shrink-0"
               title={sortOrder === 'asc' ? t('sortOrderAsc') : t('sortOrderDesc')}
               aria-label="Toggle sort order"
             >
-              {sortOrder === 'asc' ? <ArrowUp className="w-4 h-4 text-[#0071E3] dark:text-[#2997FF]" /> : <ArrowDown className="w-4 h-4 text-[#0071E3] dark:text-[#2997FF]" />}
+              {sortOrder === 'asc' ? <ArrowUp className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-[#0071E3] dark:text-[#2997FF]" /> : <ArrowDown className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-[#0071E3] dark:text-[#2997FF]" />}
             </button>
           </div>
         </div>
@@ -454,10 +760,18 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
           </div>
           <div className="space-y-1">
             <h3 className="text-base font-bold text-[#1D1D1F] dark:text-[#F5F5F7]">
-              {favoritesOnly ? (ko ? '표시할 즐겨찾기 종목이 없습니다.' : 'No favorite stocks to show.') : t('noStocksFound')}
+              {hiddenOnly
+                ? (ko ? '숨긴 종목이 없습니다.' : 'No hidden stocks.')
+                : favoritesOnly
+                ? (ko ? '표시할 즐겨찾기 종목이 없습니다.' : 'No favorite stocks to show.')
+                : t('noStocksFound')}
             </h3>
             <p className="text-xs text-[#86868B]">
-              {favoritesOnly ? (ko ? '전체 종목에서 별표를 눌러 추가하거나 검색·필터를 확인해 주세요.' : 'Add stocks using the star, or adjust your search and filters.') : (ko ? '다른 시장이나 상태 필터를 선택하거나 검색어를 변경해보세요.' : 'Try a different market, status filter, or search.')}
+              {hiddenOnly
+                ? (ko ? '전체 종목에서 숨기기(눈 가림) 아이콘을 누른 종목이 이곳에 표시됩니다.' : 'Stocks you hide from the screener will appear here.')
+                : favoritesOnly
+                ? (ko ? '전체 종목에서 별표를 눌러 추가하거나 검색·필터를 확인해 주세요.' : 'Add stocks using the star, or adjust your search and filters.')
+                : (ko ? '다른 시장이나 상태 필터를 선택하거나 검색어를 변경해보세요.' : 'Try a different market, status filter, or search.')}
             </p>
           </div>
           <button
@@ -488,13 +802,31 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                 <div
                   key={stock.id}
                   onClick={() => {
+                    if (selectionMode) {
+                      toggleSelectStock(stock.id);
+                      return;
+                    }
                     setDrawerStockId(stock.id);
                     setDrawerView('detail');
                   }}
-                  className="p-4 flex items-center justify-between gap-3 active:bg-[#F5F5F7] dark:active:bg-[#2C2C2E] transition-colors cursor-pointer"
+                  className={`p-4 flex items-center justify-between gap-3 active:bg-[#F5F5F7] dark:active:bg-[#2C2C2E] transition-colors cursor-pointer ${
+                    selectionMode && selectedStockIds.includes(stock.id)
+                      ? 'bg-[#0071E3]/[0.06] dark:bg-[#2997FF]/[0.1]'
+                      : ''
+                  }`}
                 >
                   {/* Left: Rank & Ticker & Name & Grade */}
                   <div className="flex items-center gap-3 min-w-0">
+                    {selectionMode && (
+                      <input
+                        type="checkbox"
+                        aria-label={`${stock.name} 선택`}
+                        checked={selectedStockIds.includes(stock.id)}
+                        onChange={() => toggleSelectStock(stock.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 rounded accent-[#0071E3] shrink-0 cursor-pointer"
+                      />
+                    )}
                     <span className="font-mono text-xs font-semibold text-[#6E6E73] dark:text-[#A1A1A6] w-5 shrink-0 tabular-nums">
                       {rank}
                     </span>
@@ -503,6 +835,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                         <span className={`font-bold text-[15px] text-[#1D1D1F] dark:text-[#F5F5F7] ${isKoreanMarket(stock.market) ? 'truncate max-w-[9rem]' : 'font-mono'}`}>
                           {isKoreanMarket(stock.market) ? stock.name : stock.ticker}
                         </span>
+                        <HideStockButton stockId={stock.id} name={stock.name} />
                         {stock.isStale && (
                           <span className="text-[11px] font-bold text-[#FF9500] bg-[#FF9500]/10 px-1.5 py-0.5 rounded-full">
                             STALE
@@ -512,6 +845,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                           <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${gradeInfo.dotClass}`} />
                           <span className={gradeInfo.textClass}>{gradeInfo.badgeLabel}</span>
                         </div>
+                        <FavoriteButton stockId={stock.id} name={stock.name} />
                       </div>
                       <StockMemoEditor
                         stockId={stock.id}
@@ -522,9 +856,8 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                     </div>
                   </div>
 
-                  {/* Right: Current Price & Intrinsic Value & Favorite */}
-                  <div className="flex items-center gap-1 shrink-0">
-                  <div className="text-right space-y-0.5">
+                  {/* Right: Current Price & Intrinsic Value */}
+                  <div className="text-right space-y-0.5 shrink-0">
                     <div className="font-mono font-bold text-[15px] text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
                       {formatPrice(stock.currentPrice, stock.currency)}
                     </div>
@@ -535,8 +868,6 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                       <span className={priceToValueColor(stock.currentPrice, minIntrinsicValue)}>{valuationPriceToValueRatio(stock.currentPrice, minIntrinsicValue)}</span>
                     </div>
                     <div className={`text-xs font-mono font-bold ${confidenceColor(minPeriod?.dcf.confidence)}`}>{minPeriod?.dcf.confidence ?? '—'}</div>
-                  </div>
-                  <FavoriteButton stockId={stock.id} name={stock.name} />
                   </div>
                 </div>
               );
@@ -551,6 +882,17 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="text-[13px] font-semibold text-[#6E6E73] dark:text-[#A1A1A6] whitespace-nowrap">
+                    {selectionMode && (
+                      <th rowSpan={2} className="py-3 pl-3 pr-1 w-8 text-center border-b border-black/[0.05] dark:border-white/[0.06]">
+                        <input
+                          type="checkbox"
+                          aria-label={ko ? '전체 선택' : 'Select all'}
+                          checked={allLoadedSelected}
+                          onChange={toggleSelectAllLoaded}
+                          className="w-4 h-4 rounded accent-[#0071E3] cursor-pointer"
+                        />
+                      </th>
+                    )}
                     <th rowSpan={2} className="py-3 pl-2.5 sm:pl-3 pr-0 w-8 border-b border-black/[0.05] dark:border-white/[0.06]"><span className="sr-only">{ko ? '즐겨찾기' : 'Favorite'}</span></th>
                     <th rowSpan={2} className="py-3 px-1 w-9 text-center border-b border-black/[0.05] dark:border-white/[0.06]">{t('rank')}</th>
                     <th rowSpan={2} className="py-3 px-2 min-w-[100px] border-b border-black/[0.05] dark:border-white/[0.06]">{t('company')}</th>
@@ -580,11 +922,33 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                       <tr
                         key={stock.id}
                         onClick={() => {
+                          if (selectionMode) {
+                            toggleSelectStock(stock.id);
+                            return;
+                          }
                           setDrawerStockId(stock.id);
                           setDrawerView('detail');
                         }}
-                        className="hover:bg-[#F5F5F7]/80 dark:hover:bg-[#2C2C2E]/60 transition-colors cursor-pointer group"
+                        className={`hover:bg-[#F5F5F7]/80 dark:hover:bg-[#2C2C2E]/60 transition-colors cursor-pointer group ${
+                          selectionMode && selectedStockIds.includes(stock.id)
+                            ? 'bg-[#0071E3]/[0.06] dark:bg-[#2997FF]/[0.1]'
+                            : ''
+                        }`}
                       >
+                        {selectionMode && (
+                          <td
+                            className="py-3 pl-3 pr-1 text-center"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              aria-label={`${stock.name} 선택`}
+                              checked={selectedStockIds.includes(stock.id)}
+                              onChange={() => toggleSelectStock(stock.id)}
+                              className="w-4 h-4 rounded accent-[#0071E3] cursor-pointer"
+                            />
+                          </td>
+                        )}
                         {/* Favorite */}
                         <td className="py-3 pl-2.5 sm:pl-3 pr-0">
                           <FavoriteButton stockId={stock.id} name={stock.name} />
@@ -612,6 +976,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                                 STALE
                               </span>
                             )}
+                            <HideStockButton stockId={stock.id} name={stock.name} />
                           </div>
                           <StockMemoEditor
                             stockId={stock.id}
@@ -714,6 +1079,10 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
               ticker={drawerStock.ticker}
               market={drawerStock.market}
               embedded
+              onDeleted={() => {
+                setDrawerStockId(null);
+                retry();
+              }}
             />
           )
         )}

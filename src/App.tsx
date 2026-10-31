@@ -69,6 +69,7 @@ function AppContent() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/account/password" element={<LoginPage key="password" passwordChange />} />
           <Route path="/favorites" element={<RequireAccount><ScreenerPage key="favorites" searchQuery={searchQuery} favoritesOnly /></RequireAccount>} />
+          <Route path="/hidden" element={<RequireAccount><ScreenerPage key="hidden" searchQuery={searchQuery} hiddenOnly /></RequireAccount>} />
           <Route path="/admin/valuation" element={<RequireAccount admin><AdminValuationPage /></RequireAccount>} />
           {/* Screener (Home) */}
           <Route
@@ -138,7 +139,7 @@ function AppContent() {
         </Suspense>
       </main>
 
-      {/* 3. Apple Minimalist Footer with Inline Controls on a Single Line */}
+      {/* 3. Minimalist Footer with Inline Controls on a Single Line */}
       <footer className="display-chrome border-t border-black/[0.04] dark:border-white/[0.08] bg-[#FBFBFD] dark:bg-black py-8 px-6 sm:px-8 text-xs text-[#86868B] font-sans transition-colors duration-300">
         <div className="page-container max-w-[1600px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Left: Copyright */}

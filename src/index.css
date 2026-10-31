@@ -8,29 +8,29 @@
   }
 
   :root {
-    --apple-canvas: #FBFBFD;
-    --apple-surface: #FFFFFF;
-    --apple-text-primary: #1D1D1F;
-    --apple-text-secondary: #86868B;
-    --apple-blue: #0071E3;
-    --apple-green: #34C759;
-    --apple-red: #FF3B30;
-    --apple-orange: #FF9500;
+    --canvas-bg: #FBFBFD;
+    --surface-bg: #FFFFFF;
+    --text-primary: #1D1D1F;
+    --text-secondary: #86868B;
+    --accent-blue: #0071E3;
+    --accent-green: #34C759;
+    --accent-red: #FF3B30;
+    --accent-orange: #FF9500;
   }
 
   .dark {
-    --apple-canvas: #000000;
-    --apple-surface: #1C1C1E;
-    --apple-text-primary: #F5F5F7;
-    --apple-text-secondary: #86868B;
-    --apple-blue: #2997FF;
-    --apple-green: #30D158;
-    --apple-red: #FF453A;
-    --apple-orange: #FF9F0A;
+    --canvas-bg: #000000;
+    --surface-bg: #1C1C1E;
+    --text-primary: #F5F5F7;
+    --text-secondary: #86868B;
+    --accent-blue: #2997FF;
+    --accent-green: #30D158;
+    --accent-red: #FF453A;
+    --accent-orange: #FF9F0A;
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'SF Pro Text', 'Inter', 'Nanum Gothic', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Inter', 'Nanum Gothic', sans-serif;
     letter-spacing: -0.015em;
     background-color: #FBFBFD;
     color: #1D1D1F;
@@ -46,12 +46,12 @@
   }
 }
 
-/* Apple-grade Tabular Numbers */
+/* Tabular Numbers */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Apple Sleek Minimalist Scrollbar */
+/* Minimalist Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -183,8 +183,8 @@
   }
 }
 
-/* Apple Bento Card & Surface Utilities */
-.apple-card {
+/* Bento Card & Surface Utilities */
+.bento-card {
   background-color: #FFFFFF;
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 1.5rem;
@@ -193,36 +193,36 @@
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.dark .apple-card {
+.dark .bento-card {
   background-color: #1C1C1E;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.4);
 }
 
-.apple-card:hover {
+.bento-card:hover {
   border-color: rgba(0, 0, 0, 0.1);
   box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.06), 0 2px 6px 0 rgba(0, 0, 0, 0.02);
 }
 
-.dark .apple-card:hover {
+.dark .bento-card:hover {
   border-color: rgba(255, 255, 255, 0.15);
   box-shadow: 0 8px 28px 0 rgba(0, 0, 0, 0.6);
 }
 
-.apple-pill {
+.bento-pill {
   border-radius: 9999px;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Apple Frosted Glass Header */
-.apple-glass {
+/* Frosted Glass Header */
+.glass-panel {
   background-color: rgba(251, 251, 253, 0.88);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 }
 
-.dark .apple-glass {
+.dark .glass-panel {
   background-color: rgba(0, 0, 0, 0.85);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
