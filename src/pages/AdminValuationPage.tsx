@@ -30,6 +30,7 @@ import {
   formatPerShare,
   parseNumeric,
 } from '../utils/numberFormatters';
+import { getMarketGroup, loadValuationConfig } from '../utils/valuationConfig';
 
 interface FieldMeta {
   ko: string;
@@ -173,15 +174,19 @@ const valuationOptionsStorageKey = (stockId: number) =>
   `admin-valuation-options:${stockId}`;
 
 function defaultValuationOptions(stock: AdminStockItem): ValuationOptions {
+  const regional = loadValuationConfig(getMarketGroup(stock.currency ?? stock.market));
   return {
     publish: true,
     as_of: today(),
-    capex_mode: 'TOTAL',
-    normalization_years: 5,
-    normalization_method: 'CONSERVATIVE',
-    growth_method: 'OEPS_WEIGHTED',
-    growth_rate_cap: stock.growth_rate_cap ?? '0.20',
-    growth_rate_floor: stock.growth_rate_floor ?? '0.05',
+    capex_mode: regional.capexMode ?? 'TOTAL',
+    normalization_years: regional.normalizationYears ?? 5,
+    normalization_method: regional.normalizationMethod ?? 'CONSERVATIVE',
+    growth_method: regional.growthMethod ?? 'OEPS_WEIGHTED',
+    growth_rate_cap: stock.growth_rate_cap ?? regional.growthRateCap ?? '0.20',
+    growth_rate_floor:
+      stock.growth_rate_floor !== undefined
+        ? stock.growth_rate_floor
+        : (regional.growthRateFloor ?? '0.05'),
     statement_scope: stock.currency === 'USD' ? 'CONSOLIDATED_US_GAAP' : 'CFS',
   };
 }
@@ -1246,10 +1251,33 @@ export function AdminValuationPage() {
       {stock && (
         <>
           <section aria-labelledby="valuation-options-heading" className="overflow-hidden rounded-2xl border border-black/10 bg-white dark:border-white/15 dark:bg-[#1C1C1E]">
-            <div className="border-b border-black/5 px-4 py-5 dark:border-white/10 sm:px-6">
-              <p className="mb-1 text-xs font-semibold text-blue-600 dark:text-blue-400">{stock.name} · {stock.ticker}</p>
-              <h2 id="valuation-options-heading" className="text-xl font-bold">계산 조건</h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">기준 자료와 산정 방식을 선택한 뒤 내재가치를 계산하세요.</p>
+            <div className="border-b border-black/5 px-4 py-5 dark:border-white/10 sm:px-6 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="mb-1 text-xs font-semibold text-blue-600 dark:text-blue-400">{stock.name} · {stock.ticker}</p>
+                <h2 id="valuation-options-heading" className="text-xl font-bold">계산 조건</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">기준 자료와 산정 방식을 선택한 뒤 내재가치를 계산하세요.</p>
+              </div>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  const group = getMarketGroup(stock.currency ?? stock.market);
+                  const cfg = loadValuationConfig(group);
+                  changeOption({
+                    capex_mode: cfg.capexMode,
+                    normalization_years: cfg.normalizationYears,
+                    normalization_method: cfg.normalizationMethod,
+                    growth_method: cfg.growthMethod,
+                    growth_rate_cap: cfg.growthRateCap,
+                    growth_rate_floor: cfg.growthRateFloor ?? undefined,
+                  });
+                }}
+                className="rounded-xl border border-black/15 dark:border-white/20 bg-[#F5F5F7] dark:bg-[#2C2C2E] hover:bg-[#EBEBED] dark:hover:bg-[#3A3A3C] px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {getMarketGroup(stock.currency ?? stock.market) === 'kr'
+                  ? '🇰🇷 한국(KR) 기본 설정값 불러오기'
+                  : '🇺🇸 미국(US) 기본 설정값 불러오기'}
+              </button>
             </div>
             <div className="grid grid-cols-1 gap-4 p-4 sm:p-6 lg:grid-cols-2">
               <fieldset className="min-w-0 lg:col-span-2 rounded-xl border border-black/5 bg-[#F5F5F7]/70 p-4 dark:border-white/10 dark:bg-white/[0.03]">

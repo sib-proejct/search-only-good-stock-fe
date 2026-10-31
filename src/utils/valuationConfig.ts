@@ -1,6 +1,23 @@
 import type { ValuationConditions } from '../services/valuationApi';
 
 export const STORAGE_KEY_VALUATION_CONFIG = 'sogs_default_valuation_conditions';
+export const STORAGE_KEY_VALUATION_CONFIG_US = 'sogs_default_valuation_conditions:us';
+export const STORAGE_KEY_VALUATION_CONFIG_KR = 'sogs_default_valuation_conditions:kr';
+
+export type ValuationMarketGroup = 'us' | 'kr';
+
+export interface RegionalValuationConfigs {
+  us: ValuationConditions;
+  kr: ValuationConditions;
+}
+
+export function getMarketGroup(marketOrCurrency?: string | null): ValuationMarketGroup {
+  const normalized = (marketOrCurrency ?? '').trim().toUpperCase();
+  if (normalized === 'KOSPI' || normalized === 'KOSDAQ' || normalized === 'KRW' || normalized === 'KR') {
+    return 'kr';
+  }
+  return 'us';
+}
 
 export const SYSTEM_DEFAULT_VALUATION_CONDITIONS: ValuationConditions = {
   normalizationYears: 5,
@@ -115,16 +132,13 @@ export function validateValuationConditions(conditions: Partial<ValuationConditi
   return { valid: true };
 }
 
-export function loadValuationConfig(): ValuationConditions {
-  const storage = getStorage();
-  if (!storage) return { ...SYSTEM_DEFAULT_VALUATION_CONDITIONS };
+function parseStoredConditions(raw: string | null): ValuationConditions | null {
+  if (!raw) return null;
   try {
-    const raw = storage.getItem(STORAGE_KEY_VALUATION_CONFIG);
-    if (!raw) return { ...SYSTEM_DEFAULT_VALUATION_CONDITIONS };
     const parsed = JSON.parse(raw);
     const validation = validateValuationConditions(parsed);
     if (!validation.valid) {
-      return { ...SYSTEM_DEFAULT_VALUATION_CONDITIONS };
+      return null;
     }
     return {
       normalizationYears: parsed.normalizationYears,
@@ -135,11 +149,38 @@ export function loadValuationConfig(): ValuationConditions {
       growthRateFloor: parsed.growthRateFloor == null ? null : String(parsed.growthRateFloor),
     };
   } catch {
+    return null;
+  }
+}
+
+export function loadValuationConfig(region: ValuationMarketGroup = 'us'): ValuationConditions {
+  const storage = getStorage();
+  if (!storage) return { ...SYSTEM_DEFAULT_VALUATION_CONDITIONS };
+  try {
+    const regionKey = region === 'kr' ? STORAGE_KEY_VALUATION_CONFIG_KR : STORAGE_KEY_VALUATION_CONFIG_US;
+    const regional = parseStoredConditions(storage.getItem(regionKey));
+    if (regional) return regional;
+
+    const legacy = parseStoredConditions(storage.getItem(STORAGE_KEY_VALUATION_CONFIG));
+    if (legacy) return legacy;
+
+    return { ...SYSTEM_DEFAULT_VALUATION_CONDITIONS };
+  } catch {
     return { ...SYSTEM_DEFAULT_VALUATION_CONDITIONS };
   }
 }
 
-export function saveValuationConfig(conditions: ValuationConditions): boolean {
+export function loadRegionalValuationConfigs(): RegionalValuationConfigs {
+  return {
+    us: loadValuationConfig('us'),
+    kr: loadValuationConfig('kr'),
+  };
+}
+
+export function saveValuationConfig(
+  conditions: ValuationConditions,
+  region?: ValuationMarketGroup,
+): boolean {
   const validation = validateValuationConditions(conditions);
   if (!validation.valid) {
     throw new Error(validation.error);
@@ -147,7 +188,14 @@ export function saveValuationConfig(conditions: ValuationConditions): boolean {
   const storage = getStorage();
   if (!storage) return false;
   try {
-    storage.setItem(STORAGE_KEY_VALUATION_CONFIG, JSON.stringify(conditions));
+    const serialized = JSON.stringify(conditions);
+    if (!region || region === 'us') {
+      storage.setItem(STORAGE_KEY_VALUATION_CONFIG_US, serialized);
+      storage.setItem(STORAGE_KEY_VALUATION_CONFIG, serialized);
+    }
+    if (region === 'kr') {
+      storage.setItem(STORAGE_KEY_VALUATION_CONFIG_KR, serialized);
+    }
     if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
       window.dispatchEvent(new Event('sogs_valuation_config_updated'));
     }
@@ -157,11 +205,46 @@ export function saveValuationConfig(conditions: ValuationConditions): boolean {
   }
 }
 
-export function resetValuationConfig(): ValuationConditions {
+export function saveRegionalValuationConfigs(configs: RegionalValuationConfigs): boolean {
+  const usValidation = validateValuationConditions(configs.us);
+  if (!usValidation.valid) {
+    throw new Error(`US: ${usValidation.error}`);
+  }
+  const krValidation = validateValuationConditions(configs.kr);
+  if (!krValidation.valid) {
+    throw new Error(`KR: ${krValidation.error}`);
+  }
+  const storage = getStorage();
+  if (!storage) return false;
+  try {
+    const usSerialized = JSON.stringify(configs.us);
+    const krSerialized = JSON.stringify(configs.kr);
+    storage.setItem(STORAGE_KEY_VALUATION_CONFIG_US, usSerialized);
+    storage.setItem(STORAGE_KEY_VALUATION_CONFIG, usSerialized);
+    storage.setItem(STORAGE_KEY_VALUATION_CONFIG_KR, krSerialized);
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      window.dispatchEvent(new Event('sogs_valuation_config_updated'));
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function resetValuationConfig(region?: ValuationMarketGroup): ValuationConditions {
   const storage = getStorage();
   if (storage) {
     try {
-      storage.removeItem(STORAGE_KEY_VALUATION_CONFIG);
+      if (!region) {
+        storage.removeItem(STORAGE_KEY_VALUATION_CONFIG);
+        storage.removeItem(STORAGE_KEY_VALUATION_CONFIG_US);
+        storage.removeItem(STORAGE_KEY_VALUATION_CONFIG_KR);
+      } else if (region === 'us') {
+        storage.removeItem(STORAGE_KEY_VALUATION_CONFIG_US);
+        storage.removeItem(STORAGE_KEY_VALUATION_CONFIG);
+      } else if (region === 'kr') {
+        storage.removeItem(STORAGE_KEY_VALUATION_CONFIG_KR);
+      }
       if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
         window.dispatchEvent(new Event('sogs_valuation_config_updated'));
       }
@@ -172,11 +255,27 @@ export function resetValuationConfig(): ValuationConditions {
   return { ...SYSTEM_DEFAULT_VALUATION_CONDITIONS };
 }
 
-export function hasCustomValuationConfig(): boolean {
+export function hasCustomValuationConfig(region?: ValuationMarketGroup): boolean {
   const storage = getStorage();
   if (!storage) return false;
   try {
-    return storage.getItem(STORAGE_KEY_VALUATION_CONFIG) !== null;
+    if (region === 'kr') {
+      return (
+        storage.getItem(STORAGE_KEY_VALUATION_CONFIG_KR) !== null ||
+        storage.getItem(STORAGE_KEY_VALUATION_CONFIG) !== null
+      );
+    }
+    if (region === 'us') {
+      return (
+        storage.getItem(STORAGE_KEY_VALUATION_CONFIG_US) !== null ||
+        storage.getItem(STORAGE_KEY_VALUATION_CONFIG) !== null
+      );
+    }
+    return (
+      storage.getItem(STORAGE_KEY_VALUATION_CONFIG) !== null ||
+      storage.getItem(STORAGE_KEY_VALUATION_CONFIG_US) !== null ||
+      storage.getItem(STORAGE_KEY_VALUATION_CONFIG_KR) !== null
+    );
   } catch {
     return false;
   }

@@ -240,21 +240,21 @@
 /* Large-display readability. Laptop and mobile sizes keep their existing styles. */
 @media (min-width: 1920px) {
   .display-shell {
-    --display-width: 1840px;
+    --display-width: 1720px;
     --display-form-width: 520px;
-    --display-body: 16px;
-    --display-label: 17px;
-    --display-small: 14px;
-    --display-title: 30px;
-    --display-total: 40px;
-    --display-date: 26px;
-    --display-control: 44px;
-    --display-icon: 18px;
-    --display-cell-y: 16px;
-    --display-cell-x: 12px;
-    --display-card-padding: 28px;
-    --display-gap: 28px;
-    --display-company-width: 200px;
+    --display-body: 15px;
+    --display-label: 15px;
+    --display-small: 13px;
+    --display-title: 28px;
+    --display-total: 36px;
+    --display-date: 24px;
+    --display-control: 42px;
+    --display-icon: 17px;
+    --display-cell-y: 14px;
+    --display-cell-x: 8px;
+    --display-card-padding: 26px;
+    --display-gap: 24px;
+    --display-company-width: 176px;
   }
 
   .display-shell .page-container {
@@ -440,22 +440,13 @@
     padding-bottom: var(--display-cell-y);
   }
 
-  .screener-page :is(th, td).px-2\.5 {
+  .screener-page :is(th, td):is(.px-2, .px-2\.5) {
     padding-left: var(--display-cell-x);
     padding-right: var(--display-cell-x);
   }
 
-  .screener-page td.pl-2 {
-    padding-left: var(--display-cell-x);
-  }
-
   .screener-page td .truncate {
     max-width: var(--display-company-width);
-  }
-
-  .screener-page td button {
-    width: var(--display-control);
-    height: var(--display-control);
   }
 
   .display-shell header.display-chrome > .page-container {
@@ -471,21 +462,21 @@
 
 @media (min-width: 2560px) {
   .display-shell {
-    --display-width: 2240px;
-    --display-form-width: 600px;
-    --display-body: 18px;
-    --display-label: 19px;
-    --display-small: 15px;
-    --display-title: 36px;
-    --display-total: 44px;
-    --display-date: 30px;
-    --display-control: 48px;
-    --display-icon: 20px;
-    --display-cell-y: 20px;
-    --display-cell-x: 16px;
-    --display-card-padding: 32px;
-    --display-gap: 32px;
-    --display-company-width: 240px;
+    --display-width: 1880px;
+    --display-form-width: 580px;
+    --display-body: 16px;
+    --display-label: 16px;
+    --display-small: 14px;
+    --display-title: 32px;
+    --display-total: 40px;
+    --display-date: 28px;
+    --display-control: 44px;
+    --display-icon: 18px;
+    --display-cell-y: 16px;
+    --display-cell-x: 10px;
+    --display-card-padding: 30px;
+    --display-gap: 28px;
+    --display-company-width: 192px;
   }
 
   .display-shell header.display-chrome > .page-container {

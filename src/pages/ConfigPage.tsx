@@ -17,6 +17,8 @@ import {
   Shield,
   ChevronDown,
   ChevronUp,
+  Copy,
+  Zap,
 } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import { useValuationConfig } from '../hooks/useValuationConfig';
@@ -24,6 +26,8 @@ import {
   VALUATION_PRESETS,
   ValuationPreset,
   validateValuationConditions,
+  type ValuationMarketGroup,
+  type RegionalValuationConfigs,
 } from '../utils/valuationConfig';
 import type { ValuationConditions } from '../services/valuationApi';
 import {
@@ -31,8 +35,10 @@ import {
   BulkRecalculateResponse,
   bulkFillMaintenanceCapex,
   BulkFillMaintenanceCapexResponse,
+  refreshStockPrices,
+  QuickPriceRefreshResponse,
 } from '../services/adminApi';
-import { valuationPercent, valuationPrice } from '../utils/valuationFormatters';
+import { valuationMarketCap, valuationPercent, valuationPrice } from '../utils/valuationFormatters';
 
 const box = 'rounded-3xl border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 sm:p-8 shadow-sm transition-colors duration-300';
 const label = 'text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] flex items-center gap-1.5 mb-1.5';
@@ -41,17 +47,44 @@ const input = 'w-full rounded-2xl border border-black/[0.08] dark:border-white/[
 const buttonPrimary = 'inline-flex items-center justify-center gap-2 rounded-full bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#2997FF] dark:hover:bg-[#0071E3] text-white text-xs font-semibold px-6 py-2.5 shadow-sm transition-all disabled:opacity-40 cursor-pointer';
 const buttonSecondary = 'inline-flex items-center justify-center gap-2 rounded-full bg-[#F5F5F7] dark:bg-[#2C2C2E] hover:bg-[#EBEBED] dark:hover:bg-[#3A3A3C] text-[#1D1D1F] dark:text-[#F5F5F7] text-xs font-semibold px-5 py-2.5 border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer';
 
+function formatConditionSummary(c: ValuationConditions, ko: boolean): string {
+  const cap = `${Math.round(Number(c.growthRateCap) * 1000) / 10}%`;
+  const floor =
+    c.growthRateFloor == null || c.growthRateFloor === ''
+      ? ko
+        ? '없음'
+        : 'None'
+      : `${Math.round(Number(c.growthRateFloor) * 1000) / 10}%`;
+  return `${c.normalizationYears}${ko ? '개년' : 'Y'} · ${c.normalizationMethod} · ${c.capexMode} · ${c.growthMethod} · ${cap}/${floor}`;
+}
+
 export const ConfigPage: React.FC = () => {
   const { language } = useAppConfig();
   const ko = language === 'ko';
-  const { config, isCustom, saveConfig, resetConfig } = useValuationConfig();
+  const { configs, isCustom, isCustomUs, isCustomKr, saveRegionalConfigs, resetConfig } =
+    useValuationConfig();
 
-  // Local draft state for editing
-  const [form, setForm] = useState<ValuationConditions>({ ...config });
+  // Active region tab ('us' | 'kr') and regional draft forms
+  const [activeRegion, setActiveRegion] = useState<ValuationMarketGroup>('us');
+  const [forms, setForms] = useState<RegionalValuationConfigs>(() => ({
+    us: { ...configs.us },
+    kr: { ...configs.kr },
+  }));
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [activePreset, setActivePreset] = useState<string | null>(null);
+  const [activePresets, setActivePresets] = useState<{ us: string | null; kr: string | null }>({
+    us: null,
+    kr: null,
+  });
+
+  // Quick price refresh state
+  const [priceMarketGroup, setPriceMarketGroup] = useState<'ALL' | 'US' | 'KR'>('ALL');
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [priceError, setPriceError] = useState<string | null>(null);
+  const [priceResult, setPriceResult] = useState<QuickPriceRefreshResponse | null>(null);
+  const [showPriceTableDetails, setShowPriceTableDetails] = useState(true);
 
   // Bulk recalculation state
+  const [bulkMarketGroup, setBulkMarketGroup] = useState<'ALL' | 'US' | 'KR'>('ALL');
   const [bulkLoading, setBulkLoading] = useState(false);
   const [bulkError, setBulkError] = useState<string | null>(null);
   const [bulkResult, setBulkResult] = useState<BulkRecalculateResponse | null>(null);
@@ -65,50 +98,125 @@ export const ConfigPage: React.FC = () => {
   const [showFillConfirmModal, setShowFillConfirmModal] = useState(false);
   const [overwriteExisting, setOverwriteExisting] = useState(false);
 
-  const validation = validateValuationConditions(form);
-  const isFormDirty = JSON.stringify(form) !== JSON.stringify(config);
+  const form = forms[activeRegion];
+  const activePreset = activePresets[activeRegion];
+  const usValidation = validateValuationConditions(forms.us);
+  const krValidation = validateValuationConditions(forms.kr);
+  const bothValid = usValidation.valid && krValidation.valid;
+  const isFormDirty =
+    JSON.stringify(forms.us) !== JSON.stringify(configs.us) ||
+    JSON.stringify(forms.kr) !== JSON.stringify(configs.kr);
 
   const handleApplyPreset = (preset: ValuationPreset) => {
-    setForm({ ...preset.conditions });
-    setActivePreset(preset.id);
+    setForms((prev) => ({
+      ...prev,
+      [activeRegion]: { ...preset.conditions },
+    }));
+    setActivePresets((prev) => ({
+      ...prev,
+      [activeRegion]: preset.id,
+    }));
+    setSaveSuccess(false);
+  };
+
+  const handleCopyFromOtherRegion = () => {
+    const sourceRegion: ValuationMarketGroup = activeRegion === 'us' ? 'kr' : 'us';
+    setForms((prev) => ({
+      ...prev,
+      [activeRegion]: { ...prev[sourceRegion] },
+    }));
+    setActivePresets((prev) => ({
+      ...prev,
+      [activeRegion]: prev[sourceRegion],
+    }));
     setSaveSuccess(false);
   };
 
   const handleFieldChange = (patch: Partial<ValuationConditions>) => {
-    setForm((prev) => ({ ...prev, ...patch }));
-    setActivePreset(null);
+    setForms((prev) => ({
+      ...prev,
+      [activeRegion]: { ...prev[activeRegion], ...patch },
+    }));
+    setActivePresets((prev) => ({
+      ...prev,
+      [activeRegion]: null,
+    }));
     setSaveSuccess(false);
   };
 
   const handleSave = () => {
-    if (!validation.valid) return;
-    saveConfig(form);
+    if (!bothValid) return;
+    saveRegionalConfigs(forms);
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3500);
   };
 
-  const handleResetToSystemDefault = () => {
-    const def = resetConfig();
-    setForm({ ...def });
-    setActivePreset('buffett_conservative');
+  const handleResetCurrentRegion = () => {
+    const def = resetConfig(activeRegion);
+    setForms((prev) => ({
+      ...prev,
+      [activeRegion]: { ...def },
+    }));
+    setActivePresets((prev) => ({
+      ...prev,
+      [activeRegion]: 'buffett_conservative',
+    }));
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3500);
+  };
+
+  const handleResetAllRegions = () => {
+    const def = resetConfig();
+    setForms({
+      us: { ...def },
+      kr: { ...def },
+    });
+    setActivePresets({
+      us: 'buffett_conservative',
+      kr: 'buffett_conservative',
+    });
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3500);
+  };
+
+  const handleRunQuickPriceRefresh = async () => {
+    if (!bothValid) return;
+    setPriceLoading(true);
+    setPriceError(null);
+    setPriceResult(null);
+
+    try {
+      saveRegionalConfigs(forms);
+      const res = await refreshStockPrices({
+        marketGroup: priceMarketGroup,
+        usConditions: forms.us,
+        krConditions: forms.kr,
+      });
+      setPriceResult(res);
+    } catch (err) {
+      setPriceError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPriceLoading(false);
+    }
   };
 
   const handleRunBulkRecalculate = async () => {
     setShowConfirmModal(false);
-    if (!validation.valid) return;
+    if (!bothValid) return;
     setBulkLoading(true);
     setBulkError(null);
     setBulkResult(null);
 
     try {
-      // First save to local storage as default
-      saveConfig(form);
+      // Save both US and KR configurations to local storage
+      saveRegionalConfigs(forms);
 
-      // Call bulk recalculation API on the backend
+      // Call bulk recalculation API with separate US and KR conditions
       const res = await bulkRecalculateValuation({
-        conditions: form,
+        conditions: forms.us,
+        usConditions: forms.us,
+        krConditions: forms.kr,
+        marketGroup: bulkMarketGroup,
         apply: true,
       });
       setBulkResult(res);
@@ -159,7 +267,7 @@ export const ConfigPage: React.FC = () => {
                 <Sliders className="w-5 h-5" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                {ko ? '내재가치 계산 조건 설정' : 'Valuation Defaults Configuration'}
+                {ko ? '내재가치 계산 조건 설정 (미국 · 한국 분리)' : 'Valuation Defaults (US & Korea)'}
               </h1>
               <span
                 className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${
@@ -179,27 +287,27 @@ export const ConfigPage: React.FC = () => {
             </div>
             <p className="text-xs sm:text-sm text-[#86868B] max-w-2xl leading-relaxed">
               {ko
-                ? '브라우저에서 종목 내재가치(DCF) 계산 시 사용할 기본 파라미터(성장률 상/하한, 산출 방식, 정상화 연도 등)를 저장합니다. 저장된 값은 개별 종목 계산기 진입 시 기본값으로 적용되며, 아래 관리자 기능을 통해 전 종목에 일괄 적용할 수 있습니다.'
-                : 'Configure default parameters (growth cap/floor, estimation method, normalization years) used for DCF valuations. Apply them to individual stock views or bulk-recalculate all stocks in the database.'}
+                ? '미국 시장(NASDAQ·NYSE)과 한국 시장(KOSPI·KOSDAQ)의 내재가치(DCF) 계산 조건을 각각 독립적으로 설정할 수 있습니다. 저장된 조건은 각 국가 종목 페이지 진입 시 자동 적용되며, 관리자 일괄 재계산 및 현재가 업데이트 시에도 국가별로 분리 적용됩니다.'
+                : 'Configure independent DCF valuation defaults for US (NASDAQ/NYSE) and Korean (KOSPI/KOSDAQ) markets. Applied automatically per stock market and during bulk recalculation.'}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <button
-              onClick={handleResetToSystemDefault}
+              onClick={handleResetAllRegions}
               className={buttonSecondary}
-              title={ko ? '엔진 원래 표준값으로 복원' : 'Reset to engine default values'}
+              title={ko ? '미국·한국 모두 엔진 표준값으로 복원' : 'Reset both US and KR to system defaults'}
             >
               <RotateCcw className="w-3.5 h-3.5 text-[#86868B]" />
-              <span>{ko ? '시스템 기본값 초기화' : 'Reset to Defaults'}</span>
+              <span>{ko ? '전체 기본값 초기화' : 'Reset All Defaults'}</span>
             </button>
             <button
               onClick={handleSave}
-              disabled={!validation.valid || (!isFormDirty && !isCustom && !activePreset)}
+              disabled={!bothValid || (!isFormDirty && !isCustom && !activePresets.us && !activePresets.kr)}
               className={buttonPrimary}
             >
               <Save className="w-3.5 h-3.5" />
-              <span>{ko ? '설정 저장' : 'Save Configuration'}</span>
+              <span>{ko ? '미국·한국 설정 저장' : 'Save US & KR Config'}</span>
             </button>
           </div>
         </div>
@@ -210,28 +318,147 @@ export const ConfigPage: React.FC = () => {
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>
               {ko
-                ? '계산 조건 기본값이 브라우저에 성공적으로 저장되었습니다.'
-                : 'Valuation default conditions saved to this browser successfully.'}
+                ? '미국(US) 및 한국(KR) 계산 조건 기본값이 브라우저에 저장되었습니다.'
+                : 'US and Korea valuation default conditions saved to this browser.'}
             </span>
           </div>
         )}
 
         {/* Validation error alert */}
-        {!validation.valid && (
+        {(!usValidation.valid || !krValidation.valid) && (
           <div className="mt-5 p-3.5 rounded-2xl bg-[#FF3B30]/10 border border-[#FF3B30]/20 flex items-center gap-2.5 text-xs font-semibold text-[#FF3B30] animate-fade-in">
             <AlertTriangle className="w-4 h-4 shrink-0" />
-            <span>{validation.error}</span>
+            <span>
+              {!usValidation.valid
+                ? `[US] ${usValidation.error}`
+                : `[KR] ${krValidation.error}`}
+            </span>
           </div>
         )}
       </header>
 
+      {/* Market Selector Tabs (US vs KR) & Comparison Bar */}
+      <section className="space-y-4">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <button
+            type="button"
+            onClick={() => setActiveRegion('us')}
+            className={`text-left rounded-3xl p-5 border transition-all cursor-pointer ${
+              activeRegion === 'us'
+                ? 'border-[#0071E3] dark:border-[#2997FF] bg-[#0071E3]/[0.06] dark:bg-[#2997FF]/[0.12] shadow-sm ring-1 ring-[#0071E3]'
+                : 'border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] hover:border-black/[0.14] dark:hover:border-white/[0.16]'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🇺🇸</span>
+                <span className="text-sm font-bold text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  {ko ? '미국 주식 설정 (US · NASDAQ / NYSE)' : 'US Market (NASDAQ / NYSE)'}
+                </span>
+              </div>
+              <span
+                className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                  activeRegion === 'us'
+                    ? 'bg-[#0071E3] text-white'
+                    : isCustomUs
+                    ? 'bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF]'
+                    : 'bg-[#86868B]/10 text-[#86868B]'
+                }`}
+              >
+                {activeRegion === 'us'
+                  ? ko
+                    ? '편집 중'
+                    : 'Editing'
+                  : isCustomUs
+                  ? ko
+                    ? '커스텀'
+                    : 'Custom'
+                  : ko
+                  ? '표준'
+                  : 'Default'}
+              </span>
+            </div>
+            <p className="text-[11px] font-mono text-[#86868B] truncate">
+              {formatConditionSummary(forms.us, ko)}
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveRegion('kr')}
+            className={`text-left rounded-3xl p-5 border transition-all cursor-pointer ${
+              activeRegion === 'kr'
+                ? 'border-[#0071E3] dark:border-[#2997FF] bg-[#0071E3]/[0.06] dark:bg-[#2997FF]/[0.12] shadow-sm ring-1 ring-[#0071E3]'
+                : 'border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] hover:border-black/[0.14] dark:hover:border-white/[0.16]'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🇰🇷</span>
+                <span className="text-sm font-bold text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  {ko ? '한국 주식 설정 (KR · KOSPI / KOSDAQ)' : 'Korea Market (KOSPI / KOSDAQ)'}
+                </span>
+              </div>
+              <span
+                className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                  activeRegion === 'kr'
+                    ? 'bg-[#0071E3] text-white'
+                    : isCustomKr
+                    ? 'bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF]'
+                    : 'bg-[#86868B]/10 text-[#86868B]'
+                }`}
+              >
+                {activeRegion === 'kr'
+                  ? ko
+                    ? '편집 중'
+                    : 'Editing'
+                  : isCustomKr
+                  ? ko
+                    ? '커스텀'
+                    : 'Custom'
+                  : ko
+                  ? '표준'
+                  : 'Default'}
+              </span>
+            </div>
+            <p className="text-[11px] font-mono text-[#86868B] truncate">
+              {formatConditionSummary(forms.kr, ko)}
+            </p>
+          </button>
+        </div>
+      </section>
+
       {/* Preset Fast Selection Cards */}
       <section className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-[#0071E3] dark:text-[#2997FF]" />
-          <h2 className="text-sm font-bold tracking-tight">
-            {ko ? '추천 투자 스타일 프리셋' : 'Recommended Strategy Presets'}
-          </h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#0071E3] dark:text-[#2997FF]" />
+            <h2 className="text-sm font-bold tracking-tight">
+              {activeRegion === 'us'
+                ? ko
+                  ? '🇺🇸 미국 주식 투자 스타일 프리셋'
+                  : '🇺🇸 US Strategy Presets'
+                : ko
+                ? '🇰🇷 한국 주식 투자 스타일 프리셋'
+                : '🇰🇷 Korea Strategy Presets'}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={handleCopyFromOtherRegion}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] hover:underline cursor-pointer"
+          >
+            <Copy className="w-3.5 h-3.5" />
+            <span>
+              {activeRegion === 'us'
+                ? ko
+                  ? '한국(KR) 설정값 그대로 가져오기'
+                  : 'Copy from Korea (KR) settings'
+                : ko
+                ? '미국(US) 설정값 그대로 가져오기'
+                : 'Copy from US settings'}
+            </span>
+          </button>
         </div>
         <div className="grid sm:grid-cols-3 gap-4">
           {VALUATION_PRESETS.map((preset) => {
@@ -268,11 +495,35 @@ export const ConfigPage: React.FC = () => {
 
       {/* Parameter Edit Form Card */}
       <section className={box}>
-        <div className="flex items-center gap-2 mb-6">
-          <Layers className="w-4 h-4 text-[#0071E3] dark:text-[#2997FF]" />
-          <h2 className="text-base font-bold tracking-tight">
-            {ko ? '상세 계산 파라미터' : 'Detailed Calculation Parameters'}
-          </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-[#0071E3] dark:text-[#2997FF]" />
+            <h2 className="text-base font-bold tracking-tight">
+              {activeRegion === 'us'
+                ? ko
+                  ? '🇺🇸 미국 주식 (NASDAQ · NYSE) 상세 계산 파라미터'
+                  : '🇺🇸 US Market Detailed Calculation Parameters'
+                : ko
+                ? '🇰🇷 한국 주식 (KOSPI · KOSDAQ) 상세 계산 파라미터'
+                : '🇰🇷 Korea Market Detailed Calculation Parameters'}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={handleResetCurrentRegion}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>
+              {activeRegion === 'us'
+                ? ko
+                  ? '미국 설정만 기본값 복원'
+                  : 'Reset US Only'
+                : ko
+                ? '한국 설정만 기본값 복원'
+                : 'Reset KR Only'}
+            </span>
+          </button>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 text-xs">
@@ -462,27 +713,242 @@ export const ConfigPage: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-4 mt-8 pt-6 border-t border-black/[0.04] dark:border-white/[0.06]">
           <p className="text-xs text-[#86868B]">
             {ko
-              ? '저장 시 브라우저의 localStorage에 보관되며, 개별 종목 내재가치 페이지 진입 시 적용됩니다.'
-              : 'Saved locally in this browser and applied when inspecting individual stock valuations.'}
+              ? '저장 시 미국(US)·한국(KR) 설정이 각각 브라우저에 보관되며, 각 시장의 개별 종목 내재가치 페이지에서 기본값으로 사용됩니다.'
+              : 'Saved per market (US & KR) in this browser and applied when inspecting individual stock valuations.'}
           </p>
           <div className="flex items-center gap-3">
             <button
-              onClick={handleResetToSystemDefault}
+              onClick={handleResetAllRegions}
               className={buttonSecondary}
             >
               <RotateCcw className="w-3.5 h-3.5 text-[#86868B]" />
-              <span>{ko ? '초기화' : 'Reset'}</span>
+              <span>{ko ? '전체 초기화' : 'Reset All'}</span>
             </button>
             <button
               onClick={handleSave}
-              disabled={!validation.valid}
+              disabled={!bothValid}
               className={buttonPrimary}
             >
               <Save className="w-3.5 h-3.5" />
-              <span>{ko ? '설정 저장하기' : 'Save Settings'}</span>
+              <span>{ko ? '미국·한국 설정 저장하기' : 'Save US & KR Settings'}</span>
             </button>
           </div>
         </div>
+      </section>
+
+      {/* Admin Quick Current Price Update Section */}
+      <section className="rounded-3xl border border-amber-500/25 dark:border-amber-400/25 bg-gradient-to-br from-amber-500/[0.03] to-transparent dark:from-amber-400/[0.04] p-6 sm:p-8 shadow-sm transition-colors duration-300 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-white bg-amber-500 dark:bg-amber-500 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Zap className="w-3 h-3" />
+                QUICK PRICE
+              </span>
+              <h2 className="text-base sm:text-lg font-bold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7]">
+                {ko ? '전 종목 현재가만 빠르게 업데이트' : 'Quick Current Price Refresh'}
+              </h2>
+            </div>
+            <p className="text-xs text-[#86868B] max-w-2xl leading-relaxed">
+              {ko
+                ? '무거운 7년치 재무/공시 수집을 생략하고 토스증권에서 최신 주식 현재가만 빠르게 가져와 시가총액·안전마진·스크리너 노출가를 즉시 갱신합니다.'
+                : 'Fetches only the latest stock prices without full 7-year financial/filing collection and immediately updates market cap and margin of safety.'}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <select
+              value={priceMarketGroup}
+              disabled={priceLoading}
+              onChange={(e) => setPriceMarketGroup(e.target.value as 'ALL' | 'US' | 'KR')}
+              className="rounded-full border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#2C2C2E] text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] px-4 py-2.5 focus:outline-none focus:border-amber-500"
+            >
+              <option value="ALL">{ko ? '전체 종목 (미국 + 한국)' : 'All Markets (US + KR)'}</option>
+              <option value="US">{ko ? '🇺🇸 미국 종목만 (NASDAQ·NYSE)' : '🇺🇸 US Stocks Only'}</option>
+              <option value="KR">{ko ? '🇰🇷 한국 종목만 (KOSPI·KOSDAQ)' : '🇰🇷 Korea Stocks Only'}</option>
+            </select>
+
+            <button
+              type="button"
+              disabled={priceLoading || !bothValid}
+              onClick={handleRunQuickPriceRefresh}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all disabled:opacity-40 cursor-pointer shrink-0"
+            >
+              {priceLoading ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>{ko ? '현재가 빠르게 갱신 중…' : 'Refreshing prices…'}</span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 fill-current" />
+                  <span>{ko ? '현재가만 빠르게 업데이트' : 'Quick Refresh Prices'}</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {priceError && (
+          <div className="p-4 rounded-2xl bg-[#FF3B30]/10 border border-[#FF3B30]/20 flex items-start gap-3 text-xs text-[#FF3B30] animate-fade-in">
+            <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold">{ko ? '현재가 업데이트 실패' : 'Quick Price Refresh Failed'}</p>
+              <p className="text-[11px] text-[#86868B] dark:text-[#A1A1A6]">{priceError}</p>
+            </div>
+          </div>
+        )}
+
+        {priceResult && (
+          <div className="space-y-5 animate-fade-in pt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div className="bg-white dark:bg-[#1C1C1E] p-4 rounded-2xl border border-black/[0.06] dark:border-white/[0.08]">
+                <span className="text-[11px] text-[#86868B] block font-medium">
+                  {ko ? '총 대상 종목' : 'Total Stocks'}
+                </span>
+                <span className="text-xl font-bold font-mono tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7] mt-1 block">
+                  {priceResult.totalStocks}
+                </span>
+              </div>
+              <div className="bg-white dark:bg-[#1C1C1E] p-4 rounded-2xl border border-black/[0.06] dark:border-white/[0.08]">
+                <span className="text-[11px] text-[#86868B] block font-medium">
+                  {ko ? '현재가 조회 성공' : 'Price Fetched'}
+                </span>
+                <span className="text-xl font-bold font-mono tracking-tight text-amber-500 mt-1 block">
+                  {priceResult.priceUpdatedCount}
+                </span>
+              </div>
+              <div className="bg-white dark:bg-[#1C1C1E] p-4 rounded-2xl border border-black/[0.06] dark:border-white/[0.08]">
+                <span className="text-[11px] text-[#86868B] block font-medium">
+                  {ko ? '스크리너 반영 완료' : 'Valuation Updated'}
+                </span>
+                <span className="text-xl font-bold font-mono tracking-tight text-[#34C759] mt-1 block">
+                  {priceResult.valuationUpdatedCount}
+                </span>
+              </div>
+              <div className="bg-white dark:bg-[#1C1C1E] p-4 rounded-2xl border border-black/[0.06] dark:border-white/[0.08]">
+                <span className="text-[11px] text-[#86868B] block font-medium">
+                  {ko ? '건너뜀' : 'Skipped'}
+                </span>
+                <span className="text-xl font-bold font-mono tracking-tight text-[#86868B] mt-1 block">
+                  {priceResult.skippedCount}
+                </span>
+              </div>
+              <div className="bg-white dark:bg-[#1C1C1E] p-4 rounded-2xl border border-black/[0.06] dark:border-white/[0.08]">
+                <span className="text-[11px] text-[#86868B] block font-medium">
+                  {ko ? '오류 실패' : 'Failed'}
+                </span>
+                <span className={`text-xl font-bold font-mono tracking-tight mt-1 block ${priceResult.failedCount > 0 ? 'text-[#FF3B30]' : 'text-[#86868B]'}`}>
+                  {priceResult.failedCount}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setShowPriceTableDetails((v) => !v)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+              >
+                {showPriceTableDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                <span>
+                  {showPriceTableDetails
+                    ? ko
+                      ? '종목별 현재가 갱신 내역 접기'
+                      : 'Hide Price Refresh Details'
+                    : ko
+                    ? `종목별 현재가 갱신 내역 펼치기 (${priceResult.items.length}개)`
+                    : `Show Price Refresh Details (${priceResult.items.length})`}
+                </span>
+              </button>
+
+              <Link
+                to="/"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[#34C759] hover:underline"
+              >
+                <span>{ko ? '갱신된 스크리너 확인하러 가기' : 'View Updated Screener'}</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {showPriceTableDetails && priceResult.items.length > 0 && (
+              <div className="overflow-x-auto rounded-2xl border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E]">
+                <table className="w-full text-xs whitespace-nowrap">
+                  <thead className="text-[11px] font-medium text-[#86868B] border-b border-black/[0.05] dark:border-white/[0.06] bg-[#F5F5F7]/50 dark:bg-[#2C2C2E]/40">
+                    <tr>
+                      <th className="py-2.5 px-4 text-left font-medium">{ko ? '티커' : 'Ticker'}</th>
+                      <th className="py-2.5 px-4 text-left font-medium">{ko ? '종목명' : 'Company'}</th>
+                      <th className="py-2.5 px-4 text-left font-medium">{ko ? '시장' : 'Market'}</th>
+                      <th className="py-2.5 px-4 text-left font-medium">{ko ? '이전 현재가 → 최신 현재가' : 'Prev → Latest Price'}</th>
+                      <th className="py-2.5 px-4 text-left font-medium">{ko ? '기준일' : 'As Of'}</th>
+                      <th className="py-2.5 px-4 text-left font-medium">{ko ? '시가총액' : 'Market Cap'}</th>
+                      <th className="py-2.5 px-4 text-left font-medium">{ko ? '내재가치' : 'Intrinsic Value'}</th>
+                      <th className="py-2.5 px-4 text-left font-medium">{ko ? '안전마진' : 'Margin'}</th>
+                      <th className="py-2.5 px-4 text-left font-medium">{ko ? '상태' : 'Status'}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.06] font-mono tabular-nums">
+                    {priceResult.items.map((item) => {
+                      const prev = item.previousPrice != null ? Number(item.previousPrice) : null;
+                      const curr = item.currentPrice != null ? Number(item.currentPrice) : null;
+                      return (
+                        <tr key={item.ticker} className="hover:bg-[#F5F5F7]/80 dark:hover:bg-[#2C2C2E]/60 transition-colors">
+                          <td className="py-2 px-4 font-bold">
+                            <Link
+                              to={`/stock/${encodeURIComponent(item.ticker)}/valuation`}
+                              className="text-[#0071E3] dark:text-[#2997FF] hover:underline"
+                              target="_blank"
+                            >
+                              {item.ticker}
+                            </Link>
+                          </td>
+                          <td className="py-2 px-4 font-sans font-medium text-[#1D1D1F] dark:text-[#F5F5F7] max-w-[180px] truncate">
+                            {item.name}
+                          </td>
+                          <td className="py-2 px-4 text-[#86868B]">{item.market}</td>
+                          <td className="py-2 px-4">
+                            <span className="text-[#86868B]">
+                              {valuationPrice(prev, item.currency, ko)}
+                            </span>
+                            <span className="mx-1.5 text-[#86868B]">→</span>
+                            <span className="font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
+                              {valuationPrice(curr, item.currency, ko)}
+                            </span>
+                          </td>
+                          <td className="py-2 px-4 text-[#86868B]">{item.priceAsOf ?? '—'}</td>
+                          <td className="py-2 px-4 text-[#86868B]">
+                            {valuationMarketCap(item.marketCap != null ? Number(item.marketCap) : null, item.currency, ko)}
+                          </td>
+                          <td className="py-2 px-4 text-[#0071E3] dark:text-[#2997FF] font-semibold">
+                            {valuationPrice(item.intrinsicValuePerShare != null ? Number(item.intrinsicValuePerShare) : null, item.currency, ko)}
+                          </td>
+                          <td className="py-2 px-4 font-semibold">
+                            {valuationPercent(item.conservativeMarginOfSafety != null ? Number(item.conservativeMarginOfSafety) : null)}
+                          </td>
+                          <td className="py-2 px-4">
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                item.status === 'PASS_WITH_MARGIN'
+                                  ? 'bg-[#34C759]/10 text-[#34C759]'
+                                  : item.status === 'WATCH'
+                                  ? 'bg-[#FF9500]/10 text-[#FF9500]'
+                                  : item.status === 'ERROR'
+                                  ? 'bg-[#FF3B30]/10 text-[#FF3B30]'
+                                  : 'bg-[#86868B]/10 text-[#86868B]'
+                              }`}
+                            >
+                              {item.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Admin Bulk Recalculation Section */}
@@ -495,34 +961,47 @@ export const ConfigPage: React.FC = () => {
                 ADMIN
               </span>
               <h2 className="text-base sm:text-lg font-bold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7]">
-                {ko ? '관리자 전 종목 일괄 재계산' : 'Admin Bulk Recalculation for All Stocks'}
+                {ko ? '관리자 전 종목 일괄 재계산 (미국 · 한국 조건 분리 적용)' : 'Admin Bulk Recalculation (US & KR Conditions)'}
               </h2>
             </div>
             <p className="text-xs text-[#86868B] max-w-2xl leading-relaxed">
               {ko
-                ? '현재 화면에 설정된 조건으로 1, 2, 3, 4, 5개년 전 기간 내재가치를 일괄 재산출합니다. 재무 데이터 부족 등으로 계산이 불가능한 종목은 오류 없이 안전하게 패스(N/A 유지)되며, 공식 스크리너 데이터가 즉시 갱신됩니다.'
-                : 'Recalculates intrinsic valuations across all 1 to 5 fiscal year horizons for managed stocks. Unsupported stocks are safely skipped (kept as N/A) without halting the run.'}
+                ? '미국 종목에는 미국(US) 설정을, 한국 종목에는 한국(KR) 설정을 각각 적용하여 1~5개년 전 기간 내재가치를 일괄 재산출합니다. 특정 국가만 선택하여 재계산할 수도 있습니다.'
+                : 'Applies US settings to US stocks and Korea settings to Korean stocks across 1-5 fiscal year horizons. You can also target a single market group.'}
             </p>
           </div>
 
-          <button
-            type="button"
-            disabled={bulkLoading || !validation.valid}
-            onClick={() => setShowConfirmModal(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#2997FF] dark:hover:bg-[#0071E3] text-white text-xs font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all disabled:opacity-40 cursor-pointer shrink-0"
-          >
-            {bulkLoading ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>{ko ? '전 종목 일괄 재계산 중…' : 'Recalculating all stocks…'}</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4 fill-current" />
-                <span>{ko ? '전 종목 1~5개년 일괄 재계산 실행' : 'Recalculate All Stocks (1-5Y)'}</span>
-              </>
-            )}
-          </button>
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <select
+              value={bulkMarketGroup}
+              disabled={bulkLoading}
+              onChange={(e) => setBulkMarketGroup(e.target.value as 'ALL' | 'US' | 'KR')}
+              className="rounded-full border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#2C2C2E] text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] px-4 py-2.5 focus:outline-none focus:border-[#0071E3]"
+            >
+              <option value="ALL">{ko ? '전체 (미국·한국 각각 적용)' : 'All (Apply US & KR)'}</option>
+              <option value="US">{ko ? '🇺🇸 미국 종목만 재계산' : '🇺🇸 US Stocks Only'}</option>
+              <option value="KR">{ko ? '🇰🇷 한국 종목만 재계산' : '🇰🇷 Korea Stocks Only'}</option>
+            </select>
+
+            <button
+              type="button"
+              disabled={bulkLoading || !bothValid}
+              onClick={() => setShowConfirmModal(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#2997FF] dark:hover:bg-[#0071E3] text-white text-xs font-semibold px-6 py-3 shadow-md hover:shadow-lg transition-all disabled:opacity-40 cursor-pointer shrink-0"
+            >
+              {bulkLoading ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>{ko ? '일괄 재계산 중…' : 'Recalculating stocks…'}</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>{ko ? '1~5개년 일괄 재계산 실행' : 'Recalculate (1-5Y)'}</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Bulk Error Alert */}
@@ -849,20 +1328,31 @@ export const ConfigPage: React.FC = () => {
             </div>
             <div className="text-center space-y-2">
               <h3 className="text-lg font-bold tracking-tight text-[#1D1D1F] dark:text-[#F5F5F7]">
-                {ko ? '전 종목 일괄 재계산을 실행하시겠습니까?' : 'Recalculate All Stocks?'}
+                {ko ? '일괄 재계산을 실행하시겠습니까?' : 'Run Bulk Recalculation?'}
               </h3>
               <p className="text-xs text-[#86868B] leading-relaxed">
                 {ko
-                  ? '현재 설정된 조건으로 백엔드 DB 관리 대상 전 종목의 1, 2, 3, 4, 5개년 내재가치가 일괄 재계산됩니다. 재무 데이터 부족 등으로 계산 불가한 종목은 오류 없이 자동으로 패스(N/A 유지)되며, 공식 스크리너가 즉시 갱신됩니다.'
-                  : 'Recalculates 1 to 5 fiscal year intrinsic valuations for all managed stocks in the database. Unsupported stocks are safely skipped (kept as N/A).'}
+                  ? '설정된 미국(US) 및 한국(KR) 조건으로 대상 종목의 1~5개년 내재가치가 일괄 재계산되며 공식 스크리너가 즉시 갱신됩니다.'
+                  : 'Recalculates 1 to 5 fiscal year intrinsic valuations using the configured US and Korea conditions.'}
               </p>
             </div>
-            <div className="p-3.5 rounded-2xl bg-[#F5F5F7] dark:bg-[#2C2C2E] text-xs font-mono text-[#86868B] space-y-1">
-              <div>• {ko ? '정상화 기간' : 'Period'}: {form.normalizationYears}{ko ? '개년' : ' years'}</div>
-              <div>• {ko ? '정상화 방식' : 'Method'}: {form.normalizationMethod}</div>
-              <div>• CAPEX: {form.capexMode}</div>
-              <div>• {ko ? '성장률 방식' : 'Growth'}: {form.growthMethod}</div>
-              <div>• {ko ? '성장률 상/하한' : 'Cap/Floor'}: {Number(form.growthRateCap) * 100}% / {form.growthRateFloor == null ? (ko ? '없음' : 'None') : `${Number(form.growthRateFloor) * 100}%`}</div>
+            <div className="p-3.5 rounded-2xl bg-[#F5F5F7] dark:bg-[#2C2C2E] text-xs font-mono text-[#86868B] space-y-2">
+              {(bulkMarketGroup === 'ALL' || bulkMarketGroup === 'US') && (
+                <div>
+                  <div className="font-bold text-[#1D1D1F] dark:text-[#F5F5F7] mb-0.5">
+                    🇺🇸 {ko ? '미국 종목 적용 조건' : 'US Stocks'}
+                  </div>
+                  <div>{formatConditionSummary(forms.us, ko)}</div>
+                </div>
+              )}
+              {(bulkMarketGroup === 'ALL' || bulkMarketGroup === 'KR') && (
+                <div>
+                  <div className="font-bold text-[#1D1D1F] dark:text-[#F5F5F7] mb-0.5">
+                    🇰🇷 {ko ? '한국 종목 적용 조건' : 'Korea Stocks'}
+                  </div>
+                  <div>{formatConditionSummary(forms.kr, ko)}</div>
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-end gap-3 pt-2">
               <button

@@ -21,14 +21,27 @@ import {
   Check,
   ChevronRight,
   Star,
+  Zap,
+  RefreshCw,
 } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
 import { StockSort } from '../types/api';
 import { getCoreGradeInfo } from '../utils/ruleFormatters';
 import { StockDetailDrawer } from '../components/screener/StockDetailDrawer';
+import { StockDetailPage } from './StockDetailPage';
 import { StockValuationPage } from './StockValuationPage';
 import { stockApi } from '../services/api';
+import { refreshStockPrices } from '../services/adminApi';
+import { loadRegionalValuationConfigs } from '../utils/valuationConfig';
 import { getLowestIntrinsicValue, periodNote, priceToValueColor, valuationMarketCap, valuationPrice, valuationPriceToValueRatio } from '../utils/valuationFormatters';
+
+const confidenceColor = (confidence?: string | null) =>
+  confidence === 'HIGH' ? 'text-[#34C759]'
+    : confidence === 'MEDIUM' ? 'text-[#FF9500]'
+    : 'text-[#6E6E73] dark:text-[#A1A1A6]';
+
+// 한국 주식은 티커(숫자 코드)보다 종목명이 식별하기 쉽다.
+const isKoreanMarket = (market: string) => market === 'KOSPI' || market === 'KOSDAQ';
 
 interface ScreenerPageProps {
   onSelectStock?: (stockId: string) => void;
@@ -66,6 +79,42 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
 
   const ko = language === 'ko';
   const [counts, setCounts] = useState<{ total: number; passed: number; margin: number } | null>(null);
+  const [quickPriceBusy, setQuickPriceBusy] = useState(false);
+  const [quickPriceMessage, setQuickPriceMessage] = useState<string | null>(null);
+
+  const handleQuickRefreshPrices = async () => {
+    if (quickPriceBusy) return;
+    setQuickPriceBusy(true);
+    setQuickPriceMessage(null);
+    try {
+      const regional = loadRegionalValuationConfigs();
+      const marketGroup =
+        market.length > 0 && market.every((m) => m === 'KOSPI' || m === 'KOSDAQ')
+          ? 'KR'
+          : market.length > 0 && market.every((m) => m === 'NASDAQ' || m === 'NYSE')
+          ? 'US'
+          : 'ALL';
+      const res = await refreshStockPrices({
+        marketGroup,
+        usConditions: regional.us,
+        krConditions: regional.kr,
+      });
+      setQuickPriceMessage(
+        ko
+          ? `현재가 ${res.priceUpdatedCount}개 갱신 완료`
+          : `Updated ${res.priceUpdatedCount} prices`,
+      );
+      retry();
+      setTimeout(() => setQuickPriceMessage(null), 4000);
+    } catch (err) {
+      setQuickPriceMessage(
+        err instanceof Error ? err.message : ko ? '현재가 갱신 실패' : 'Price refresh failed',
+      );
+      setTimeout(() => setQuickPriceMessage(null), 5000);
+    } finally {
+      setQuickPriceBusy(false);
+    }
+  };
   useEffect(() => { setSearchQuery(globalSearchQuery); }, [globalSearchQuery, setSearchQuery]);
   useEffect(() => {
     const controller = new AbortController();
@@ -83,6 +132,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
     return () => { clearTimeout(timer); controller.abort(); };
   }, [searchQuery, market, favoritesOnly, revision]);
   const [drawerStockId, setDrawerStockId] = useState<string | null>(null);
+  const [drawerView, setDrawerView] = useState<'detail' | 'valuation'>('detail');
   const drawerStock = stocks.find(stock => stock.id === drawerStockId) ?? null;
   const drawerMinInfo = drawerStock ? getLowestIntrinsicValue(drawerStock.periodValuations) : { minIntrinsicValue: null, minYear: null };
   const effectiveDrawerYears = drawerMinInfo.minYear ?? 5;
@@ -167,7 +217,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
         <div className="md:col-span-5 bg-white dark:bg-[#1C1C1E] rounded-3xl p-5 sm:p-6 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between transition-colors duration-300">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[#86868B] block truncate">
+              <span className="text-[13px] font-medium text-[#6E6E73] dark:text-[#A1A1A6] block truncate">
                 {t('currentMarketScan')}
               </span>
               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF] font-mono">
@@ -179,7 +229,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
               <span className="text-2xl sm:text-3xl font-bold font-mono text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight tabular-nums">
                 {counts?.passed ?? '—'} / {counts?.total ?? '—'}
               </span>
-              <span className="text-xs sm:text-sm font-semibold text-[#86868B] dark:text-[#A1A1A6]">
+              <span className="text-xs sm:text-sm font-semibold text-[#6E6E73] dark:text-[#A1A1A6]">
                 {t('stocksPassed')}
               </span>
             </div>
@@ -198,21 +248,21 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
         {/* Card 2: Valuation Coverage */}
         <div className="md:col-span-4 bg-white dark:bg-[#1C1C1E] rounded-3xl p-5 sm:p-6 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between transition-colors duration-300">
           <div>
-            <span className="text-xs font-medium text-[#86868B] block truncate">
+            <span className="text-[13px] font-medium text-[#6E6E73] dark:text-[#A1A1A6] block truncate">
               {t('valuationStatusLabel')}
             </span>
             <div className="flex items-baseline gap-2 mt-2 whitespace-nowrap">
               <span className="text-2xl sm:text-3xl font-bold font-mono text-[#34C759] tracking-tight tabular-nums">
                 {counts?.margin ?? '—'}
               </span>
-              <span className="text-xs sm:text-sm font-semibold text-[#86868B] dark:text-[#A1A1A6]">
+              <span className="text-xs sm:text-sm font-semibold text-[#6E6E73] dark:text-[#A1A1A6]">
                 {t('valuationPassWithMargin')}
               </span>
             </div>
           </div>
 
           <div className="pt-3 mt-3 border-t border-black/[0.06] dark:border-white/[0.08]">
-            <span className="text-xs font-medium text-[#86868B] truncate block">
+            <span className="text-[13px] font-medium text-[#6E6E73] dark:text-[#A1A1A6] truncate block">
               {ko ? '5개년 최저 내재가치 기준 안전마진' : 'Margin based on 5-year lowest intrinsic value'}
             </span>
           </div>
@@ -222,7 +272,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
         <div className="md:col-span-3 bg-white dark:bg-[#1C1C1E] rounded-3xl p-5 sm:p-6 border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-col justify-between transition-colors duration-300">
           <div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-medium text-[#86868B] block truncate">
+              <span className="text-[13px] font-medium text-[#6E6E73] dark:text-[#A1A1A6] block truncate">
                 {t('loadedAsOfDateLabel')}
               </span>
               {import.meta.env.DEV && user?.role === 'admin' && <a href="/admin/valuation" className="text-xs text-blue-600">{ko ? '종목 추가 · 원자료 관리' : 'Add stocks · Edit facts'}</a>}
@@ -235,14 +285,34 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
 
           </div>
 
-          <div className="pt-3 mt-3 border-t border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between gap-2">
-            <span className="text-xs font-medium text-[#86868B] truncate block font-mono">
-              {t('loadedSnapshotStatus', {
-                loaded: stocks.length,
-                stale: loadedStaleCount,
-              })}
+          <div className="pt-3 mt-3 border-t border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between gap-2 flex-wrap">
+            <span className="text-[13px] font-medium text-[#6E6E73] dark:text-[#A1A1A6] truncate block font-mono">
+              {quickPriceMessage ??
+                t('loadedSnapshotStatus', {
+                  loaded: stocks.length,
+                  stale: loadedStaleCount,
+                })}
             </span>
-
+            {user?.role === 'admin' && (
+              <button
+                type="button"
+                disabled={quickPriceBusy}
+                onClick={() => void handleQuickRefreshPrices()}
+                title={
+                  ko
+                    ? '토스증권에서 최신 현재가만 빠르게 가져와 시가총액·안전마진을 즉시 갱신합니다'
+                    : 'Quickly refresh latest stock prices and recalculate margins'
+                }
+                className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-50 shrink-0"
+              >
+                {quickPriceBusy ? (
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Zap className="w-3 h-3 fill-current" />
+                )}
+                <span>{quickPriceBusy ? (ko ? '갱신 중…' : 'Updating…') : (ko ? '현재가 빠른 갱신' : 'Refresh Prices')}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -264,7 +334,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                   onClick={() => setCoreGradeFilter(opt.id)}
                   className={`px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-[13px] rounded-xl whitespace-nowrap transition-all duration-200 select-none cursor-pointer focus:outline-none shrink-0 ${isActive
                       ? 'bg-white dark:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-bold shadow-sm border border-black/[0.04] dark:border-white/[0.06]'
-                      : 'text-[#8B95A1] dark:text-[#86868B] hover:text-[#191F28] dark:hover:text-[#F5F5F7] font-medium hover:bg-white/40 dark:hover:bg-white/5'
+                      : 'text-[#4E5968] dark:text-[#A1A1A6] hover:text-[#191F28] dark:hover:text-[#F5F5F7] font-medium hover:bg-white/40 dark:hover:bg-white/5'
                     }`}
                 >
                   {opt.label}
@@ -277,7 +347,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
               aria-label={ko ? '가치평가' : 'Valuation'}
               value={valuationStatus}
               onChange={event => setValuationStatus(event.target.value as typeof valuationStatus)}
-              className="h-10 pl-3.5 pr-8 appearance-none rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-xs border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071E3]"
+              className="h-10 pl-3.5 pr-8 appearance-none rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-[13px] border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071E3]"
             >
               <option value="ALL">{ko ? '가치평가: 전체' : 'Valuation: All'}</option>
               <option value="PASS_WITH_MARGIN">{ko ? '가치평가: 안전마진 확보' : 'Valuation: With margin'}</option>
@@ -297,7 +367,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
             <div className="relative" ref={sortDropdownRef}>
               <button
                 onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                className="h-10 px-3.5 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-xs flex items-center gap-1.5 border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer select-none focus:outline-none"
+                className="h-10 px-3.5 rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-[13px] flex items-center gap-1.5 border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer select-none focus:outline-none"
               >
                 <ArrowUpDown className="w-3.5 h-3.5 text-[#86868B]" />
                 <span>{currentSortOption.label}</span>
@@ -417,28 +487,28 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
               return (
                 <div
                   key={stock.id}
-                  onClick={() => setDrawerStockId(stock.id)}
+                  onClick={() => {
+                    setDrawerStockId(stock.id);
+                    setDrawerView('detail');
+                  }}
                   className="p-4 flex items-center justify-between gap-3 active:bg-[#F5F5F7] dark:active:bg-[#2C2C2E] transition-colors cursor-pointer"
                 >
                   {/* Left: Rank & Ticker & Name & Grade */}
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="font-mono text-xs font-semibold text-[#86868B] w-4 shrink-0 tabular-nums">
+                    <span className="font-mono text-xs font-semibold text-[#6E6E73] dark:text-[#A1A1A6] w-5 shrink-0 tabular-nums">
                       {rank}
                     </span>
                     <div className="min-w-0 space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-sm text-[#1D1D1F] dark:text-[#F5F5F7] font-mono">
-                          {stock.ticker}
-                        </span>
-                        <span className="text-[10px] font-mono text-[#A1A1A6]">
-                          {stock.market}
+                        <span className={`font-bold text-[15px] text-[#1D1D1F] dark:text-[#F5F5F7] ${isKoreanMarket(stock.market) ? 'truncate max-w-[9rem]' : 'font-mono'}`}>
+                          {isKoreanMarket(stock.market) ? stock.name : stock.ticker}
                         </span>
                         {stock.isStale && (
-                          <span className="text-[9px] font-bold text-[#FF9500] bg-[#FF9500]/10 px-1.5 py-0.5 rounded-full">
+                          <span className="text-[11px] font-bold text-[#FF9500] bg-[#FF9500]/10 px-1.5 py-0.5 rounded-full">
                             STALE
                           </span>
                         )}
-                        <div className="inline-flex items-center gap-1.5 font-mono text-[11px] font-semibold" title={gradeInfo.desc}>
+                        <div className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold" title={gradeInfo.desc}>
                           <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${gradeInfo.dotClass}`} />
                           <span className={gradeInfo.textClass}>{gradeInfo.badgeLabel}</span>
                         </div>
@@ -455,14 +525,16 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                   {/* Right: Current Price & Intrinsic Value & Favorite */}
                   <div className="flex items-center gap-1 shrink-0">
                   <div className="text-right space-y-0.5">
-                    <div className="font-mono font-bold text-sm text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
+                    <div className="font-mono font-bold text-[15px] text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
                       {formatPrice(stock.currentPrice, stock.currency)}
                     </div>
-                    <div className="text-[10px] font-mono text-[#86868B]">{ko ? '시총' : 'Cap'} {formatMarketCap(stock.marketCap, stock.currency)}</div>
-                      <div title={ratioTitle} className="text-[11px] font-mono font-medium text-[#0071E3] dark:text-[#2997FF] tabular-nums">
-                        {minYear ? `${minYear}${ko ? '개년(최저)' : 'y(min)'}` : (ko ? '최저' : 'Min')} · {formatPrice(minIntrinsicValue, stock.currency)} · {valuationPriceToValueRatio(stock.currentPrice, minIntrinsicValue)}
-                      </div>
-                      <p className="text-[10px] text-[#86868B] max-w-[180px]">{minPeriod?.dcf.confidence ?? '—'}{!minPeriod?.dcf.scenarios || (minPeriod?.dcf.warnings.length ?? 0) > 0 ? ` · ${periodNote(minPeriod, ko)}` : ''}</p>
+                    <div className="text-xs font-mono text-[#6E6E73] dark:text-[#A1A1A6]">{ko ? '시총' : 'Cap'} {formatMarketCap(stock.marketCap, stock.currency)}</div>
+                    <div title={ratioTitle} className="text-xs font-mono tabular-nums text-[#6E6E73] dark:text-[#A1A1A6]">
+                      <span className="font-semibold text-[#0071E3] dark:text-[#2997FF]">{formatPrice(minIntrinsicValue, stock.currency)}</span>
+                      {' · '}
+                      <span className={priceToValueColor(stock.currentPrice, minIntrinsicValue)}>{valuationPriceToValueRatio(stock.currentPrice, minIntrinsicValue)}</span>
+                    </div>
+                    <div className={`text-xs font-mono font-bold ${confidenceColor(minPeriod?.dcf.confidence)}`}>{minPeriod?.dcf.confidence ?? '—'}</div>
                   </div>
                   <FavoriteButton stockId={stock.id} name={stock.name} />
                   </div>
@@ -478,23 +550,23 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="text-xs font-medium text-[#86868B] whitespace-nowrap">
-                    <th rowSpan={2} className="py-3 pl-3 sm:pl-4 pr-0 w-9 border-b border-black/[0.05] dark:border-white/[0.06]"><span className="sr-only">{ko ? '즐겨찾기' : 'Favorite'}</span></th>
-                    <th rowSpan={2} className="py-3 px-1.5 w-10 border-b border-black/[0.05] dark:border-white/[0.06]">{t('rank')}</th>
-                    <th rowSpan={2} className="py-3 px-2.5 min-w-[110px] border-b border-black/[0.05] dark:border-white/[0.06]">{t('company')}</th>
-                    <th rowSpan={2} className="py-3 px-2.5 text-right border-b border-black/[0.05] dark:border-white/[0.06]">{t('price')}</th>
-                    <th rowSpan={2} className="py-3 px-2.5 text-right border-b border-black/[0.05] dark:border-white/[0.06]">{t('marketCapLabel')}</th>
-                    <th rowSpan={2} className="py-3 px-2.5 text-center border-b border-black/[0.05] dark:border-white/[0.06]">{t('coreStatusLabel')}</th>
-                    <th rowSpan={2} className="py-3 px-2.5 text-center border-b border-black/[0.05] dark:border-white/[0.06]">{t('coreRulesLabel')}</th>
-                    <th colSpan={5} className="pt-3 pb-1 px-2 text-center">{ko ? '내재가치' : 'Intrinsic value'}</th>
-                    <th rowSpan={2} title={ko ? '5개년 중 최저 내재가치 기준' : 'Based on 5-year minimum intrinsic value'} className="py-3 px-2.5 text-right border-b border-black/[0.05] dark:border-white/[0.06]">{ko ? '주가/내재가치' : 'Price / Value'}</th>
-                    <th rowSpan={2} className="py-3 pr-4 sm:pr-5 pl-2.5 text-center border-b border-black/[0.05] dark:border-white/[0.06]">{t('confidence')}</th>
+                  <tr className="text-[13px] font-semibold text-[#6E6E73] dark:text-[#A1A1A6] whitespace-nowrap">
+                    <th rowSpan={2} className="py-3 pl-2.5 sm:pl-3 pr-0 w-8 border-b border-black/[0.05] dark:border-white/[0.06]"><span className="sr-only">{ko ? '즐겨찾기' : 'Favorite'}</span></th>
+                    <th rowSpan={2} className="py-3 px-1 w-9 text-center border-b border-black/[0.05] dark:border-white/[0.06]">{t('rank')}</th>
+                    <th rowSpan={2} className="py-3 px-2 min-w-[100px] border-b border-black/[0.05] dark:border-white/[0.06]">{t('company')}</th>
+                    <th rowSpan={2} className="py-3 px-2 text-right border-b border-black/[0.05] dark:border-white/[0.06]">{t('price')}</th>
+                    <th rowSpan={2} className="py-3 px-2 text-right border-b border-black/[0.05] dark:border-white/[0.06]">{t('marketCapLabel')}</th>
+                    <th rowSpan={2} className="py-3 px-2 text-center border-b border-black/[0.05] dark:border-white/[0.06]">{t('coreStatusLabel')}</th>
+                    <th rowSpan={2} className="py-3 px-2 text-center border-b border-black/[0.05] dark:border-white/[0.06]">{t('coreRulesLabel')}</th>
+                    <th colSpan={5} className="pt-3 pb-1 px-1.5 text-center">{ko ? '내재가치' : 'Intrinsic value'}</th>
+                    <th rowSpan={2} title={ko ? '5개년 중 최저 내재가치 기준' : 'Based on 5-year minimum intrinsic value'} className="py-3 px-2 text-right border-b border-black/[0.05] dark:border-white/[0.06]">{ko ? '주가/내재가치' : 'Price / Value'}</th>
+                    <th rowSpan={2} className="py-3 pl-2 pr-3 sm:pr-4 text-center border-b border-black/[0.05] dark:border-white/[0.06]">{t('confidence')}</th>
                   </tr>
-                  <tr className="text-[11px] font-medium text-[#A1A1A6] whitespace-nowrap border-b border-black/[0.05] dark:border-white/[0.06]">
-                    {[1, 2, 3, 4, 5].map(year => <th key={year} className="pt-1 pb-3 pl-2 pr-4 text-right font-mono">{year}{ko ? '년' : 'Y'}</th>)}
+                  <tr className="text-xs font-medium text-[#6E6E73] dark:text-[#A1A1A6] whitespace-nowrap border-b border-black/[0.05] dark:border-white/[0.06]">
+                    {[1, 2, 3, 4, 5].map(year => <th key={year} className="pt-1 pb-3 px-1.5 lg:px-2 text-right font-mono">{year}{ko ? '년' : 'Y'}</th>)}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.06] text-xs">
+                <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.06] text-sm">
                   {stocks.map((stock, index) => {
                     const rank = index + 1;
                     const gradeInfo = getCoreGradeInfo(stock, language);
@@ -507,31 +579,34 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                     return (
                       <tr
                         key={stock.id}
-                        onClick={() => setDrawerStockId(stock.id)}
+                        onClick={() => {
+                          setDrawerStockId(stock.id);
+                          setDrawerView('detail');
+                        }}
                         className="hover:bg-[#F5F5F7]/80 dark:hover:bg-[#2C2C2E]/60 transition-colors cursor-pointer group"
                       >
                         {/* Favorite */}
-                        <td className="py-3 pl-3 sm:pl-4 pr-0">
+                        <td className="py-3 pl-2.5 sm:pl-3 pr-0">
                           <FavoriteButton stockId={stock.id} name={stock.name} />
                         </td>
 
                         {/* Rank */}
-                        <td className="py-3 px-1.5 font-mono text-[#86868B] tabular-nums whitespace-nowrap">
+                        <td className="py-3 px-1 text-center font-mono text-[#6E6E73] dark:text-[#A1A1A6] tabular-nums whitespace-nowrap">
                           {rank}
                         </td>
 
                         {/* Company */}
-                        <td className="py-3 px-2.5">
+                        <td className="py-3 px-2">
                           <div className="flex items-center gap-1.5 whitespace-nowrap">
-                            <span className="font-bold text-[#1D1D1F] dark:text-[#F5F5F7] group-hover:text-[#0071E3] dark:group-hover:text-[#2997FF] transition-colors font-mono">
-                              {stock.ticker}
+                            <span className={`font-bold text-[#1D1D1F] dark:text-[#F5F5F7] group-hover:text-[#0071E3] dark:group-hover:text-[#2997FF] transition-colors ${isKoreanMarket(stock.market) ? 'truncate max-w-[10rem] xl:max-w-[11rem]' : 'font-mono'}`}>
+                              {isKoreanMarket(stock.market) ? stock.name : stock.ticker}
                             </span>
-                            <span className="text-[10px] font-mono text-[#A1A1A6]">
+                            <span className="text-[11px] font-mono text-[#6E6E73] dark:text-[#A1A1A6]">
                               {stock.market}
                             </span>
                             {stock.isStale && (
                               <span
-                                className="text-[9px] font-bold text-[#FF9500] bg-[#FF9500]/10 px-1.5 py-0.5 rounded"
+                                className="text-[11px] font-bold text-[#FF9500] bg-[#FF9500]/10 px-1.5 py-0.5 rounded"
                                 title={`Last successful: ${stock.lastSuccessfulAt}`}
                               >
                                 STALE
@@ -547,55 +622,48 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                         </td>
 
                         {/* Price */}
-                        <td className="py-3 px-2.5 text-right font-mono font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums whitespace-nowrap">
+                        <td className="py-3 px-2 text-right font-mono font-semibold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums whitespace-nowrap">
                           {formatPrice(stock.currentPrice, stock.currency)}
                         </td>
 
                         {/* Market Cap */}
-                        <td className="py-3 px-2.5 text-right font-mono text-[#86868B] tabular-nums whitespace-nowrap">
+                        <td className="py-3 px-2 text-right font-mono text-[#6E6E73] dark:text-[#A1A1A6] tabular-nums whitespace-nowrap">
                           {formatMarketCap(stock.marketCap, stock.currency)}
                         </td>
 
                         {/* 1. Core Status (등급제: 점 + 등급명만 표시) */}
-                        <td className="py-3 px-2.5 text-center whitespace-nowrap">
+                        <td className="py-3 px-2 text-center whitespace-nowrap">
                           <div className="inline-flex items-center justify-center gap-1.5" title={gradeInfo.desc}>
-                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${gradeInfo.dotClass}`} />
-                            <span className={`font-mono font-bold text-xs tabular-nums ${gradeInfo.textClass}`}>
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${gradeInfo.dotClass}`} />
+                            <span className={`font-mono font-bold tabular-nums ${gradeInfo.textClass}`}>
                               {gradeInfo.badgeLabel}
                             </span>
                           </div>
                         </td>
 
                         {/* Core Rules Breakdown (P / F / NA) */}
-                        <td className="py-3 px-2.5 text-center whitespace-nowrap font-mono text-xs tabular-nums">
+                        <td className="py-3 px-2 text-center whitespace-nowrap font-mono tabular-nums">
                           <span className="font-semibold text-[#34C759]">{stock.corePassCount}</span>
-                          <span className="text-[#86868B] dark:text-[#636366]">/</span>
+                          <span className="text-[#6E6E73] dark:text-[#8E8E93]">/</span>
                           <span className="font-semibold text-[#FF3B30]">{stock.coreFailCount}</span>
-                          <span className="text-[#86868B] dark:text-[#636366]">/</span>
-                          <span className="font-semibold text-[#86868B] dark:text-[#636366]">{stock.coreNaCount}</span>
+                          <span className="text-[#6E6E73] dark:text-[#8E8E93]">/</span>
+                          <span className="font-semibold text-[#6E6E73] dark:text-[#8E8E93]">{stock.coreNaCount}</span>
                         </td>
 
                         {[1, 2, 3, 4, 5].map(year => {
                           const period = stock.periodValuations?.[String(year)];
                           const isLowest = year === minYear;
-                          return <td key={year} title={periodNote(period, ko)} className={`py-3 pl-2 pr-1 text-right font-mono tabular-nums whitespace-nowrap ${isLowest ? 'font-semibold text-[#0071E3] dark:text-[#2997FF]' : 'text-[#86868B]'}`}>
+                          const hasWarning = period?.dcf.warnings.includes('INCOMPLETE_GROWTH_HISTORY');
+                          return <td key={year} title={periodNote(period, ko)} className={`py-3 px-1.5 lg:px-2 text-right font-mono tabular-nums whitespace-nowrap ${isLowest ? 'font-semibold text-[#0071E3] dark:text-[#2997FF]' : 'text-[#6E6E73] dark:text-[#A1A1A6]'}`}>
                             {formatPrice(period?.dcf.scenarios?.base.intrinsicValuePerShare, stock.currency)}
-                            <span aria-hidden={!period?.dcf.warnings.includes('INCOMPLETE_GROWTH_HISTORY')} className="inline-block w-3 ml-0.5 text-left text-[#FF9500]">{period?.dcf.warnings.includes('INCOMPLETE_GROWTH_HISTORY') ? '⚠' : ''}</span>
+                            {hasWarning && <span className="ml-0.5 text-[#FF9500]">⚠</span>}
                           </td>;
                         })}
-                        <td title={ratioTitle} className={`py-3 px-2.5 text-right font-mono tabular-nums whitespace-nowrap ${priceToValueColor(stock.currentPrice, minIntrinsicValue)}`}>{valuationPriceToValueRatio(stock.currentPrice, minIntrinsicValue)}</td>
+                        <td title={ratioTitle} className={`py-3 px-2 text-right font-mono tabular-nums whitespace-nowrap ${priceToValueColor(stock.currentPrice, minIntrinsicValue)}`}>{valuationPriceToValueRatio(stock.currentPrice, minIntrinsicValue)}</td>
 
                         {/* Confidence */}
-                        <td className="py-3 pr-4 sm:pr-5 pl-2.5 text-center font-mono whitespace-nowrap">
-                          <span
-                            className={`text-[10px] font-bold ${
-                              minPeriod?.dcf.confidence === 'HIGH'
-                                ? 'text-[#34C759]'
-                                : minPeriod?.dcf.confidence === 'MEDIUM'
-                                ? 'text-[#FF9500]'
-                                : 'text-[#86868B]'
-                            }`}
-                          >
+                        <td className="py-3 pl-2 pr-3 sm:pr-4 text-center font-mono whitespace-nowrap">
+                          <span className={`text-xs font-bold ${confidenceColor(minPeriod?.dcf.confidence)}`}>
                             {minPeriod?.dcf.confidence ?? '—'}
                           </span>
                         </td>
@@ -607,7 +675,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
             </div>
 
             {/* Table Footer */}
-            <div className="py-4 px-7 border-t border-black/[0.05] dark:border-white/[0.06] flex items-center justify-between text-xs text-[#86868B]">
+            <div className="py-4 px-7 border-t border-black/[0.05] dark:border-white/[0.06] flex items-center justify-between text-[13px] text-[#6E6E73] dark:text-[#A1A1A6]">
               <span>{t('showingTop', { count: stocks.length, total })}</span>
               {hasMore && (
                 <button
@@ -629,12 +697,33 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
       <StockDetailDrawer
         stock={selectedDrawerStock}
         years={effectiveDrawerYears}
-        content={drawerStock && <StockValuationPage key={`${drawerStock.id}:${effectiveDrawerYears}`} ticker={drawerStock.ticker} market={drawerStock.market} years={effectiveDrawerYears} embedded onApplied={retry} />}
+        actionLabel={drawerView === 'valuation' ? (ko ? '종목 분석으로 돌아가기' : 'Back to Stock Analysis') : undefined}
+        content={drawerStock && (
+          drawerView === 'valuation' ? (
+            <StockValuationPage
+              key={`${drawerStock.id}-valuation`}
+              ticker={drawerStock.ticker}
+              market={drawerStock.market}
+              years={effectiveDrawerYears}
+              embedded
+              onApplied={retry}
+            />
+          ) : (
+            <StockDetailPage
+              key={`${drawerStock.id}-detail`}
+              ticker={drawerStock.ticker}
+              market={drawerStock.market}
+              embedded
+            />
+          )
+        )}
         isOpen={Boolean(selectedDrawerStock)}
-        onClose={() => setDrawerStockId(null)}
-        onNavigateToFullDetail={(ticker, stockMarket) => {
+        onClose={() => {
           setDrawerStockId(null);
-          navigate(`/stock/${encodeURIComponent(ticker)}/valuation?market=${encodeURIComponent(stockMarket)}&years=${effectiveDrawerYears}`);
+          setDrawerView('detail');
+        }}
+        onNavigateToFullDetail={() => {
+          setDrawerView(prev => (prev === 'detail' ? 'valuation' : 'detail'));
         }}
         stockList={stocks}
         onSelectStock={stock => setDrawerStockId(stock.id)}

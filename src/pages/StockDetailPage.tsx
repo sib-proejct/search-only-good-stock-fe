@@ -37,6 +37,8 @@ interface StockDetailPageProps {
   ticker?: string | null;
   onBack?: () => void;
   onSelectStock?: (ticker: string) => void;
+  market?: Market;
+  embedded?: boolean;
 }
 
 export const StockDetailPage: React.FC<StockDetailPageProps> = ({
@@ -44,13 +46,15 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   ticker: propTicker,
   onBack,
   onSelectStock,
+  market: propMarket,
+  embedded = false,
 }) => {
   const { ticker: urlTicker } = useParams<{ ticker?: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const currentTicker = urlTicker || propTicker || stockId;
   const marketParam = searchParams.get('market');
-  const currentMarket = (
+  const currentMarket = propMarket ?? (
     ['NASDAQ', 'NYSE', 'KOSPI', 'KOSDAQ'] as const
   ).find((market) => market === marketParam);
   const { t, language } = useAppConfig();
@@ -370,8 +374,9 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-6 animate-fade-in">
-      {/* 1. Sub Header: Back Button & Stock Switcher Dropdown */}
+    <div className={embedded ? 'space-y-6 animate-fade-in' : 'max-w-[1600px] mx-auto px-4 sm:px-8 py-5 sm:py-8 space-y-6 animate-fade-in'}>
+      {/* 1. Sub Header: Back Button & Stock Switcher Dropdown (드로어에서는 드로어 헤더가 대신한다) */}
+      {!embedded && (
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <button
           onClick={handleBack}
@@ -522,6 +527,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
           </div>
         </div>
       </div>
+      )}
 
       {/* 2. Hero Section: Stock Identity & Status Badges & Price */}
       <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-6 sm:p-8 border border-black/[0.06] dark:border-white/[0.08] shadow-sm transition-colors duration-300">
@@ -529,7 +535,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
           {/* Left: Ticker, Name, Status & Tags */}
           <div className="space-y-2">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
+              <h1 id={embedded ? 'drawer-stock-title' : undefined} className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
                 {detail.name}
               </h1>
               <FavoriteButton stockId={detail.id} name={detail.name} />

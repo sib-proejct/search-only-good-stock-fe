@@ -1,8 +1,8 @@
-import { Check, ListChecks } from 'lucide-react';
+import { Check, ListChecks, Zap } from 'lucide-react';
 import { MarketFilter } from '../common/MarketFilter';
 import type { Market } from '../../types/api';
 import { useEffect, useRef, useState } from 'react';
-import { adminRequest, type AdminStock } from '../../services/adminApi';
+import { adminRequest, refreshStockPrices, type AdminStock } from '../../services/adminApi';
 import type { components } from '../../types/openapi.generated';
 
 type Collection = components['schemas']['CollectionStatus'];
@@ -36,13 +36,15 @@ export function MultiStockCollector({
   const [markets, setMarkets] = useState<Market[]>([]);
   const [items, setItems] = useState<Collection[]>([]);
   const [busy, setBusy] = useState(false);
+  const [priceBusy, setPriceBusy] = useState(false);
+  const [priceNotice, setPriceNotice] = useState('');
   const [error, setError] = useState('');
   const [pollError, setPollError] = useState('');
   const initialized = useRef(false);
   const restored = useRef(false);
   const button = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
-  const running = busy || items.some((item) => active(item.status));
+  const running = busy || priceBusy || items.some((item) => active(item.status));
   const pendingKey = items
     .filter((item) => active(item.status))
     .map((item) => `${item.stock_id}:${item.batch_run_id}`)
@@ -144,6 +146,7 @@ export function MultiStockCollector({
   async function collect(ids: number[]) {
     setBusy(true);
     setError('');
+    setPriceNotice('');
     setPollError('');
     try {
       const response = await adminRequest<components['schemas']['StocksRefreshResponse']>('/stocks/refresh', {
@@ -157,6 +160,24 @@ export function MultiStockCollector({
       setError(e instanceof Error ? e.message : '수집 시작 실패');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function refreshPricesOnly(ids: number[]) {
+    setPriceBusy(true);
+    setError('');
+    setPriceNotice('');
+    setPollError('');
+    try {
+      const res = await refreshStockPrices({ stock_ids: ids });
+      setPriceNotice(
+        `현재가 갱신 완료: ${res.priceUpdatedCount}/${res.totalStocks}개 조회, 내재가치 ${res.valuationUpdatedCount}개 반영${res.failedCount > 0 ? ` (실패 ${res.failedCount}개)` : ''}`,
+      );
+      onCollected();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '현재가 일괄 업데이트 실패');
+    } finally {
+      setPriceBusy(false);
     }
   }
   const actionClass = 'h-10 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold bg-white dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-[#F5F5F7] hover:bg-[#F5F5F7] dark:hover:bg-[#2C2C2E] border border-black/15 dark:border-white/20 transition-colors cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071E3] disabled:opacity-50 disabled:cursor-not-allowed';
@@ -292,6 +313,7 @@ export function MultiStockCollector({
                 {running && ' · 창을 닫아도 수집은 계속됩니다.'}
               </p>
             )}
+            {priceNotice && <p role="status" className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{priceNotice}</p>}
             {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
             {pollError && <p role="status" className="text-sm text-amber-600">{pollError}</p>}
             <div className="flex flex-wrap gap-2">
@@ -301,7 +323,17 @@ export function MultiStockCollector({
                 disabled={running || disabled || !selected.length}
                 onClick={() => void collect(selected)}
               >
-                {running ? '수집 중…' : `선택한 ${selected.length}개 종목 자료 수집`}
+                {busy ? '수집 중…' : `선택한 ${selected.length}개 종목 자료 수집`}
+              </button>
+              <button
+                type="button"
+                className="h-10 px-4 rounded-xl inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#1C1C1E] disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={running || disabled || !selected.length}
+                onClick={() => void refreshPricesOnly(selected)}
+                title="선택한 종목의 최신 현재가만 빠르게 조회하여 시가총액 및 안전마진을 갱신합니다"
+              >
+                <Zap className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+                {priceBusy ? '현재가 갱신 중…' : `선택한 ${selected.length}개 현재가만 업데이트`}
               </button>
               {failed.length > 0 && (
                 <button

@@ -1,20 +1,27 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { ValuationConditions } from '../services/valuationApi';
 import {
-  loadValuationConfig,
+  loadRegionalValuationConfigs,
   saveValuationConfig,
+  saveRegionalValuationConfigs,
   resetValuationConfig,
   hasCustomValuationConfig,
   SYSTEM_DEFAULT_VALUATION_CONDITIONS,
+  type ValuationMarketGroup,
+  type RegionalValuationConfigs,
 } from '../utils/valuationConfig';
 
 export function useValuationConfig() {
-  const [config, setConfig] = useState<ValuationConditions>(() => loadValuationConfig());
-  const [isCustom, setIsCustom] = useState<boolean>(() => hasCustomValuationConfig());
+  const [configs, setConfigs] = useState<RegionalValuationConfigs>(() =>
+    loadRegionalValuationConfigs(),
+  );
+  const [isCustomUs, setIsCustomUs] = useState<boolean>(() => hasCustomValuationConfig('us'));
+  const [isCustomKr, setIsCustomKr] = useState<boolean>(() => hasCustomValuationConfig('kr'));
 
   const refresh = useCallback(() => {
-    setConfig(loadValuationConfig());
-    setIsCustom(hasCustomValuationConfig());
+    setConfigs(loadRegionalValuationConfigs());
+    setIsCustomUs(hasCustomValuationConfig('us'));
+    setIsCustomKr(hasCustomValuationConfig('kr'));
   }, []);
 
   useEffect(() => {
@@ -31,27 +38,37 @@ export function useValuationConfig() {
     };
   }, [refresh]);
 
-  const save = useCallback((conditions: ValuationConditions) => {
-    const success = saveValuationConfig(conditions);
+  const save = useCallback((conditions: ValuationConditions, region?: ValuationMarketGroup) => {
+    const success = saveValuationConfig(conditions, region);
     if (success) {
-      setConfig(conditions);
-      setIsCustom(true);
+      refresh();
     }
     return success;
-  }, []);
+  }, [refresh]);
 
-  const reset = useCallback(() => {
-    const def = resetValuationConfig();
-    setConfig(def);
-    setIsCustom(false);
+  const saveRegional = useCallback((nextConfigs: RegionalValuationConfigs) => {
+    const success = saveRegionalValuationConfigs(nextConfigs);
+    if (success) {
+      refresh();
+    }
+    return success;
+  }, [refresh]);
+
+  const reset = useCallback((region?: ValuationMarketGroup) => {
+    const def = resetValuationConfig(region);
+    refresh();
     return def;
-  }, []);
+  }, [refresh]);
 
   return {
-    config,
-    isCustom,
+    config: configs.us,
+    configs,
+    isCustom: isCustomUs || isCustomKr,
+    isCustomUs,
+    isCustomKr,
     systemDefault: SYSTEM_DEFAULT_VALUATION_CONDITIONS,
     saveConfig: save,
+    saveRegionalConfigs: saveRegional,
     resetConfig: reset,
     refreshConfig: refresh,
   };

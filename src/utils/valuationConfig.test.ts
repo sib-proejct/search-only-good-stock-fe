@@ -2,10 +2,13 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   SYSTEM_DEFAULT_VALUATION_CONDITIONS,
   loadValuationConfig,
+  loadRegionalValuationConfigs,
   saveValuationConfig,
+  saveRegionalValuationConfigs,
   resetValuationConfig,
   hasCustomValuationConfig,
   validateValuationConditions,
+  getMarketGroup,
   STORAGE_KEY_VALUATION_CONFIG,
   VALUATION_PRESETS,
 } from './valuationConfig';
@@ -107,5 +110,33 @@ describe('valuationConfig', () => {
       const res = validateValuationConditions(preset.conditions);
       expect(res.valid).toBe(true);
     }
+  });
+
+  it('stores and loads separate US and KR valuation conditions', () => {
+    const usCustom = {
+      ...SYSTEM_DEFAULT_VALUATION_CONDITIONS,
+      normalizationYears: 5 as const,
+      growthRateCap: '0.25',
+    };
+    const krCustom = {
+      ...SYSTEM_DEFAULT_VALUATION_CONDITIONS,
+      normalizationYears: 3 as const,
+      capexMode: 'MAINTENANCE' as const,
+      growthRateCap: '0.15',
+    };
+
+    saveRegionalValuationConfigs({ us: usCustom, kr: krCustom });
+    const regional = loadRegionalValuationConfigs();
+    expect(regional.us).toEqual(usCustom);
+    expect(regional.kr).toEqual(krCustom);
+    expect(loadValuationConfig('us')).toEqual(usCustom);
+    expect(loadValuationConfig('kr')).toEqual(krCustom);
+
+    expect(getMarketGroup('KOSPI')).toBe('kr');
+    expect(getMarketGroup('KOSDAQ')).toBe('kr');
+    expect(getMarketGroup('KRW')).toBe('kr');
+    expect(getMarketGroup('NASDAQ')).toBe('us');
+    expect(getMarketGroup('NYSE')).toBe('us');
+    expect(getMarketGroup('USD')).toBe('us');
   });
 });

@@ -9,7 +9,7 @@ import { useAppConfig } from '../context/ThemeLanguageContext';
 import { stockApi } from '../services/api';
 import { valuationRequest, type ValuationView, type ValuationConditions } from '../services/valuationApi';
 import { growthUnavailableNote, periodNote, valuationAmount, valuationMarketCap, valuationPercent, valuationPrice } from '../utils/valuationFormatters';
-import { loadValuationConfig, saveValuationConfig } from '../utils/valuationConfig';
+import { loadValuationConfig, saveValuationConfig, getMarketGroup } from '../utils/valuationConfig';
 import type { Market, StockDetailDTO } from '../types/api';
 import { getCoreGradeInfo, getValuationStatusInfo, getConfidenceInfo } from '../utils/ruleFormatters';
 
@@ -85,17 +85,19 @@ export function StockValuationPage({ ticker: panelTicker, market: panelMarket, y
   };
   const money = (value: number | null | undefined) => valuationPrice(value, stock?.currency ?? 'KRW', ko);
   const amount = (value: unknown) => valuationAmount(value == null ? null : Number(value), stock?.currency ?? 'KRW', ko);
+  const marketGroup = getMarketGroup(stock?.currency ?? stock?.market ?? market);
+  const marketGroupLabel = marketGroup === 'kr' ? (ko ? '한국(KR)' : 'Korea (KR)') : (ko ? '미국(US)' : 'US');
   const applyBrowserDefaults = () => {
-    const loaded = loadValuationConfig();
+    const loaded = loadValuationConfig(marketGroup);
     edit(loaded);
-    setConfigToast(ko ? '브라우저 기본 설정값을 불러왔습니다.' : 'Loaded browser default conditions.');
+    setConfigToast(ko ? `${marketGroupLabel} 기본 설정값을 불러왔습니다.` : `Loaded ${marketGroupLabel} default conditions.`);
     setTimeout(() => setConfigToast(''), 3000);
   };
   const saveAsBrowserDefaults = () => {
     if (!conditions) return;
     try {
-      saveValuationConfig(conditions);
-      setConfigToast(ko ? '현재 조건을 브라우저 기본값으로 저장했습니다.' : 'Saved current conditions as browser defaults.');
+      saveValuationConfig(conditions, marketGroup);
+      setConfigToast(ko ? `현재 조건을 ${marketGroupLabel} 기본값으로 저장했습니다.` : `Saved current conditions as ${marketGroupLabel} defaults.`);
       setTimeout(() => setConfigToast(''), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -177,18 +179,18 @@ export function StockValuationPage({ ticker: panelTicker, market: panelMarket, y
             className="rounded-full bg-[#F5F5F7] dark:bg-[#2C2C2E] hover:bg-[#EBEBED] dark:hover:bg-[#3A3A3C] text-[#1D1D1F] dark:text-[#F5F5F7] text-xs font-semibold px-4 py-2 border border-black/[0.06] dark:border-white/[0.08] transition-colors cursor-pointer"
             disabled={busy}
             onClick={applyBrowserDefaults}
-            title={ko ? '설정 페이지에서 저장한 기본값을 현재 폼에 적용' : 'Load default conditions saved in Config'}
+            title={ko ? '설정 페이지에서 저장한 국가별 기본값을 현재 폼에 적용' : 'Load market default conditions saved in Config'}
           >
-            {ko ? '내 기본값 불러오기' : 'Load My Defaults'}
+            {ko ? `${marketGroupLabel} 기본값 불러오기` : `Load ${marketGroupLabel} Defaults`}
           </button>
           <button
             type="button"
             className="rounded-full bg-[#F5F5F7] dark:bg-[#2C2C2E] hover:bg-[#EBEBED] dark:hover:bg-[#3A3A3C] text-[#1D1D1F] dark:text-[#F5F5F7] text-xs font-semibold px-4 py-2 border border-black/[0.06] dark:border-white/[0.08] transition-colors cursor-pointer"
             disabled={busy || !conditions}
             onClick={saveAsBrowserDefaults}
-            title={ko ? '현재 입력된 계산 조건을 브라우저의 기본값으로 저장' : 'Save current form conditions as browser default'}
+            title={ko ? '현재 입력된 계산 조건을 해당 국가의 기본값으로 저장' : 'Save current form conditions as market default'}
           >
-            {ko ? '내 기본값으로 저장' : 'Save as My Defaults'}
+            {ko ? `${marketGroupLabel} 기본값으로 저장` : `Save as ${marketGroupLabel} Defaults`}
           </button>
         </div>
         <p className="text-xs text-[#86868B] mt-3">{ko ? '게시된 입력만 사용합니다. 임시 재계산은 공식 목록을 변경하지 않습니다.' : 'Uses published inputs. Preview calculations leave official values unchanged.'}</p>

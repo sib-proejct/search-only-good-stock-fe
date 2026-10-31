@@ -292,7 +292,7 @@ export const translations = {
 
     // Drawer & Quick View
     quickStockDiagnosis: '종목 간편 진단',
-    viewFullAnalysis: '심층 분석 전체 페이지로 이동',
+    viewFullValuation: '내재가치 전체 페이지로 이동',
     prevStock: '이전 종목',
     nextStock: '다음 종목',
     close: '닫기',
@@ -603,7 +603,7 @@ export const translations = {
 
     // Drawer & Quick View
     quickStockDiagnosis: 'Quick Stock Diagnosis',
-    viewFullAnalysis: 'Open Full Deep Dive Analysis',
+    viewFullValuation: 'Open Full Valuation Page',
     prevStock: 'Previous Stock',
     nextStock: 'Next Stock',
     close: 'Close',

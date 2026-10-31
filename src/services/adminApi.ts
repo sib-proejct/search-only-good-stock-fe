@@ -115,6 +115,9 @@ export function changedValues(draft: Draft, original: Draft): Draft {
 
 export interface BulkRecalculateRequest {
   conditions?: ValuationConditions;
+  usConditions?: ValuationConditions;
+  krConditions?: ValuationConditions;
+  marketGroup?: 'ALL' | 'US' | 'KR';
   apply?: boolean;
 }
 
@@ -138,7 +141,10 @@ export interface BulkRecalculateResponse {
   appliedCount: number;
   skippedCount?: number;
   failedCount: number;
+  marketGroup?: 'ALL' | 'US' | 'KR';
   conditions: ValuationConditions;
+  usConditions?: ValuationConditions | null;
+  krConditions?: ValuationConditions | null;
   items: BulkRecalculateItem[];
 }
 
@@ -150,6 +156,63 @@ export async function bulkRecalculateValuation(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+    signal,
+  });
+}
+
+export interface QuickPriceRefreshRequest {
+  stock_ids?: number[];
+  stockIds?: number[];
+  marketGroup?: 'ALL' | 'US' | 'KR';
+  conditions?: ValuationConditions;
+  usConditions?: ValuationConditions;
+  krConditions?: ValuationConditions;
+}
+
+export interface QuickPriceRefreshItem {
+  stockId: number;
+  ticker: string;
+  name: string;
+  market: string;
+  currency: string;
+  previousPrice: string | number | null;
+  currentPrice: string | number | null;
+  priceAsOf: string | null;
+  marketCap: string | number | null;
+  intrinsicValuePerShare: string | number | null;
+  conservativeMarginOfSafety: string | number | null;
+  status: string;
+  updated: boolean;
+  error?: string | null;
+}
+
+export interface QuickPriceRefreshResponse {
+  totalStocks: number;
+  priceUpdatedCount: number;
+  valuationUpdatedCount: number;
+  skippedCount: number;
+  failedCount: number;
+  items: QuickPriceRefreshItem[];
+}
+
+export async function refreshStockPrices(
+  payload: QuickPriceRefreshRequest = {},
+  signal?: AbortSignal,
+): Promise<QuickPriceRefreshResponse> {
+  return adminRequest<QuickPriceRefreshResponse>('/stocks/refresh-prices', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    signal,
+  });
+}
+
+export async function refreshSingleStockPrice(
+  stockId: number,
+  signal?: AbortSignal,
+): Promise<QuickPriceRefreshItem> {
+  return adminRequest<QuickPriceRefreshItem>(`/stocks/${stockId}/refresh-price`, {
+    method: 'POST',
     signal,
   });
 }
