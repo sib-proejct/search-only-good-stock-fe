@@ -6,6 +6,7 @@ import {
   StockDetailDTO,
   StockListQuery,
   StockListResponse,
+  StockMemoDTO,
 } from '../types/api';
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
@@ -153,5 +154,43 @@ export const stockApi = {
     }
 
     return response.json();
+  },
+
+  async getStockMemo(stockId: string, signal?: AbortSignal): Promise<StockMemoDTO> {
+    const response = await apiFetch(`${API_BASE_URL}/api/stocks/${encodeURIComponent(stockId)}/memo`, { signal });
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
+
+  async updateStockMemo(stockId: string, content: string, signal?: AbortSignal): Promise<StockMemoDTO> {
+    const response = await apiFetch(`${API_BASE_URL}/api/stocks/${encodeURIComponent(stockId)}/memo`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ content }),
+      signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    return response.json();
+  },
+
+  async deleteStockMemo(stockId: string, signal?: AbortSignal): Promise<void> {
+    const response = await apiFetch(`${API_BASE_URL}/api/stocks/${encodeURIComponent(stockId)}/memo`, {
+      method: 'DELETE',
+      signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseErrorMessage(response));
+    }
   },
 };

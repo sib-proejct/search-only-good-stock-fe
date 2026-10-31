@@ -1,5 +1,6 @@
 import { MarketFilter } from '../components/common/MarketFilter';
 import { FavoriteButton } from '../components/common/FavoriteButton';
+import { StockMemoEditor } from '../components/common/StockMemoEditor';
 import { useAccount } from '../context/AccountContext';
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -27,7 +28,7 @@ import { getCoreGradeInfo } from '../utils/ruleFormatters';
 import { StockDetailDrawer } from '../components/screener/StockDetailDrawer';
 import { StockValuationPage } from './StockValuationPage';
 import { stockApi } from '../services/api';
-import { periodNote, priceToValueColor, valuationMarketCap, valuationPrice, valuationPriceToValueRatio } from '../utils/valuationFormatters';
+import { getLowestIntrinsicValue, periodNote, priceToValueColor, valuationMarketCap, valuationPrice, valuationPriceToValueRatio } from '../utils/valuationFormatters';
 
 interface ScreenerPageProps {
   onSelectStock?: (stockId: string) => void;
@@ -40,7 +41,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
   const { t, language } = useAppConfig();
   const { user, revision, favoritesError, reloadFavorites } = useAccount();
   const {
-    years, setYears, valuationStatus, setValuationStatus,
+    valuationStatus, setValuationStatus,
     stocks,
     total,
     loading,
@@ -60,6 +61,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
     loadMore,
     retry,
     resetFilters,
+    updateStockMemoLocal,
   } = useStocks(favoritesOnly, favoritesOnly ? revision : 0);
 
   const ko = language === 'ko';
@@ -69,7 +71,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
     const controller = new AbortController();
     setCounts(null);
     const timer = setTimeout(() => {
-      const query = { limit: 1, years, favoritesOnly, search: searchQuery.trim() || undefined, market: market.length ? market : undefined };
+      const query = { limit: 1, favoritesOnly, search: searchQuery.trim() || undefined, market: market.length ? market : undefined };
       Promise.all([
         stockApi.getStocks(query, controller.signal),
         stockApi.getStocks({ ...query, coreStatus: 'PASS' }, controller.signal),
@@ -79,10 +81,12 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
       }).catch(() => { /* Counts remain unavailable when the request fails. */ });
     }, 300);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [searchQuery, market, years, favoritesOnly, revision]);
+  }, [searchQuery, market, favoritesOnly, revision]);
   const [drawerStockId, setDrawerStockId] = useState<string | null>(null);
   const drawerStock = stocks.find(stock => stock.id === drawerStockId) ?? null;
-  const drawerPeriod = drawerStock?.periodValuations?.[String(years)];
+  const drawerMinInfo = drawerStock ? getLowestIntrinsicValue(drawerStock.periodValuations) : { minIntrinsicValue: null, minYear: null };
+  const effectiveDrawerYears = drawerMinInfo.minYear ?? 5;
+  const drawerPeriod = drawerStock?.periodValuations?.[String(effectiveDrawerYears)];
   const selectedDrawerStock = drawerStock ? {
     ...drawerStock,
     conservativeIntrinsicValue: drawerPeriod?.dcf.scenarios?.conservative.intrinsicValuePerShare ?? null,
@@ -120,7 +124,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
   // Sort Options
   const sortOptions: { id: StockSort; label: string }[] = [
     { id: 'marketCap', label: t('sortMarketCap') },
-    { id: 'conservativeMarginOfSafety', label: ko ? '선택 기간 안전마진' : 'Selected period margin' },
+    { id: 'conservativeMarginOfSafety', label: ko ? '최저 내재가치 안전마진' : 'Lowest value margin' },
     { id: 'corePassCount', label: t('sortPassCount') },
     { id: 'currentPrice', label: ko ? '현재가' : 'Price' },
     { id: 'ticker', label: t('sortTicker') },
@@ -209,7 +213,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
 
           <div className="pt-3 mt-3 border-t border-black/[0.06] dark:border-white/[0.08]">
             <span className="text-xs font-medium text-[#86868B] truncate block">
-              {ko ? `${years}개년 재무자료 기준 현재 내재가치` : `Current intrinsic value using ${years} fiscal years`}
+              {ko ? '5개년 최저 내재가치 기준 안전마진' : 'Margin based on 5-year lowest intrinsic value'}
             </span>
           </div>
         </div>
@@ -285,23 +289,8 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
           </div>
         </div>
 
-        {/* Right: History Period, Sorting Selector & Order Toggle */}
+        {/* Right: Sorting Selector & Order Toggle */}
         <div className="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
-          <div className="relative shrink-0">
-            <select
-              aria-label={ko ? '재무자료 기간' : 'Financial history'}
-              value={years}
-              onChange={event => setYears(Number(event.target.value))}
-              className="h-10 pl-3.5 pr-8 appearance-none rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-xs border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071E3]"
-            >
-              {[1, 2, 3, 4, 5].map(year => (
-                <option key={year} value={year}>
-                  {ko ? `재무자료 기간: ${year}개년` : `History: ${year}y`}
-                </option>
-              ))}
-            </select>
-            <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[#86868B]" />
-          </div>
           {/* Sort Selector & Order Toggle stay together when wrapping */}
           <div className="flex items-center gap-2 shrink-0">
             {/* Sort Selector Dropdown */}
@@ -419,7 +408,11 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
             {stocks.map((stock, index) => {
               const rank = index + 1;
               const gradeInfo = getCoreGradeInfo(stock, language);
-              const selected = stock.periodValuations?.[String(years)];
+              const { minIntrinsicValue, minYear } = getLowestIntrinsicValue(stock.periodValuations);
+              const minPeriod = minYear ? stock.periodValuations?.[String(minYear)] : undefined;
+              const ratioTitle = minYear
+                ? `${ko ? `5개년 최저 (${minYear}개년): ` : `5Y Min (${minYear}Y): `}${formatPrice(minIntrinsicValue, stock.currency)}${minPeriod ? ` · ${periodNote(minPeriod, ko)}` : ''}`
+                : (ko ? '내재가치 계산 불가' : 'Valuation unavailable');
 
               return (
                 <div
@@ -437,6 +430,9 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                         <span className="font-bold text-sm text-[#1D1D1F] dark:text-[#F5F5F7] font-mono">
                           {stock.ticker}
                         </span>
+                        <span className="text-[10px] font-mono text-[#A1A1A6]">
+                          {stock.market}
+                        </span>
                         {stock.isStale && (
                           <span className="text-[9px] font-bold text-[#FF9500] bg-[#FF9500]/10 px-1.5 py-0.5 rounded-full">
                             STALE
@@ -447,9 +443,12 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                           <span className={gradeInfo.textClass}>{gradeInfo.badgeLabel}</span>
                         </div>
                       </div>
-                      <div className="text-xs text-[#86868B] truncate font-normal">
-                        {stock.name} · {stock.market}
-                      </div>
+                      <StockMemoEditor
+                        stockId={stock.id}
+                        stockName={stock.name}
+                        initialMemo={stock.memo}
+                        onMemoChange={(newMemo) => updateStockMemoLocal(stock.id, newMemo)}
+                      />
                     </div>
                   </div>
 
@@ -460,10 +459,10 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                       {formatPrice(stock.currentPrice, stock.currency)}
                     </div>
                     <div className="text-[10px] font-mono text-[#86868B]">{ko ? '시총' : 'Cap'} {formatMarketCap(stock.marketCap, stock.currency)}</div>
-                      <div title={periodNote(selected, ko)} className="text-[11px] font-mono font-medium text-[#0071E3] dark:text-[#2997FF] tabular-nums">
-                        {years}{ko ? '개년' : 'y'} · {formatPrice(selected?.dcf.scenarios?.base.intrinsicValuePerShare, stock.currency)} · {valuationPriceToValueRatio(stock.currentPrice, selected?.dcf.scenarios?.base.intrinsicValuePerShare)}
+                      <div title={ratioTitle} className="text-[11px] font-mono font-medium text-[#0071E3] dark:text-[#2997FF] tabular-nums">
+                        {minYear ? `${minYear}${ko ? '개년(최저)' : 'y(min)'}` : (ko ? '최저' : 'Min')} · {formatPrice(minIntrinsicValue, stock.currency)} · {valuationPriceToValueRatio(stock.currentPrice, minIntrinsicValue)}
                       </div>
-                      <p className="text-[10px] text-[#86868B] max-w-[180px]">{selected?.dcf.confidence ?? '—'}{!selected?.dcf.scenarios || selected.dcf.warnings.length > 0 ? ` · ${periodNote(selected, ko)}` : ''}</p>
+                      <p className="text-[10px] text-[#86868B] max-w-[180px]">{minPeriod?.dcf.confidence ?? '—'}{!minPeriod?.dcf.scenarios || (minPeriod?.dcf.warnings.length ?? 0) > 0 ? ` · ${periodNote(minPeriod, ko)}` : ''}</p>
                   </div>
                   <FavoriteButton stockId={stock.id} name={stock.name} />
                   </div>
@@ -488,18 +487,22 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                     <th rowSpan={2} className="py-3 px-2.5 text-center border-b border-black/[0.05] dark:border-white/[0.06]">{t('coreStatusLabel')}</th>
                     <th rowSpan={2} className="py-3 px-2.5 text-center border-b border-black/[0.05] dark:border-white/[0.06]">{t('coreRulesLabel')}</th>
                     <th colSpan={5} className="pt-3 pb-1 px-2 text-center">{ko ? '내재가치' : 'Intrinsic value'}</th>
-                    <th rowSpan={2} className="py-3 px-2.5 text-right border-b border-black/[0.05] dark:border-white/[0.06]">{ko ? '주가/내재가치' : 'Price / Value'}</th>
+                    <th rowSpan={2} title={ko ? '5개년 중 최저 내재가치 기준' : 'Based on 5-year minimum intrinsic value'} className="py-3 px-2.5 text-right border-b border-black/[0.05] dark:border-white/[0.06]">{ko ? '주가/내재가치' : 'Price / Value'}</th>
                     <th rowSpan={2} className="py-3 pr-4 sm:pr-5 pl-2.5 text-center border-b border-black/[0.05] dark:border-white/[0.06]">{t('confidence')}</th>
                   </tr>
                   <tr className="text-[11px] font-medium text-[#A1A1A6] whitespace-nowrap border-b border-black/[0.05] dark:border-white/[0.06]">
-                    {[1, 2, 3, 4, 5].map(year => <th key={year} className={`pt-1 pb-3 pl-2 pr-4 text-right font-mono ${year === years ? 'text-[#0071E3] dark:text-[#2997FF] font-semibold' : ''}`}>{year}{ko ? '년' : 'Y'}</th>)}
+                    {[1, 2, 3, 4, 5].map(year => <th key={year} className="pt-1 pb-3 pl-2 pr-4 text-right font-mono">{year}{ko ? '년' : 'Y'}</th>)}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.06] text-xs">
                   {stocks.map((stock, index) => {
                     const rank = index + 1;
                     const gradeInfo = getCoreGradeInfo(stock, language);
-              const selected = stock.periodValuations?.[String(years)];
+                    const { minIntrinsicValue, minYear } = getLowestIntrinsicValue(stock.periodValuations);
+                    const minPeriod = minYear ? stock.periodValuations?.[String(minYear)] : undefined;
+                    const ratioTitle = minYear
+                      ? `${ko ? `5개년 최저 (${minYear}개년): ` : `5Y Min (${minYear}Y): `}${formatPrice(minIntrinsicValue, stock.currency)}${minPeriod ? ` · ${periodNote(minPeriod, ko)}` : ''}`
+                      : (ko ? '내재가치 계산 불가' : 'Valuation unavailable');
 
                     return (
                       <tr
@@ -535,9 +538,12 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
                               </span>
                             )}
                           </div>
-                          <div className="text-[#86868B] font-normal text-[11px] truncate max-w-[160px]" title={stock.name}>
-                            {stock.name}
-                          </div>
+                          <StockMemoEditor
+                            stockId={stock.id}
+                            stockName={stock.name}
+                            initialMemo={stock.memo}
+                            onMemoChange={(newMemo) => updateStockMemoLocal(stock.id, newMemo)}
+                          />
                         </td>
 
                         {/* Price */}
@@ -571,25 +577,26 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
 
                         {[1, 2, 3, 4, 5].map(year => {
                           const period = stock.periodValuations?.[String(year)];
-                          return <td key={year} title={periodNote(period, ko)} className={`py-3 pl-2 pr-1 text-right font-mono tabular-nums whitespace-nowrap ${year === years ? 'font-semibold text-[#0071E3] dark:text-[#2997FF]' : 'text-[#86868B]'}`}>
+                          const isLowest = year === minYear;
+                          return <td key={year} title={periodNote(period, ko)} className={`py-3 pl-2 pr-1 text-right font-mono tabular-nums whitespace-nowrap ${isLowest ? 'font-semibold text-[#0071E3] dark:text-[#2997FF]' : 'text-[#86868B]'}`}>
                             {formatPrice(period?.dcf.scenarios?.base.intrinsicValuePerShare, stock.currency)}
                             <span aria-hidden={!period?.dcf.warnings.includes('INCOMPLETE_GROWTH_HISTORY')} className="inline-block w-3 ml-0.5 text-left text-[#FF9500]">{period?.dcf.warnings.includes('INCOMPLETE_GROWTH_HISTORY') ? '⚠' : ''}</span>
                           </td>;
                         })}
-                        <td title={periodNote(selected, ko)} className={`py-3 px-2.5 text-right font-mono tabular-nums whitespace-nowrap ${priceToValueColor(stock.currentPrice, selected?.dcf.scenarios?.base.intrinsicValuePerShare)}`}>{valuationPriceToValueRatio(stock.currentPrice, selected?.dcf.scenarios?.base.intrinsicValuePerShare)}</td>
+                        <td title={ratioTitle} className={`py-3 px-2.5 text-right font-mono tabular-nums whitespace-nowrap ${priceToValueColor(stock.currentPrice, minIntrinsicValue)}`}>{valuationPriceToValueRatio(stock.currentPrice, minIntrinsicValue)}</td>
 
                         {/* Confidence */}
                         <td className="py-3 pr-4 sm:pr-5 pl-2.5 text-center font-mono whitespace-nowrap">
                           <span
                             className={`text-[10px] font-bold ${
-                              selected?.dcf.confidence === 'HIGH'
+                              minPeriod?.dcf.confidence === 'HIGH'
                                 ? 'text-[#34C759]'
-                                : selected?.dcf.confidence === 'MEDIUM'
+                                : minPeriod?.dcf.confidence === 'MEDIUM'
                                 ? 'text-[#FF9500]'
                                 : 'text-[#86868B]'
                             }`}
                           >
-                            {selected?.dcf.confidence ?? '—'}
+                            {minPeriod?.dcf.confidence ?? '—'}
                           </span>
                         </td>
                       </tr>
@@ -621,13 +628,13 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({ searchQuery: globalS
 
       <StockDetailDrawer
         stock={selectedDrawerStock}
-        years={years}
-        content={drawerStock && <StockValuationPage key={`${drawerStock.id}:${years}`} ticker={drawerStock.ticker} market={drawerStock.market} years={years} embedded onApplied={retry} />}
+        years={effectiveDrawerYears}
+        content={drawerStock && <StockValuationPage key={`${drawerStock.id}:${effectiveDrawerYears}`} ticker={drawerStock.ticker} market={drawerStock.market} years={effectiveDrawerYears} embedded onApplied={retry} />}
         isOpen={Boolean(selectedDrawerStock)}
         onClose={() => setDrawerStockId(null)}
         onNavigateToFullDetail={(ticker, stockMarket) => {
           setDrawerStockId(null);
-          navigate(`/stock/${encodeURIComponent(ticker)}/valuation?market=${encodeURIComponent(stockMarket)}&years=${years}`);
+          navigate(`/stock/${encodeURIComponent(ticker)}/valuation?market=${encodeURIComponent(stockMarket)}&years=${effectiveDrawerYears}`);
         }}
         stockList={stocks}
         onSelectStock={stock => setDrawerStockId(stock.id)}

@@ -38,6 +38,7 @@ export interface UseStocksReturn {
   loadMore: () => void;
   retry: () => void;
   resetFilters: () => void;
+  updateStockMemoLocal: (stockId: string, memo: string | null) => void;
 }
 
 export function useStocks(favoritesOnly = false, favoritesRevision = 0): UseStocksReturn {
@@ -130,7 +131,6 @@ export function useStocks(favoritesOnly = false, favoritesRevision = 0): UseStoc
       try {
         const query: StockListQuery = {
           favoritesOnly,
-          years,
           limit,
           offset: isLoadMore ? offset : 0,
         };
@@ -182,7 +182,6 @@ export function useStocks(favoritesOnly = false, favoritesRevision = 0): UseStoc
       }
     },
     [
-      years,
       favoritesOnly,
       favoritesRevision,
       debouncedSearch,
@@ -238,6 +237,12 @@ export function useStocks(favoritesOnly = false, favoritesRevision = 0): UseStoc
     setOffset(0);
   }, []);
 
+  const updateStockMemoLocal = useCallback((stockId: string, memo: string | null) => {
+    setStocks((prev) =>
+      prev.map((s) => (s.id === stockId ? { ...s, memo } : s))
+    );
+  }, []);
+
   return {
     years, setYears,
     stocks,
@@ -262,5 +267,6 @@ export function useStocks(favoritesOnly = false, favoritesRevision = 0): UseStoc
     loadMore,
     retry,
     resetFilters,
+    updateStockMemoLocal,
   };
 }

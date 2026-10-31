@@ -39,10 +39,22 @@ export type AnnualFinancialDTO = Schemas['AnnualFinancialInput'];
 export type QuarterlyBookPriceDTO = Schemas['QuarterlyBookPriceInput'];
 export type BenchmarkPointDTO = Schemas['BenchmarkPointInput'];
 export type CurrentMarketDTO = Schemas['CurrentMarketInput'];
-export type StockSummaryDTO = Schemas['StockSummaryDTO'];
-export type StockListResponse = Schemas['StockListResponse'];
-export type StockDetailDTO = Schemas['StockDetailDTO'];
+export type StockSummaryDTO = Omit<Schemas['StockSummaryDTO'], 'memo'> & {
+  memo?: string | null;
+};
+export type StockListResponse = Omit<Schemas['StockListResponse'], 'items'> & {
+  items: StockSummaryDTO[];
+};
+export type StockDetailDTO = Omit<Schemas['StockDetailDTO'], 'memo'> & {
+  memo?: string | null;
+};
 export type ReadinessResponse = Schemas['ReadinessResponse'];
+
+export interface StockMemoDTO {
+  stock_id: string;
+  content: string;
+  updated_at?: string | null;
+}
 
 export type StockListQuery = NonNullable<
   operations['list_stocks_api_stocks_get']['parameters']['query']

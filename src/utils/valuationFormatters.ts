@@ -47,8 +47,7 @@ export function priceToValueColor(
 ): string {
   if (currentPrice == null || intrinsicValue == null || intrinsicValue <= 0) return 'text-[#86868B]';
   const ratio = currentPrice / intrinsicValue;
-  if (ratio <= 0.8) return 'text-[#34C759]';
-  if (ratio <= 1.0) return 'text-[#0071E3] dark:text-[#2997FF]';
+  if (ratio <= 1.2) return 'text-[#34C759]';
   return 'text-[#FF3B30]';
 }
 
@@ -111,3 +110,41 @@ export function growthUnavailableNote(period: PeriodValuation | undefined, ko: b
     dcf: { ...period.dcf, reasonCodes: [], warnings: [] },
   }, ko) || (ko ? '성장률 계산 자료를 확인하세요.' : 'Review growth calculation inputs.');
 }
+
+export interface LowestIntrinsicValueResult {
+  minIntrinsicValue: number | null;
+  minYear: number | null;
+}
+
+export function getLowestIntrinsicValue(
+  periodValuations?: Record<
+    string,
+    {
+      dcf?: {
+        scenarios?: {
+          base?: {
+            intrinsicValuePerShare?: number | null;
+          } | null;
+        } | null;
+      } | null;
+    } | undefined
+  > | undefined
+): LowestIntrinsicValueResult {
+  if (!periodValuations) return { minIntrinsicValue: null, minYear: null };
+
+  let minVal: number | null = null;
+  let minYear: number | null = null;
+
+  for (let year = 1; year <= 5; year++) {
+    const val = periodValuations[String(year)]?.dcf?.scenarios?.base?.intrinsicValuePerShare;
+    if (typeof val === 'number' && val > 0) {
+      if (minVal === null || val < minVal) {
+        minVal = val;
+        minYear = year;
+      }
+    }
+  }
+
+  return { minIntrinsicValue: minVal, minYear };
+}
+
