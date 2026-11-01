@@ -272,7 +272,13 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
     return null;
   }
 
-  const getStockInfo = (ticker: string) => {
+  const getStockInfo = (ticker: string): {
+    ticker: string;
+    name: string;
+    price?: string;
+    change?: string;
+    score?: number;
+  } => {
     const matched = TRENDING_TICKERS.find((t) => t.ticker.toUpperCase() === ticker.toUpperCase());
     if (matched) return matched;
     if (ticker.toUpperCase() === 'KO') {
@@ -281,9 +287,6 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
     return {
       ticker,
       name: ticker.replace('.KS', ''),
-      price: '$150.00',
-      change: '+0.50%',
-      score: 85,
     };
   };
 
@@ -454,7 +457,8 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
               {/* Readable Inline Stock Metrics (Name, Ticker, Price, Change Rate, Buffett Score, View Analysis) */}
               {post.ticker && (() => {
                 const stock = getStockInfo(post.ticker);
-                const isUp = stock.change.startsWith('+');
+                const isUp = stock.change?.startsWith('+') ?? false;
+                const displayScore = post.buffettScore ?? stock.score;
                 return (
                   <div className="flex items-center gap-2 text-xs flex-wrap py-0.5">
                     {/* Stock Name & Ticker */}
@@ -463,24 +467,30 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
                     </span>
 
                     {/* Current Price */}
-                    <span className="font-bold tabular-nums text-[#1D1D1F] dark:text-[#F5F5F7]">
-                      {stock.price}
-                    </span>
+                    {stock.price && (
+                      <span className="font-bold tabular-nums text-[#1D1D1F] dark:text-[#F5F5F7]">
+                        {stock.price}
+                      </span>
+                    )}
 
                     {/* Change Rate Pill */}
-                    <span
-                      className={`font-semibold tabular-nums text-[11px] px-1.5 py-0.5 rounded ${isUp
-                        ? 'bg-[#34C759]/15 text-[#34C759] dark:text-[#30D158]'
-                        : 'bg-[#FF3B30]/15 text-[#FF3B30] dark:text-[#FF453A]'
-                        }`}
-                    >
-                      {stock.change}
-                    </span>
+                    {stock.change && (
+                      <span
+                        className={`font-semibold tabular-nums text-[11px] px-1.5 py-0.5 rounded ${isUp
+                          ? 'bg-[#34C759]/15 text-[#34C759] dark:text-[#30D158]'
+                          : 'bg-[#FF3B30]/15 text-[#FF3B30] dark:text-[#FF453A]'
+                          }`}
+                      >
+                        {stock.change}
+                      </span>
+                    )}
 
                     {/* Buffett Score Pill */}
-                    <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF]">
-                      {t('buffettScoreShort')} {post.buffettScore ?? stock.score}{t('scorePts')}
-                    </span>
+                    {displayScore != null && (
+                      <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF]">
+                        {t('buffettScoreShort')} {displayScore}{t('scorePts')}
+                      </span>
+                    )}
 
                     {/* Action Link */}
                     {onSelectStock && (

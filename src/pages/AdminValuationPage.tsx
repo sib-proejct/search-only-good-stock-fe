@@ -570,13 +570,21 @@ export function AdminValuationPage() {
       setLatestPrice(null);
       return;
     }
+    if (stock.currentPrice != null) {
+      setLatestPrice(stock.currentPrice);
+    }
+    if (table === 'market_fact') {
+      return;
+    }
     const controller = new AbortController();
     adminRequest<FactRow[]>(`/facts/market_fact?stock_id=${stock.id}`, {
       signal: controller.signal,
     })
       .then((marketRows) => {
         if (controller.signal.aborted) return;
-        const priceRow = marketRows.find((r) => 'current_price' in r && r.current_price != null);
+        const priceRow = [...marketRows]
+          .filter((r) => 'current_price' in r && r.current_price != null)
+          .sort((a, b) => String((b as unknown as Draft).as_of ?? '').localeCompare(String((a as unknown as Draft).as_of ?? '')))[0];
         if (priceRow && 'current_price' in priceRow && priceRow.current_price != null) {
           const num = typeof priceRow.current_price === 'string' ? parseFloat(priceRow.current_price) : priceRow.current_price;
           if (!isNaN(num)) {
@@ -591,7 +599,7 @@ export function AdminValuationPage() {
         // Silently preserve currentPrice
       });
     return () => controller.abort();
-  }, [stock, revision]);
+  }, [stock, table, revision]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -666,6 +674,10 @@ export function AdminValuationPage() {
     );
     setStocks(locallyFiltered);
 
+    if (initialStocks.length < 1000) {
+      return;
+    }
+
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       adminRequest<AdminStock[]>(
@@ -704,6 +716,23 @@ export function AdminValuationPage() {
       .then((data) => {
         setRows(data);
         setLoadingRows(false);
+        if (table === 'market_fact') {
+          const priceRow = [...data]
+            .filter((r) => 'current_price' in r && r.current_price != null)
+            .sort((a, b) => String((b as unknown as Draft).as_of ?? '').localeCompare(String((a as unknown as Draft).as_of ?? '')))[0];
+          if (priceRow && 'current_price' in priceRow && priceRow.current_price != null) {
+            const num =
+              typeof priceRow.current_price === 'string'
+                ? parseFloat(priceRow.current_price)
+                : priceRow.current_price;
+            if (!isNaN(num)) {
+              setLatestPrice(num);
+              setStocks((prev) =>
+                prev.map((s) => (s.id === stock.id ? { ...s, currentPrice: num } : s)),
+              );
+            }
+          }
+        }
       })
       .catch((e) => {
         if (!controller.signal.aborted) {

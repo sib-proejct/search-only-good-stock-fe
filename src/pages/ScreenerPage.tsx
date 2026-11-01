@@ -64,7 +64,6 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
   const { t, language } = useAppConfig();
   const {
     user,
-    revision,
     favoritesError,
     reloadFavorites,
     hiddenIds,
@@ -77,6 +76,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
     valuationStatus, setValuationStatus,
     stocks,
     total,
+    counts,
     loading,
     loadingMore,
     error,
@@ -95,10 +95,26 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
     retry,
     resetFilters,
     updateStockMemoLocal,
-  } = useStocks(favoritesOnly, user ? revision : 0, hiddenOnly);
+    removeStocksLocal,
+  } = useStocks(favoritesOnly, hiddenOnly);
+
+  const handleStockFavoriteToggled = (stockId: string, favorite: boolean) => {
+    if (!favorite && favoritesOnly) {
+      removeStocksLocal([stockId]);
+    } else if (favorite && hiddenOnly) {
+      removeStocksLocal([stockId]);
+    }
+  };
+
+  const handleStockHiddenToggled = (stockId: string, hidden: boolean) => {
+    if (hidden && !hiddenOnly) {
+      removeStocksLocal([stockId]);
+    } else if (!hidden && hiddenOnly) {
+      removeStocksLocal([stockId]);
+    }
+  };
 
   const ko = language === 'ko';
-  const [counts, setCounts] = useState<{ total: number; passed: number; margin: number } | null>(null);
   const [quickPriceBusy, setQuickPriceBusy] = useState(false);
   const [quickPriceMessage, setQuickPriceMessage] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -138,14 +154,17 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
     setBulkBusy(true);
     setBulkMessage(null);
     try {
-      const count = selectedStockIds.length;
+      const idsToProcess = [...selectedStockIds];
+      const count = idsToProcess.length;
       if (hiddenOnly) {
-        await bulkUnhideStocks(selectedStockIds);
+        await bulkUnhideStocks(idsToProcess);
+        removeStocksLocal(idsToProcess);
         setBulkMessage(
           ko ? `${count}개 종목 숨김을 해제했습니다.` : `Unhid ${count} stocks.`,
         );
       } else {
-        await bulkHideStocks(selectedStockIds);
+        await bulkHideStocks(idsToProcess);
+        removeStocksLocal(idsToProcess);
         setBulkMessage(
           ko ? `${count}개 종목을 숨겼습니다.` : `Hid ${count} stocks.`,
         );
@@ -233,27 +252,6 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
     }
   };
   useEffect(() => { setSearchQuery(globalSearchQuery); }, [globalSearchQuery, setSearchQuery]);
-  useEffect(() => {
-    const controller = new AbortController();
-    setCounts(null);
-    const timer = setTimeout(() => {
-      const query = {
-        limit: 1,
-        favoritesOnly,
-        hiddenOnly,
-        search: searchQuery.trim() || undefined,
-        market: market.length ? market : undefined,
-      };
-      Promise.all([
-        stockApi.getStocks(query, controller.signal),
-        stockApi.getStocks({ ...query, coreStatus: 'PASS' }, controller.signal),
-        stockApi.getStocks({ ...query, valuationStatus: 'PASS_WITH_MARGIN' }, controller.signal),
-      ]).then(([all, passed, margin]) => {
-        if (!controller.signal.aborted) setCounts({ total: all.total, passed: passed.total, margin: margin.total });
-      }).catch(() => { /* Counts remain unavailable when the request fails. */ });
-    }, 300);
-    return () => { clearTimeout(timer); controller.abort(); };
-  }, [searchQuery, market, favoritesOnly, hiddenOnly, revision]);
   const [drawerStockId, setDrawerStockId] = useState<string | null>(null);
   const [drawerView, setDrawerView] = useState<'detail' | 'valuation'>('detail');
   const drawerStock = stocks.find(stock => stock.id === drawerStockId) ?? null;
@@ -290,8 +288,8 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
   }[] = [
     { id: 'ALL', label: t('allStatuses') },
     { id: 'PASS', label: t('coreStatusPass') },
-    { id: 'HOLD', label: t('coreStatusHold') },
     { id: 'FAIL', label: t('coreStatusFail') },
+    { id: 'N/A', label: ko ? '평가 불가' : 'N/A' },
   ];
 
   // Sort Options
@@ -835,7 +833,11 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
                         <span className={`font-bold text-[15px] text-[#1D1D1F] dark:text-[#F5F5F7] ${isKoreanMarket(stock.market) ? 'truncate max-w-[9rem]' : 'font-mono'}`}>
                           {isKoreanMarket(stock.market) ? stock.name : stock.ticker}
                         </span>
-                        <HideStockButton stockId={stock.id} name={stock.name} />
+                        <HideStockButton
+                          stockId={stock.id}
+                          name={stock.name}
+                          onToggled={(hidden) => handleStockHiddenToggled(stock.id, hidden)}
+                        />
                         {stock.isStale && (
                           <span className="text-[11px] font-bold text-[#FF9500] bg-[#FF9500]/10 px-1.5 py-0.5 rounded-full">
                             STALE
@@ -845,7 +847,11 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
                           <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${gradeInfo.dotClass}`} />
                           <span className={gradeInfo.textClass}>{gradeInfo.badgeLabel}</span>
                         </div>
-                        <FavoriteButton stockId={stock.id} name={stock.name} />
+                        <FavoriteButton
+                          stockId={stock.id}
+                          name={stock.name}
+                          onToggled={(fav) => handleStockFavoriteToggled(stock.id, fav)}
+                        />
                       </div>
                       <StockMemoEditor
                         stockId={stock.id}
@@ -951,7 +957,11 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
                         )}
                         {/* Favorite */}
                         <td className="py-3 pl-2.5 sm:pl-3 pr-0">
-                          <FavoriteButton stockId={stock.id} name={stock.name} />
+                          <FavoriteButton
+                            stockId={stock.id}
+                            name={stock.name}
+                            onToggled={(fav) => handleStockFavoriteToggled(stock.id, fav)}
+                          />
                         </td>
 
                         {/* Rank */}
@@ -976,7 +986,11 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
                                 STALE
                               </span>
                             )}
-                            <HideStockButton stockId={stock.id} name={stock.name} />
+                            <HideStockButton
+                              stockId={stock.id}
+                              name={stock.name}
+                              onToggled={(hidden) => handleStockHiddenToggled(stock.id, hidden)}
+                            />
                           </div>
                           <StockMemoEditor
                             stockId={stock.id}
@@ -1072,6 +1086,7 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
               years={effectiveDrawerYears}
               embedded
               onApplied={retry}
+              onFavoriteToggled={(fav) => handleStockFavoriteToggled(drawerStock.id, fav)}
             />
           ) : (
             <StockDetailPage
@@ -1083,6 +1098,8 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
                 setDrawerStockId(null);
                 retry();
               }}
+              onFavoriteToggled={(fav) => handleStockFavoriteToggled(drawerStock.id, fav)}
+              onHiddenToggled={(hidden) => handleStockHiddenToggled(drawerStock.id, hidden)}
             />
           )
         )}

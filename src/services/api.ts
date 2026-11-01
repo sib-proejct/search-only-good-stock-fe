@@ -27,15 +27,24 @@ async function parseErrorMessage(response: Response): Promise<string> {
   return `HTTP error! status: ${response.status}`;
 }
 
+let rulesCachePromise: Promise<RuleListResponse> | null = null;
+
 export const stockApi = {
-  async getRules(signal?: AbortSignal): Promise<RuleListResponse> {
-    const response = await apiFetch(`${API_BASE_URL}/api/rules`, { signal });
-
-    if (!response.ok) {
-      throw new Error(await parseErrorMessage(response));
+  async getRules(_signal?: AbortSignal): Promise<RuleListResponse> {
+    if (!rulesCachePromise) {
+      rulesCachePromise = apiFetch(`${API_BASE_URL}/api/rules`)
+        .then(async (response) => {
+          if (!response.ok) {
+            throw new Error(await parseErrorMessage(response));
+          }
+          return response.json();
+        })
+        .catch((err) => {
+          rulesCachePromise = null;
+          throw err;
+        });
     }
-
-    return response.json();
+    return rulesCachePromise;
   },
 
   async getStocks(
@@ -74,6 +83,9 @@ export const stockApi = {
       }
       if (typeof query.offset === 'number') {
         params.set('offset', String(query.offset));
+      }
+      if (query.includeCounts) {
+        params.set('includeCounts', 'true');
       }
     }
 

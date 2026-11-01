@@ -5,7 +5,15 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppConfig } from '../../context/ThemeLanguageContext';
 import { useAccount } from '../../context/AccountContext';
 
-export function FavoriteButton({ stockId, name }: { stockId: string; name: string }) {
+export function FavoriteButton({
+  stockId,
+  name,
+  onToggled,
+}: {
+  stockId: string;
+  name: string;
+  onToggled?: (favorite: boolean) => void;
+}) {
   const { language } = useAppConfig();
   const { user, loading, favoriteIds, favoritesLoading, favoritesError, pendingIds, toggleFavorite, reloadFavorites } = useAccount();
   const navigate = useNavigate();
@@ -28,11 +36,22 @@ export function FavoriteButton({ stockId, name }: { stockId: string; name: strin
   const click = async () => {
     setError('');
     if (!user) { navigate(`/login?next=${encodeURIComponent(location.pathname + location.search)}`); return; }
+    if (favoritesError) {
+      try {
+        await reloadFavorites();
+      } catch {
+        setError(ko ? '즐겨찾기를 저장하지 못했습니다. 다시 시도해 주세요.' : 'Could not save favorites. Please retry.');
+      }
+      return;
+    }
+    const nextState = !saved;
+    setOptimistic(nextState);
+    onToggled?.(nextState);
     try {
-      if (favoritesError) await reloadFavorites();
-      else { setOptimistic(!saved); await toggleFavorite(stockId); }
+      await toggleFavorite(stockId);
     } catch {
       setOptimistic(null);
+      onToggled?.(!nextState);
       setError(ko ? '즐겨찾기를 저장하지 못했습니다. 다시 시도해 주세요.' : 'Could not save favorites. Please retry.');
     }
   };

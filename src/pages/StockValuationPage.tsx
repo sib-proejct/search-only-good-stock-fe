@@ -25,9 +25,10 @@ interface StockValuationPageProps {
   years?: number;
   embedded?: boolean;
   onApplied?: () => void;
+  onFavoriteToggled?: (favorite: boolean) => void;
 }
 
-export function StockValuationPage({ ticker: panelTicker, market: panelMarket, years: panelYears, embedded = false, onApplied }: StockValuationPageProps = {}) {
+export function StockValuationPage({ ticker: panelTicker, market: panelMarket, years: panelYears, embedded = false, onApplied, onFavoriteToggled }: StockValuationPageProps = {}) {
   const { user } = useAccount();
   const { ticker: routeTicker = '' } = useParams();
   const ticker = panelTicker ?? routeTicker;
@@ -120,7 +121,7 @@ export function StockValuationPage({ ticker: panelTicker, market: panelMarket, y
       <header className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-6 sm:p-8 border border-black/[0.06] dark:border-white/[0.08] shadow-sm transition-colors duration-300">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="flex items-center gap-3 flex-wrap"><h1 id={embedded ? "drawer-stock-title" : undefined} className="text-2xl sm:text-3xl font-bold tracking-tight">{stock.name}</h1><FavoriteButton stockId={stock.id} name={stock.name} /><span className="font-mono text-base font-semibold text-[#86868B]">{ticker}</span><span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#86868B]"><Calendar className="w-3 h-3" />{result.dataAsOf.slice(0, 10)}</span>{stock.isStale && <span className="text-[10px] font-bold text-[#FF9500]">STALE</span>}</div>
+            <div className="flex items-center gap-3 flex-wrap"><h1 id={embedded ? "drawer-stock-title" : undefined} className="text-2xl sm:text-3xl font-bold tracking-tight">{stock.name}</h1><FavoriteButton stockId={stock.id} name={stock.name} onToggled={onFavoriteToggled} /><span className="font-mono text-base font-semibold text-[#86868B]">{ticker}</span><span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#86868B]"><Calendar className="w-3 h-3" />{result.dataAsOf.slice(0, 10)}</span>{stock.isStale && <span className="text-[10px] font-bold text-[#FF9500]">STALE</span>}</div>
             <p className="text-xs sm:text-[13px] text-[#86868B]">{stock.market} · {stock.sector} · {ko ? '현재 내재가치 계산' : 'Current intrinsic value'}</p>
           </div>
           <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-5 sm:gap-7">

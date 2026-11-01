@@ -21,6 +21,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
+import { useAccount } from '../context/AccountContext';
 import { useValuationConfig } from '../hooks/useValuationConfig';
 import {
   VALUATION_PRESETS,
@@ -60,6 +61,8 @@ function formatConditionSummary(c: ValuationConditions, ko: boolean): string {
 
 export const ConfigPage: React.FC = () => {
   const { language } = useAppConfig();
+  const { user } = useAccount();
+  const isAdmin = user?.role === 'admin';
   const ko = language === 'ko';
   const { configs, isCustom, isCustomUs, isCustomKr, saveRegionalConfigs, resetConfig } =
     useValuationConfig();
@@ -736,8 +739,10 @@ export const ConfigPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Admin Quick Current Price Update Section */}
-      <section className="rounded-3xl border border-amber-500/25 dark:border-amber-400/25 bg-gradient-to-br from-amber-500/[0.03] to-transparent dark:from-amber-400/[0.04] p-6 sm:p-8 shadow-sm transition-colors duration-300 space-y-6">
+      {isAdmin && (
+        <>
+          {/* Admin Quick Current Price Update Section */}
+          <section className="rounded-3xl border border-amber-500/25 dark:border-amber-400/25 bg-gradient-to-br from-amber-500/[0.03] to-transparent dark:from-amber-400/[0.04] p-6 sm:p-8 shadow-sm transition-colors duration-300 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -1285,6 +1290,8 @@ export const ConfigPage: React.FC = () => {
           </div>
         )}
       </section>
+        </>
+      )}
 
       {/* Guide & Explanation Section */}
       <section className={box}>

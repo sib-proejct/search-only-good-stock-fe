@@ -429,33 +429,45 @@ export async function migrateLocalDiscussionsToDb(): Promise<void> {
     const raw = localStorage.getItem(STORAGE_KEY_DISCUSSIONS);
     if (!raw) return;
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      const customPosts = (parsed as DiscussionPost[])
-        .filter((p) => p && typeof p.id === 'string' && !LEGACY_SAMPLE_IDS.has(p.id) && p.title && p.content)
-        .reverse();
-      for (const post of customPosts) {
-        const created = await createCommunityPost({
-          title: post.title,
-          category: post.category || '기타',
-          ticker: post.ticker,
-          content: post.content,
-          authorName: post.author?.name,
-        });
-        if (Array.isArray(post.comments)) {
-          for (const comment of post.comments) {
-            if (comment?.content) {
-              await createCommunityComment(created.id, {
-                content: comment.content,
-                authorName: comment.author?.name,
-              });
-            }
+    if (!Array.isArray(parsed)) {
+      localStorage.removeItem(STORAGE_KEY_DISCUSSIONS);
+      return;
+    }
+    let remaining = (parsed as DiscussionPost[]).filter(
+      (p) => p && typeof p.id === 'string' && !LEGACY_SAMPLE_IDS.has(p.id) && p.title && p.content
+    );
+    if (remaining.length === 0) {
+      localStorage.removeItem(STORAGE_KEY_DISCUSSIONS);
+      return;
+    }
+    const customPosts = [...remaining].reverse();
+    for (const post of customPosts) {
+      const created = await createCommunityPost({
+        title: post.title,
+        category: post.category || '기타',
+        ticker: post.ticker,
+        content: post.content,
+        authorName: post.author?.name,
+      });
+      if (Array.isArray(post.comments)) {
+        for (const comment of post.comments) {
+          if (comment?.content) {
+            await createCommunityComment(created.id, {
+              content: comment.content,
+              authorName: comment.author?.name,
+            });
           }
         }
       }
+      remaining = remaining.filter((item) => item.id !== post.id);
+      if (remaining.length > 0) {
+        localStorage.setItem(STORAGE_KEY_DISCUSSIONS, JSON.stringify(remaining));
+      } else {
+        localStorage.removeItem(STORAGE_KEY_DISCUSSIONS);
+      }
     }
-    localStorage.removeItem(STORAGE_KEY_DISCUSSIONS);
   } catch {
-    // Keep local storage intact if backend is unreachable so no user data is lost
+    // Keep unmigrated posts in localStorage if backend is unreachable or user is not logged in
   }
 }
 

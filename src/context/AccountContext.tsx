@@ -100,14 +100,24 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const toggleFavorite = async (id: string) => {
     if (!user || pendingRef.current.has(id)) return;
     const current = generation.current;
+    const isRemoving = favoriteIds.includes(id);
     const wasHidden = hiddenIds.includes(id);
     pendingRef.current.add(id); setPendingIds(new Set(pendingRef.current));
+    setFavoriteIds(prev => isRemoving ? prev.filter(item => item !== id) : [...prev, id]);
+    if (!isRemoving && wasHidden) {
+      setHiddenIds(prev => prev.filter(item => item !== id));
+    }
     try {
-      await accountRequest(`/favorites/${encodeURIComponent(id)}`, { method: favoriteIds.includes(id) ? 'DELETE' : 'PUT' });
+      await accountRequest(`/favorites/${encodeURIComponent(id)}`, { method: isRemoving ? 'DELETE' : 'PUT' });
       if (current === generation.current) {
-        await reloadFavorites();
+        setRevision(v => v + 1);
+      }
+    } catch (err) {
+      if (current === generation.current) {
+        await reloadFavorites().catch(() => {});
         if (wasHidden) await reloadHidden().catch(() => {});
       }
+      throw err;
     } finally {
       if (current === generation.current) { pendingRef.current.delete(id); setPendingIds(new Set(pendingRef.current)); }
     }
@@ -115,14 +125,24 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const toggleHidden = async (id: string) => {
     if (!user || pendingRef.current.has(id)) return;
     const current = generation.current;
+    const isUnhiding = hiddenIds.includes(id);
     const wasFavorite = favoriteIds.includes(id);
     pendingRef.current.add(id); setPendingIds(new Set(pendingRef.current));
+    setHiddenIds(prev => isUnhiding ? prev.filter(item => item !== id) : [...prev, id]);
+    if (!isUnhiding && wasFavorite) {
+      setFavoriteIds(prev => prev.filter(item => item !== id));
+    }
     try {
-      await accountRequest(`/hidden-stocks/${encodeURIComponent(id)}`, { method: hiddenIds.includes(id) ? 'DELETE' : 'PUT' });
+      await accountRequest(`/hidden-stocks/${encodeURIComponent(id)}`, { method: isUnhiding ? 'DELETE' : 'PUT' });
       if (current === generation.current) {
-        await reloadHidden();
+        setRevision(v => v + 1);
+      }
+    } catch (err) {
+      if (current === generation.current) {
+        await reloadHidden().catch(() => {});
         if (wasFavorite) await reloadFavorites().catch(() => {});
       }
+      throw err;
     } finally {
       if (current === generation.current) { pendingRef.current.delete(id); setPendingIds(new Set(pendingRef.current)); }
     }
@@ -130,27 +150,48 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const bulkHideStocks = async (ids: string[]) => {
     if (!user || ids.length === 0) return;
     const current = generation.current;
+    const idSet = new Set(ids);
     const hadFavorite = ids.some(id => favoriteIds.includes(id));
-    await accountRequest('/hidden-stocks/bulk', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stockIds: ids }),
-    });
-    if (current === generation.current) {
-      await reloadHidden();
-      if (hadFavorite) await reloadFavorites().catch(() => {});
+    setHiddenIds(prev => Array.from(new Set([...prev, ...ids])));
+    if (hadFavorite) {
+      setFavoriteIds(prev => prev.filter(id => !idSet.has(id)));
+    }
+    try {
+      await accountRequest('/hidden-stocks/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stockIds: ids }),
+      });
+      if (current === generation.current) {
+        setRevision(v => v + 1);
+      }
+    } catch (err) {
+      if (current === generation.current) {
+        await reloadHidden().catch(() => {});
+        if (hadFavorite) await reloadFavorites().catch(() => {});
+      }
+      throw err;
     }
   };
   const bulkUnhideStocks = async (ids: string[]) => {
     if (!user || ids.length === 0) return;
     const current = generation.current;
-    await accountRequest('/hidden-stocks/bulk-unhide', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stockIds: ids }),
-    });
-    if (current === generation.current) {
-      await reloadHidden();
+    const idSet = new Set(ids);
+    setHiddenIds(prev => prev.filter(id => !idSet.has(id)));
+    try {
+      await accountRequest('/hidden-stocks/bulk-unhide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stockIds: ids }),
+      });
+      if (current === generation.current) {
+        setRevision(v => v + 1);
+      }
+    } catch (err) {
+      if (current === generation.current) {
+        await reloadHidden().catch(() => {});
+      }
+      throw err;
     }
   };
   const logout = async () => { await accountRequest('/auth/logout', { method: 'POST' }); clear(); };

@@ -44,6 +44,8 @@ interface StockDetailPageProps {
   market?: Market;
   embedded?: boolean;
   onDeleted?: () => void;
+  onFavoriteToggled?: (favorite: boolean) => void;
+  onHiddenToggled?: (hidden: boolean) => void;
 }
 
 export const StockDetailPage: React.FC<StockDetailPageProps> = ({
@@ -54,6 +56,8 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
   market: propMarket,
   embedded = false,
   onDeleted,
+  onFavoriteToggled,
+  onHiddenToggled,
 }) => {
   const { ticker: urlTicker } = useParams<{ ticker?: string }>();
   const navigate = useNavigate();
@@ -139,10 +143,12 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
         const [detailRes, rulesRes, listRes] = await Promise.allSettled([
           stockApi.getStockDetail(currentTicker, signal, currentMarket),
           stockApi.getRules(signal),
-          stockApi.getStocks(
-            { limit: 100, sort: 'marketCap', order: 'desc' },
-            signal
-          ),
+          embedded
+            ? Promise.resolve(null)
+            : stockApi.getStocks(
+                { limit: 100, sort: 'marketCap', order: 'desc' },
+                signal
+              ),
         ]);
 
         if (signal.aborted) return;
@@ -155,7 +161,7 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
         }
 
         // 2. Process stock list
-        if (listRes.status === 'fulfilled') {
+        if (listRes.status === 'fulfilled' && listRes.value) {
           setStockList(listRes.value.items);
         }
 
@@ -546,8 +552,8 @@ export const StockDetailPage: React.FC<StockDetailPageProps> = ({
               <h1 id={embedded ? 'drawer-stock-title' : undefined} className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
                 {detail.name}
               </h1>
-              <FavoriteButton stockId={detail.id} name={detail.name} />
-              <HideStockButton stockId={detail.id} name={detail.name} />
+              <FavoriteButton stockId={detail.id} name={detail.name} onToggled={onFavoriteToggled} />
+              <HideStockButton stockId={detail.id} name={detail.name} onToggled={onHiddenToggled} />
               {user?.role === 'admin' && (
                 <button
                   type="button"

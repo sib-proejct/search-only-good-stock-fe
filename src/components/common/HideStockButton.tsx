@@ -52,17 +52,26 @@ export function HideStockButton({
       navigate(`/login?next=${encodeURIComponent(location.pathname + location.search)}`);
       return;
     }
-    try {
-      if (hiddenError) {
+    if (hiddenError) {
+      try {
         await reloadHidden();
-      } else {
-        const nextState = !saved;
-        setOptimistic(nextState);
-        await toggleHidden(stockId);
-        onToggled?.(nextState);
+      } catch {
+        setError(
+          ko
+            ? '숨김 상태를 저장하지 못했습니다. 다시 시도해 주세요.'
+            : 'Could not update hidden state. Please retry.',
+        );
       }
+      return;
+    }
+    const nextState = !saved;
+    setOptimistic(nextState);
+    onToggled?.(nextState);
+    try {
+      await toggleHidden(stockId);
     } catch {
       setOptimistic(null);
+      onToggled?.(!nextState);
       setError(
         ko
           ? '숨김 상태를 저장하지 못했습니다. 다시 시도해 주세요.'

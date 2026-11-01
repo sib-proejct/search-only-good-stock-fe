@@ -42,8 +42,15 @@ export type CurrentMarketDTO = Schemas['CurrentMarketInput'];
 export type StockSummaryDTO = Omit<Schemas['StockSummaryDTO'], 'memo'> & {
   memo?: string | null;
 };
+export interface StockListCountsDTO {
+  total: number;
+  passed: number;
+  margin: number;
+}
+
 export type StockListResponse = Omit<Schemas['StockListResponse'], 'items'> & {
   items: StockSummaryDTO[];
+  counts?: StockListCountsDTO | null;
 };
 export type StockDetailDTO = Omit<Schemas['StockDetailDTO'], 'memo'> & {
   memo?: string | null;
@@ -51,15 +58,16 @@ export type StockDetailDTO = Omit<Schemas['StockDetailDTO'], 'memo'> & {
 export type ReadinessResponse = Schemas['ReadinessResponse'];
 
 export interface StockMemoDTO {
-  stock_id: string;
+  stockId: string;
   content: string;
-  updated_at?: string | null;
+  updatedAt?: string | null;
 }
 
 export type StockListQuery = NonNullable<
   operations['list_stocks_api_stocks_get']['parameters']['query']
 > & {
   hiddenOnly?: boolean;
+  includeCounts?: boolean;
 };
 
 export interface BatchRunStatusDTO {

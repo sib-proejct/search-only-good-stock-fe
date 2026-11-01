@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   StockSummaryDTO,
+  StockListCountsDTO,
   StockListQuery,
   Market,
   CoreGradeFilter,
@@ -9,15 +10,15 @@ import {
   SortOrder,
 } from '../types/api';
 import { stockApi } from '../services/api';
+import { getLowestIntrinsicValue } from '../utils/valuationFormatters';
 
 export type CoreGradeFilterOption = CoreGradeFilter | 'ALL';
 export type ValuationStatusFilter = ValuationStatus | 'ALL';
 
 export interface UseStocksReturn {
-  years: number;
-  setYears: (years: number) => void;
   stocks: StockSummaryDTO[];
   total: number;
+  counts: StockListCountsDTO | null;
   loading: boolean;
   loadingMore: boolean;
   error: string | null;
@@ -39,17 +40,16 @@ export interface UseStocksReturn {
   retry: () => void;
   resetFilters: () => void;
   updateStockMemoLocal: (stockId: string, memo: string | null) => void;
+  removeStocksLocal: (stockIds: string[]) => void;
 }
 
 export function useStocks(
   favoritesOnly = false,
-  favoritesRevision = 0,
   hiddenOnly = false,
 ): UseStocksReturn {
-  const [years, setYearsState] = useState(5);
-  const setYears = useCallback((value: number) => { setYearsState(value); setOffset(0); }, []);
   const [stocks, setStocks] = useState<StockSummaryDTO[]>([]);
   const [total, setTotal] = useState(0);
+  const [counts, setCounts] = useState<StockListCountsDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -114,7 +114,7 @@ export function useStocks(
   const requestIdRef = useRef(0);
   const loadedQueryRef = useRef('');
 
-  useEffect(() => { setOffset(0); }, [favoritesOnly, hiddenOnly, favoritesRevision]);
+  useEffect(() => { setOffset(0); }, [favoritesOnly, hiddenOnly]);
 
   // Fetch stocks function
   const fetchStocks = useCallback(
@@ -157,9 +157,12 @@ export function useStocks(
           query.order = sortOrder;
         }
 
-        const queryKey = JSON.stringify({ ...query, offset: 0, favoritesRevision });
+        const queryKey = JSON.stringify({ ...query, offset: 0 });
         const append = isLoadMore && loadedQueryRef.current === queryKey;
-        if (!append) query.offset = 0;
+        if (!append) {
+          query.offset = 0;
+          query.includeCounts = true;
+        }
         const response = await stockApi.getStocks(query, controller.signal);
         if (requestId !== requestIdRef.current) return;
         loadedQueryRef.current = queryKey;
@@ -168,6 +171,9 @@ export function useStocks(
           setStocks((prev) => [...prev, ...response.items]);
         } else {
           setStocks(response.items);
+          if (response.counts) {
+            setCounts(response.counts);
+          }
         }
         setTotal(response.total);
         setError(null);
@@ -189,7 +195,6 @@ export function useStocks(
     [
       favoritesOnly,
       hiddenOnly,
-      favoritesRevision,
       debouncedSearch,
       market,
       coreGradeFilter,
@@ -237,7 +242,6 @@ export function useStocks(
     setMarketState([]);
     setCoreGradeFilterState('ALL');
     setValuationStatusState('ALL');
-    setYearsState(5);
     setSortFieldState('marketCap');
     setSortOrderState('desc');
     setOffset(0);
@@ -249,10 +253,40 @@ export function useStocks(
     );
   }, []);
 
+  const removeStocksLocal = useCallback((stockIds: string[]) => {
+    if (stockIds.length === 0) return;
+    const idSet = new Set(stockIds);
+    setStocks((prev) => {
+      const removedItems = prev.filter((s) => idSet.has(s.id));
+      const next = prev.filter((s) => !idSet.has(s.id));
+      const removedCount = removedItems.length;
+      if (removedCount > 0) {
+        setTotal((t) => Math.max(0, t - removedCount));
+        const removedPassed = removedItems.filter((s) => s.coreStatus === 'PASS').length;
+        const removedMargin = removedItems.filter((s) => {
+          const minInfo = getLowestIntrinsicValue(s.periodValuations);
+          const minYear = minInfo.minYear ?? 5;
+          const status = s.periodValuations?.[String(minYear)]?.dcf.status ?? s.valuationStatus;
+          return status === 'PASS_WITH_MARGIN';
+        }).length;
+        setCounts((c) =>
+          c
+            ? {
+                total: Math.max(0, c.total - removedCount),
+                passed: Math.max(0, c.passed - removedPassed),
+                margin: Math.max(0, c.margin - removedMargin),
+              }
+            : null,
+        );
+      }
+      return next;
+    });
+  }, []);
+
   return {
-    years, setYears,
     stocks,
     total,
+    counts,
     loading,
     loadingMore,
     error,
@@ -274,5 +308,6 @@ export function useStocks(
     retry,
     resetFilters,
     updateStockMemoLocal,
+    removeStocksLocal,
   };
 }

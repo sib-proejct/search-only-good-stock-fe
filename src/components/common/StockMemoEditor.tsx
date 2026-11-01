@@ -27,6 +27,7 @@ export const StockMemoEditor: React.FC<StockMemoEditorProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export const StockMemoEditor: React.FC<StockMemoEditorProps> = ({
   useEffect(() => {
     if (isEditing) {
       setDraft(memo || '');
+      setSaveError(null);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isEditing, memo]);
@@ -51,6 +53,7 @@ export const StockMemoEditor: React.FC<StockMemoEditorProps> = ({
 
   const handleCancel = (e?: React.MouseEvent) => {
     e?.stopPropagation();
+    setSaveError(null);
     setIsEditing(false);
   };
 
@@ -60,6 +63,7 @@ export const StockMemoEditor: React.FC<StockMemoEditorProps> = ({
 
     const trimmed = draft.trim();
     setSaving(true);
+    setSaveError(null);
 
     try {
       if (trimmed === '') {
@@ -73,7 +77,7 @@ export const StockMemoEditor: React.FC<StockMemoEditorProps> = ({
       }
       setIsEditing(false);
     } catch {
-      // Silently finish saving on network error
+      setSaveError('메모 저장 실패');
     } finally {
       setSaving(false);
     }
@@ -95,17 +99,25 @@ export const StockMemoEditor: React.FC<StockMemoEditorProps> = ({
       <div
         className={`text-[11px] truncate max-w-[160px] flex items-center gap-1 ${className}`}
         onClick={(e) => e.stopPropagation()}
+        title={saveError || undefined}
       >
         <input
           ref={inputRef}
           type="text"
           value={draft}
           placeholder="메모..."
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            if (saveError) setSaveError(null);
+          }}
           onKeyDown={handleKeyDown}
           disabled={saving}
           maxLength={500}
-          className="flex-1 min-w-0 p-0 text-[11px] bg-transparent text-[#1D1D1F] dark:text-[#F5F5F7] border-b border-[#0071E3] dark:border-[#2997FF] outline-none font-sans"
+          className={`flex-1 min-w-0 p-0 text-[11px] bg-transparent text-[#1D1D1F] dark:text-[#F5F5F7] border-b outline-none font-sans ${
+            saveError
+              ? 'border-[#FF3B30]'
+              : 'border-[#0071E3] dark:border-[#2997FF]'
+          }`}
         />
         <button
           type="button"
