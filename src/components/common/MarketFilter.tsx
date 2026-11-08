@@ -14,7 +14,7 @@ export function MarketFilter({ markets, onChange }: {
     { id: 'KOSDAQ', label: 'KOSDAQ' },
   ];
   return (
-    <div role="group" aria-label={language === 'ko' ? '시장 선택' : 'Markets'} className="flex flex-wrap items-center gap-1 min-w-0 max-w-full rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 border border-black/[0.04] dark:border-white/[0.06]">
+    <div role="group" aria-label={language === 'ko' ? '시장 선택' : 'Markets'} className="w-full md:w-fit flex items-center gap-1 min-w-0 max-w-full overflow-x-auto scrollbar-none rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] p-1 border border-black/[0.04] dark:border-white/[0.06]">
       {options.map((option) => {
         const isActive = option.id === 'ALL' ? markets.length === 0 : markets.includes(option.id);
         return (
@@ -28,7 +28,7 @@ export function MarketFilter({ markets, onChange }: {
                 ? markets.filter((value) => value !== id)
                 : [...markets, id]);
             }}
-            className={`px-3 sm:px-4 py-2 text-xs sm:text-[13px] rounded-xl whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071E3] ${isActive
+            className={`flex-1 md:flex-none text-center px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-[13px] rounded-xl whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071E3] ${isActive
               ? 'bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-[#2997FF] font-bold shadow-sm'
               : 'text-[#6B7684] dark:text-[#A1A1A6] hover:bg-white/60 dark:hover:bg-[#2C2C2E] font-medium'}`}
           >

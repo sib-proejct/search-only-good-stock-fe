@@ -7,11 +7,13 @@ export interface Comment {
   author: {
     name: string;
     isVerified?: boolean;
+    userId?: number | null;
   };
   createdAt: string;
   content: string;
   likes: number;
   userLiked?: boolean;
+  canDelete?: boolean;
 }
 
 export interface DiscussionPost {
@@ -21,6 +23,7 @@ export interface DiscussionPost {
   author: {
     name: string;
     isVerified?: boolean;
+    userId?: number | null;
   };
   createdAt: string;
   ticker?: string;
@@ -36,6 +39,7 @@ export interface DiscussionPost {
   commentsCount: number;
   viewsCount: number;
   comments?: Comment[];
+  canDelete?: boolean;
 }
 
 export interface SentimentPollOption {

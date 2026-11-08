@@ -12,6 +12,7 @@ import {
   Bookmark,
   Send,
   ArrowRight,
+  Trash2,
 } from 'lucide-react';
 
 interface CommunityDetailDrawerProps {
@@ -24,6 +25,8 @@ interface CommunityDetailDrawerProps {
   onToggleBookmark: (postId: string) => void;
   isBookmarked: boolean;
   onAddComment: (postId: string, commentText: string) => void;
+  onDeletePost?: (postId: string) => void;
+  onDeleteComment?: (postId: string, commentId: string) => void;
   onSelectStock?: (ticker: string) => void;
   showToast?: (msg: string) => void;
   onWidthChange?: (width: number) => void;
@@ -40,6 +43,8 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
   onToggleBookmark,
   isBookmarked,
   onAddComment,
+  onDeletePost,
+  onDeleteComment,
   onSelectStock,
   showToast,
   onWidthChange,
@@ -267,7 +272,13 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
     return null;
   }
 
-  const getStockInfo = (ticker: string) => {
+  const getStockInfo = (ticker: string): {
+    ticker: string;
+    name: string;
+    price?: string;
+    change?: string;
+    score?: number;
+  } => {
     const matched = TRENDING_TICKERS.find((t) => t.ticker.toUpperCase() === ticker.toUpperCase());
     if (matched) return matched;
     if (ticker.toUpperCase() === 'KO') {
@@ -276,9 +287,6 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
     return {
       ticker,
       name: ticker.replace('.KS', ''),
-      price: '$150.00',
-      change: '+0.50%',
-      score: 85,
     };
   };
 
@@ -357,6 +365,17 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
 
           {/* Right: Actions & Close Button */}
           <div className="flex items-center gap-2">
+            {onDeletePost && post.canDelete !== false && (
+              <button
+                onClick={() => onDeletePost(post.id)}
+                className="p-1.5 rounded-full text-[#86868B] hover:text-[#FF3B30] bg-white dark:bg-[#1C1C1E] border border-black/[0.08] dark:border-white/[0.08] transition-colors cursor-pointer"
+                title="게시글 삭제"
+                aria-label="게시글 삭제"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+
             <button
               onClick={() => onToggleBookmark(post.id)}
               className={`p-1.5 rounded-full border transition-colors cursor-pointer ${isBookmarked
@@ -438,7 +457,8 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
               {/* Readable Inline Stock Metrics (Name, Ticker, Price, Change Rate, Buffett Score, View Analysis) */}
               {post.ticker && (() => {
                 const stock = getStockInfo(post.ticker);
-                const isUp = stock.change.startsWith('+');
+                const isUp = stock.change?.startsWith('+') ?? false;
+                const displayScore = post.buffettScore ?? stock.score;
                 return (
                   <div className="flex items-center gap-2 text-xs flex-wrap py-0.5">
                     {/* Stock Name & Ticker */}
@@ -447,24 +467,30 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
                     </span>
 
                     {/* Current Price */}
-                    <span className="font-bold tabular-nums text-[#1D1D1F] dark:text-[#F5F5F7]">
-                      {stock.price}
-                    </span>
+                    {stock.price && (
+                      <span className="font-bold tabular-nums text-[#1D1D1F] dark:text-[#F5F5F7]">
+                        {stock.price}
+                      </span>
+                    )}
 
                     {/* Change Rate Pill */}
-                    <span
-                      className={`font-semibold tabular-nums text-[11px] px-1.5 py-0.5 rounded ${isUp
-                        ? 'bg-[#34C759]/15 text-[#34C759] dark:text-[#30D158]'
-                        : 'bg-[#FF3B30]/15 text-[#FF3B30] dark:text-[#FF453A]'
-                        }`}
-                    >
-                      {stock.change}
-                    </span>
+                    {stock.change && (
+                      <span
+                        className={`font-semibold tabular-nums text-[11px] px-1.5 py-0.5 rounded ${isUp
+                          ? 'bg-[#34C759]/15 text-[#34C759] dark:text-[#30D158]'
+                          : 'bg-[#FF3B30]/15 text-[#FF3B30] dark:text-[#FF453A]'
+                          }`}
+                      >
+                        {stock.change}
+                      </span>
+                    )}
 
                     {/* Buffett Score Pill */}
-                    <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF]">
-                      {t('buffettScoreShort')} {post.buffettScore ?? stock.score}{t('scorePts')}
-                    </span>
+                    {displayScore != null && (
+                      <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF]">
+                        {t('buffettScoreShort')} {displayScore}{t('scorePts')}
+                      </span>
+                    )}
 
                     {/* Action Link */}
                     {onSelectStock && (
@@ -572,11 +598,22 @@ export const CommunityDetailDrawer: React.FC<CommunityDetailDrawerProps> = ({
                           {c.content}
                         </div>
 
-                        {/* 작성 시각 */}
-                        <div className="w-12 sm:w-14 text-right shrink-0 pt-0.5">
+                        {/* 작성 시각 & 삭제 */}
+                        <div className="flex items-center justify-end gap-1.5 shrink-0 pt-0.5">
                           <span className="text-[11px] text-[#6E6E73] dark:text-[#86868B] whitespace-nowrap">
                             {c.createdAt}
                           </span>
+                          {onDeleteComment && c.canDelete !== false && (
+                            <button
+                              type="button"
+                              onClick={() => onDeleteComment(post.id, c.id)}
+                              className="p-0.5 text-[#86868B] hover:text-[#FF3B30] transition-colors cursor-pointer"
+                              title="댓글 삭제"
+                              aria-label="댓글 삭제"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

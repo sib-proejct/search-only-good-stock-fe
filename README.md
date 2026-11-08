@@ -105,3 +105,21 @@ npm run preview
 ## 📖 개발 지침
 
 자세한 AI/Agent 및 개발 가이드라인은 [AGENTS.md](AGENTS.md) 및 [프론트엔드 개발 가이드](docs/dev/frontend.md)를 참고하세요.
+
+---
+
+## ☕ Support / Donate me
+
+이 프로젝트가 마음에 드셨거나 도움이 되셨다면, 커피 한 잔으로 프로젝트의 지속적인 개발과 운영을 응원해 주세요! 여러분의 후원은 큰 힘이 됩니다. 🙏
+
+- **Buy Me a Coffee**: [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-yellow.svg?style=flat-square&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/)
+- **GitHub Sponsors**: [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-EA4AAA?style=flat-square&logo=github-sponsors&logoColor=white)](https://github.com/sponsors/)
+- **간편 송금 및 계좌 후원**:
+  - 간편 송금 링크 또는 후원 계좌번호를 기재하여 사용하실 수 있습니다.
+
+---
+
+## 📄 라이선스 (License)
+
+이 프로젝트는 [Apache License 2.0](LICENSE) 라이선스를 따릅니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참고하세요.
+

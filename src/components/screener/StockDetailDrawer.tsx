@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { StockSummaryDTO, StockDetailDTO, ReasonCode, Market } from '../../types/api';
 import { stockApi } from '../../services/api';
 import { periodNote, valuationPrice, valuationMarketCap } from '../../utils/valuationFormatters';
@@ -21,6 +21,7 @@ interface StockDetailDrawerProps {
   isOpen: boolean;
   years?: number;
   content?: React.ReactNode;
+  actionLabel?: string;
   onClose: () => void;
   onNavigateToFullDetail: (ticker: string, market: Market) => void;
   stockList: StockSummaryDTO[];
@@ -32,6 +33,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
   isOpen,
   years = 5,
   content,
+  actionLabel,
   onClose,
   onNavigateToFullDetail,
   stockList,
@@ -40,6 +42,11 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
   const { t, language } = useAppConfig();
   const [detail, setDetail] = useState<StockDetailDTO | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    bodyRef.current?.scrollTo({ top: 0 });
+  }, [stock?.id, actionLabel]);
 
   const getReasonLabel = (code: ReasonCode): string => {
     switch (code) {
@@ -301,9 +308,9 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
             <button
               onClick={() => onNavigateToFullDetail(stock.ticker, stock.market)}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] bg-[#0071E3]/10 dark:bg-[#2997FF]/15 hover:bg-[#0071E3]/20 rounded-full transition-all cursor-pointer"
-              title={t('viewFullAnalysis')}
+              title={actionLabel ?? t('viewFullValuation')}
             >
-              <span>{t('viewFullAnalysis')}</span>
+              <span>{actionLabel ?? t('viewFullValuation')}</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
 
@@ -319,7 +326,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
         </div>
 
         {/* Scrollable Drawer Body */}
-        <div className="flex-1 overflow-y-auto px-5 sm:px-7 py-5 sm:py-6 space-y-6">
+        <div ref={bodyRef} className="flex-1 overflow-y-auto px-5 sm:px-7 py-5 sm:py-6 space-y-6">
           {customContent ? content : <>
           {/* 1. Hero Stock Identity Card */}
           <div className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-5 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] shadow-sm transition-colors duration-300">
@@ -584,7 +591,7 @@ export const StockDetailDrawer: React.FC<StockDetailDrawerProps> = ({
             onClick={() => onNavigateToFullDetail(stock.ticker, stock.market)}
             className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-bold text-white bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#2997FF] dark:hover:bg-[#0071E3] shadow-sm hover:shadow transition-all cursor-pointer"
           >
-            <span>{t('viewFullAnalysis')}</span>
+            <span>{actionLabel ?? t('viewFullValuation')}</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
         </div>

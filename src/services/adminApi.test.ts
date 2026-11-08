@@ -4,6 +4,7 @@ import {
   changedValues,
   fieldDisplay,
   fieldValue,
+  type BulkRecalculateResponse,
   type EditorField,
   type FactRow,
   type ValuationOptions,
@@ -154,5 +155,51 @@ describe('administrator valuation evidence', () => {
     response.dcf!.reasonCodes = ['FINANCIAL_SECTOR'];
     mockCalculation([annualFact(2021, { ebit: '-10' }), annualFact(2022), annualFact(2023)], response);
     expect((await calculateAdminValuation(7, calculationOptions)).earningsPowerFailures).toEqual([]);
+  });
+
+  it('posts bulk recalculation request and receives response', async () => {
+    const { bulkRecalculateValuation } = await import('./adminApi');
+    const mockResponse: BulkRecalculateResponse = {
+      totalStocks: 1,
+      recalculatedCount: 1,
+      appliedCount: 1,
+      failedCount: 0,
+      conditions: {
+        normalizationYears: 5,
+        normalizationMethod: 'CONSERVATIVE',
+        capexMode: 'TOTAL',
+        growthMethod: 'OEPS_WEIGHTED',
+        growthRateCap: '0.20',
+        growthRateFloor: '0.05',
+      },
+      items: [
+        {
+          ticker: 'AAPL',
+          name: 'Apple',
+          market: 'NASDAQ',
+          changed: true,
+          status: 'PASS_WITH_MARGIN',
+          intrinsicValuePerShare: 150,
+          conservativeMarginOfSafety: 0.25,
+          epsGrowth: 0.1,
+          oepsGrowth: 0.1,
+        },
+      ],
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => mockResponse,
+      }),
+    );
+
+    const res = await bulkRecalculateValuation({
+      conditions: mockResponse.conditions,
+      apply: true,
+    });
+    expect(res.totalStocks).toBe(1);
+    expect(res.recalculatedCount).toBe(1);
+    expect(res.items[0].ticker).toBe('AAPL');
   });
 });

@@ -6,11 +6,12 @@ import {
   Eye, Columns2, Edit3, Save, AlertCircle, CheckCircle2, User
 } from 'lucide-react';
 import { useAppConfig } from '../context/ThemeLanguageContext';
+import { useAccount } from '../context/AccountContext';
 import { DiscussionPost } from '../types/community';
 import {
   TRENDING_TICKERS,
-  getStoredDiscussions,
-  addDiscussionPost,
+  createCommunityPost,
+  fetchCommunityPosts,
   saveWriteDraft,
   getWriteDraft,
   clearWriteDraft
@@ -28,6 +29,7 @@ export const CommunityWritePage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { t } = useAppConfig();
+  const { user } = useAccount();
 
   // Query params
   const initialCategoryParam = searchParams.get('category') || '';
@@ -40,9 +42,11 @@ export const CommunityWritePage: React.FC = () => {
     initialTickerParam || (initialCategoryParam === '삼성전자' || !initialCategoryParam ? '005930.KS' : '')
   );
   const [content, setContent] = useState<string>('');
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
-  // Screener Stocks from API
+  // Screener Stocks & Existing Posts from API
   const [apiStocks, setApiStocks] = useState<StockOption[]>([]);
+  const [existingPosts, setExistingPosts] = useState<DiscussionPost[]>([]);
 
   useEffect(() => {
     stockApi
@@ -57,6 +61,9 @@ export const CommunityWritePage: React.FC = () => {
           );
         }
       })
+      .catch(() => {});
+    fetchCommunityPosts()
+      .then(setExistingPosts)
       .catch(() => {});
   }, []);
 
@@ -121,8 +128,7 @@ export const CommunityWritePage: React.FC = () => {
     });
 
     // 3. Add existing discussion categories
-    const stored = getStoredDiscussions();
-    stored.forEach((post) => {
+    existingPosts.forEach((post) => {
       if (post.category && post.category !== 'all') {
         const key = post.category.toLowerCase();
         const existing = map.get(key);
@@ -139,7 +145,7 @@ export const CommunityWritePage: React.FC = () => {
     });
 
     return Array.from(map.values());
-  }, [apiStocks]);
+  }, [apiStocks, existingPosts]);
 
   // Stock Selection Handler: Fully links Category and Ticker together
   const handleSelectStock = (stockName: string, stockTicker?: string) => {
@@ -288,8 +294,9 @@ export const CommunityWritePage: React.FC = () => {
   };
 
   // Submit Post
-  const handleSubmitPost = (e: React.FormEvent) => {
+  const handleSubmitPost = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
 
     if (!title.trim()) {
       showToast('제목을 입력해주세요.', 'error');
@@ -302,41 +309,22 @@ export const CommunityWritePage: React.FC = () => {
     }
 
     const finalCategory = category.trim() || '기타';
-    const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-    const matchedTrending = TRENDING_TICKERS.find(
-      (item) =>
-        item.name.toLowerCase() === finalCategory.toLowerCase() ||
-        (ticker && item.ticker.toUpperCase() === ticker.trim().toUpperCase())
-    );
-
-    const newPost: DiscussionPost = {
-      id: `post-${Date.now()}`,
-      title: title.trim(),
-      category: finalCategory,
-      author: {
-        name: '나',
-        isVerified: false,
-      },
-      createdAt: currentTime,
-      ticker: ticker.trim().toUpperCase() || undefined,
-      stockPassStatus: matchedTrending ? (matchedTrending.pass ? 'pass' : 'watch') : undefined,
-      buffettScore: matchedTrending?.score,
-      snippet: content.trim().slice(0, 160) + (content.length > 160 ? '...' : ''),
-      content: content.trim(),
-      upvotes: 1,
-      downvotes: 0,
-      userVote: 'up',
-      commentsCount: 0,
-      viewsCount: 1,
-      comments: [],
-    };
-
-    addDiscussionPost(newPost);
-    clearWriteDraft();
-
-    navigate('/community');
+    setSubmitting(true);
+    try {
+      await createCommunityPost({
+        title: title.trim(),
+        category: finalCategory,
+        ticker: ticker.trim().toUpperCase() || undefined,
+        content: content.trim(),
+        authorName: user?.username || '나',
+      });
+      clearWriteDraft();
+      navigate('/community');
+    } catch {
+      showToast('게시글 저장에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Cancel / Back Navigation
@@ -462,8 +450,9 @@ export const CommunityWritePage: React.FC = () => {
 
           <button
             type="button"
+            disabled={submitting}
             onClick={handleSubmitPost}
-            className="px-5 py-2 rounded-xl text-xs font-bold bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#0071E3] dark:hover:bg-[#2997FF] text-white flex items-center gap-1.5 shadow-md shadow-[#0071E3]/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+            className="px-5 py-2 rounded-xl text-xs font-bold bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#0071E3] dark:hover:bg-[#2997FF] text-white flex items-center gap-1.5 shadow-md shadow-[#0071E3]/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
             <span>{t('submitPost')}</span>
@@ -588,7 +577,7 @@ export const CommunityWritePage: React.FC = () => {
                 <span>작성자</span>
               </label>
               <div className="w-full bg-[#F5F5F7]/80 dark:bg-[#2C2C2E]/60 text-[#1D1D1F] dark:text-[#F5F5F7] text-xs font-semibold px-3.5 py-2.5 rounded-xl border border-black/[0.04] dark:border-white/[0.08] select-none flex items-center">
-                <span>나</span>
+                <span>{user?.username || '나'}</span>
               </div>
             </div>
           </div>
@@ -834,7 +823,8 @@ export const CommunityWritePage: React.FC = () => {
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl font-bold bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#0071E3] dark:hover:bg-[#2997FF] text-white flex items-center gap-1.5 shadow-md shadow-[#0071E3]/20 cursor-pointer transition-all"
+              disabled={submitting}
+              className="px-6 py-2.5 rounded-xl font-bold bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#0071E3] dark:hover:bg-[#2997FF] text-white flex items-center gap-1.5 shadow-md shadow-[#0071E3]/20 cursor-pointer transition-all disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{t('submitPost')}</span>

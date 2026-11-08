@@ -11,6 +11,8 @@ export const translations = {
     guideShort: '가이드',
     community: '내재가치 분석 게시판',
     communityShort: '내재가치 분석',
+    config: '계산 설정',
+    configShort: '설정',
     searchPlaceholder: '종목명, 티커 검색...',
     searchTickerPlaceholder: '검색...',
     masterPass: '통과',
@@ -290,7 +292,7 @@ export const translations = {
 
     // Drawer & Quick View
     quickStockDiagnosis: '종목 간편 진단',
-    viewFullAnalysis: '심층 분석 전체 페이지로 이동',
+    viewFullValuation: '내재가치 전체 페이지로 이동',
     prevStock: '이전 종목',
     nextStock: '다음 종목',
     close: '닫기',
@@ -320,6 +322,8 @@ export const translations = {
     guideShort: 'Guide',
     community: 'Intrinsic Value Board',
     communityShort: 'Valuation',
+    config: 'Valuation Settings',
+    configShort: 'Settings',
     searchPlaceholder: 'Search ticker, company...',
     searchTickerPlaceholder: 'Search...',
     masterPass: 'Pass',
@@ -599,7 +603,7 @@ export const translations = {
 
     // Drawer & Quick View
     quickStockDiagnosis: 'Quick Stock Diagnosis',
-    viewFullAnalysis: 'Open Full Deep Dive Analysis',
+    viewFullValuation: 'Open Full Valuation Page',
     prevStock: 'Previous Stock',
     nextStock: 'Next Stock',
     close: 'Close',

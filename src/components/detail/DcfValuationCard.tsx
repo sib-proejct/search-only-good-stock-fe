@@ -1,4 +1,5 @@
 import React from 'react';
+import { FinancialValuationDetails } from './FinancialValuationDetails';
 import {
   AnnualFinancialDTO,
   Currency,
@@ -39,6 +40,7 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
 }) => {
   const { t, language } = useAppConfig();
   const isKo = language === 'ko';
+  const financial = dcf.method === 'FINANCIAL_FCFE_DCF';
   const [isCalculationOpen, setIsCalculationOpen] = React.useState(false);
 
   const formatPrice = (val: number | string | null): string => {
@@ -207,12 +209,12 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-[#0071E3] dark:text-[#2997FF]" />
             <h2 className="text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tracking-tight">
-              {isKo ? '10개년 현금흐름 DCF 추정가치' : t('dcfIntrinsicValue')}
+              {financial ? (isKo ? '금융업 순이익 기반 DCF 추정가치' : 'Financial earnings DCF') : (isKo ? '10개년 현금흐름 DCF 추정가치' : t('dcfIntrinsicValue'))}
             </h2>
-            <HelpPopover content={DCF_GLOSSARY.header(language)} align="left" />
+            {!financial && <HelpPopover content={DCF_GLOSSARY.header(language)} align="left" />}
           </div>
           <p className="text-xs text-[#86868B] mt-0.5 font-normal">
-            {isKo
+            {financial ? (isKo ? '순이익에서 성장에 필요한 자기자본을 유보한 FCFE 추정' : 'FCFE after retaining equity for growth') : isKo
               ? '영업현금흐름 − 유형·무형자산 투자 기반 추정 모델'
               : '10-year cash-flow proxy after tangible and intangible investment'}
           </p>
@@ -385,9 +387,9 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
             {/* Assumptions strip */}
             <div className="pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex flex-wrap items-center justify-between text-[11px] text-[#86868B] font-mono gap-2">
               <div>
-                {isKo ? '정규화 주당주주이익(OEPS): ' : 'Normalized OEPS: '}
+                {financial ? (isKo ? '정규화 EPS: ' : 'Normalized EPS: ') : (isKo ? '정규화 주당주주이익(OEPS): ' : 'Normalized OEPS: ')}
                 <span className="font-bold text-[#1D1D1F] dark:text-[#F5F5F7] tabular-nums">
-                  {formatPrice(dcf.normalizedOeps)}
+                  {formatPrice(financial ? dcf.normalizedEps ?? null : dcf.normalizedOeps)}
                 </span>
               </div>
               <div>
@@ -408,14 +410,15 @@ export const DcfValuationCard: React.FC<DcfValuationCardProps> = ({
                     ? '정규화 Owner Earnings가 0 이하이므로 현재 현금흐름으로는 의미 있는 DCF 내재가치를 계산할 수 없습니다.'
                     : 'A meaningful DCF intrinsic value cannot be calculated because normalized Owner Earnings are zero or negative.')
                 : (isKo
-                    ? '해당 종목은 업종 특성 또는 필수 데이터 부족으로 Owner Earnings DCF 산출 대상에서 제외되었습니다.'
-                    : 'Owner Earnings DCF is not applicable due to industry classification or missing inputs.')}
+                    ? (financial ? '순이익·기초 및 기말 자기자본·시장자료의 누락 또는 양수 조건 미충족으로 계산할 수 없습니다.' : '필수 데이터 부족으로 Owner Earnings DCF를 계산할 수 없습니다.')
+                    : 'Valuation inputs are missing or fail the positive-value requirements.')}
             </p>
           </div>
         )}
 
+        {financial && <FinancialValuationDetails dcf={dcf} currency={currency} annuals={annualFinancials.map(row => ({ year: row.fiscalYear, netIncome: row.netIncomeCommon, equity: row.commonEquity }))} />}
         {/* Owner Earnings calculation details */}
-        {ownerEarningsRows.length > 0 && (
+        {!financial && ownerEarningsRows.length > 0 && (
           <div className="rounded-2xl border border-black/[0.06] dark:border-white/[0.08] overflow-hidden">
             <button
               type="button"

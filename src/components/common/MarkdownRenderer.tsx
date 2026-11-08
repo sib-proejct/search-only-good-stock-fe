@@ -5,6 +5,13 @@ interface MarkdownRendererProps {
   className?: string;
 }
 
+const isSafeUrl = (url: string): boolean => {
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+  if (trimmed.startsWith('/') || trimmed.startsWith('#')) return true;
+  return /^(https?:\/\/|mailto:)/i.test(trimmed);
+};
+
 // Helper to format inline markdown (bold, italic, inline code, links)
 const renderInline = (text: string): React.ReactNode[] => {
   const tokens: React.ReactNode[] = [];
@@ -44,17 +51,21 @@ const renderInline = (text: string): React.ReactNode[] => {
         </code>
       );
     } else if (linkText !== undefined && linkUrl !== undefined) {
-      tokens.push(
-        <a
-          key={`l-${keyIndex++}`}
-          href={linkUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[#0071E3] dark:text-[#2997FF] underline hover:opacity-80"
-        >
-          {linkText}
-        </a>
-      );
+      if (isSafeUrl(linkUrl)) {
+        tokens.push(
+          <a
+            key={`l-${keyIndex++}`}
+            href={linkUrl.trim()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#0071E3] dark:text-[#2997FF] underline hover:opacity-80"
+          >
+            {linkText}
+          </a>
+        );
+      } else {
+        tokens.push(<span key={`l-${keyIndex++}`}>{linkText}</span>);
+      }
     }
 
     lastIndex = regex.lastIndex;
