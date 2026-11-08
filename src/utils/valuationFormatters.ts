@@ -125,10 +125,14 @@ export function getLowestIntrinsicValue(
           base?: {
             intrinsicValuePerShare?: number | null;
           } | null;
+          conservative?: {
+            intrinsicValuePerShare?: number | null;
+          } | null;
         } | null;
       } | null;
     } | undefined
-  > | undefined
+  > | undefined,
+  scenario: 'base' | 'conservative' = 'base'
 ): LowestIntrinsicValueResult {
   if (!periodValuations) return { minIntrinsicValue: null, minYear: null };
 
@@ -136,7 +140,7 @@ export function getLowestIntrinsicValue(
   let minYear: number | null = null;
 
   for (let year = 1; year <= 5; year++) {
-    const val = periodValuations[String(year)]?.dcf?.scenarios?.base?.intrinsicValuePerShare;
+    const val = periodValuations[String(year)]?.dcf?.scenarios?.[scenario]?.intrinsicValuePerShare;
     if (typeof val === 'number' && val > 0) {
       if (minVal === null || val < minVal) {
         minVal = val;

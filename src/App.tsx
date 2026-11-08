@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, type ReactNode } from 'react';
-import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AccountProvider, useAccount } from './context/AccountContext';
 import { LoginPage } from './pages/LoginPage';
 import { ThemeLanguageProvider, useAppConfig } from './context/ThemeLanguageContext';
@@ -50,7 +50,6 @@ function RouteFallback() {
 }
 
 function AppContent() {
-  const { user } = useAccount();
   const { t, theme, toggleTheme, language, toggleLanguage } = useAppConfig();
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -150,12 +149,6 @@ function AppContent() {
           {/* Right: Links & Controls on the Same Single Line */}
           <div className="flex flex-wrap items-center gap-5 sm:gap-6">
             <nav className="flex items-center space-x-5 sm:space-x-6 text-[#86868B]">
-              <Link to="/config" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">
-                {language === 'ko' ? '계산 조건 설정 (Config)' : 'Valuation Settings (Config)'}
-              </Link>
-              {user?.role === 'admin' && <Link to="/admin/valuation" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">
-                {language === 'ko' ? '내재가치 계산기 (원자료)' : 'Valuation editor'}
-              </Link>}
               <a href="#privacy" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('privacy')}</a>
               <a href="#terms" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('terms')}</a>
               <a href="#disclosure" className="hover:text-[#1D1D1F] dark:hover:text-[#F5F5F7] transition-colors">{t('disclosure')}</a>

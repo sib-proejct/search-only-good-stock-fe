@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   useStocks,
   CoreGradeFilterOption,
+  ValuationStatusFilter,
 } from '../hooks/useStocks';
 import {
   CheckCircle2,
@@ -121,6 +122,25 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
   const [selectedStockIds, setSelectedStockIds] = useState<string[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkMessage, setBulkMessage] = useState<string | null>(null);
+  const [showConservativePrice, setShowConservativePrice] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('sogs_show_conservative_price') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleShowConservativePrice = () => {
+    setShowConservativePrice((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('sogs_show_conservative_price', String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     setSelectedStockIds((prev) =>
@@ -267,14 +287,19 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
   } : null;
 
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+  const [isValuationDropdownOpen, setIsValuationDropdownOpen] = useState(false);
 
   const sortDropdownRef = useRef<HTMLDivElement>(null);
+  const valuationDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close the sort dropdown when clicking outside
+  // Close the dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target as Node)) {
         setIsSortDropdownOpen(false);
+      }
+      if (valuationDropdownRef.current && !valuationDropdownRef.current.contains(event.target as Node)) {
+        setIsValuationDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -291,6 +316,21 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
     { id: 'FAIL', label: t('coreStatusFail') },
     { id: 'N/A', label: ko ? '평가 불가' : 'N/A' },
   ];
+
+  // Valuation Filter Options
+  const valuationFilterOptions: {
+    id: ValuationStatusFilter;
+    label: string;
+  }[] = [
+    { id: 'ALL', label: ko ? '가치평가: 전체' : 'Valuation: All' },
+    { id: 'PASS_WITH_MARGIN', label: ko ? '가치평가: 안전마진 확보' : 'Valuation: With margin' },
+    { id: 'WATCH', label: ko ? '가치평가: 관찰' : 'Valuation: Watch' },
+    { id: 'NO_MARGIN', label: ko ? '가치평가: 안전마진 부족' : 'Valuation: No margin' },
+    { id: 'N/A', label: ko ? '가치평가: 계산 불가' : 'Valuation: Unavailable' },
+  ];
+
+  const currentValuationOption =
+    valuationFilterOptions.find((v) => v.id === valuationStatus) || valuationFilterOptions[0];
 
   // Sort Options
   const sortOptions: { id: StockSort; label: string }[] = [
@@ -647,22 +687,74 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
               <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#86868B]" />
             </div>
 
-            {/* Valuation Select */}
-            <div className="relative min-w-0 flex-1 md:flex-none">
-              <select
+            {/* Valuation Selector Dropdown */}
+            <div className="relative shrink-0" ref={valuationDropdownRef}>
+              <button
+                type="button"
                 aria-label={ko ? '가치평가' : 'Valuation'}
-                value={valuationStatus}
-                onChange={event => setValuationStatus(event.target.value as typeof valuationStatus)}
-                className="w-full md:w-auto h-9 sm:h-10 pl-2.5 sm:pl-3.5 pr-6 sm:pr-8 truncate appearance-none rounded-xl sm:rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-xs sm:text-[13px] border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071E3]"
+                aria-expanded={isValuationDropdownOpen}
+                onClick={() => setIsValuationDropdownOpen(!isValuationDropdownOpen)}
+                className="h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-xl sm:rounded-2xl bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] font-medium text-xs sm:text-[13px] flex items-center gap-1 sm:gap-1.5 border border-black/[0.06] dark:border-white/[0.08] transition-all cursor-pointer select-none focus:outline-none whitespace-nowrap"
               >
-                <option value="ALL">{ko ? '가치평가: 전체' : 'Valuation: All'}</option>
-                <option value="PASS_WITH_MARGIN">{ko ? '가치평가: 안전마진 확보' : 'Valuation: With margin'}</option>
-                <option value="WATCH">{ko ? '가치평가: 관찰' : 'Valuation: Watch'}</option>
-                <option value="NO_MARGIN">{ko ? '가치평가: 안전마진 부족' : 'Valuation: No margin'}</option>
-                <option value="N/A">{ko ? '가치평가: 계산 불가' : 'Valuation: Unavailable'}</option>
-              </select>
-              <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 sm:right-3.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[#86868B]" />
+                <span>{currentValuationOption.label}</span>
+                <ChevronDown
+                  className={`w-3 h-3 text-[#86868B] shrink-0 transition-transform ${isValuationDropdownOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+
+              {isValuationDropdownOpen && (
+                <div className="absolute left-0 top-full mt-2 w-max min-w-44 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#1C1C1E] rounded-2xl shadow-xl border border-black/[0.08] dark:border-white/[0.12] p-1.5 z-50 animate-fade-in">
+                  {valuationFilterOptions.map((opt) => {
+                    const isSelected = valuationStatus === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          setValuationStatus(opt.id);
+                          setIsValuationDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-3 whitespace-nowrap transition-colors cursor-pointer select-none ${
+                          isSelected
+                            ? 'bg-[#F2F4F6] dark:bg-[#2C2C2E] font-bold text-[#0071E3] dark:text-[#2997FF]'
+                            : 'text-[#191F28] dark:text-[#F5F5F7] hover:bg-[#F9FAFB] dark:hover:bg-[#252528]'
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 shrink-0 text-[#0071E3] dark:text-[#2997FF] stroke-[2.5]" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
+            {/* Show Conservative Intrinsic Value Toggle */}
+            <button
+              type="button"
+              aria-pressed={showConservativePrice}
+              onClick={toggleShowConservativePrice}
+              title={
+                ko
+                  ? '표의 각 연도 내재가치 아래에 (보수적 가격) 표시를 켜거나 끕니다'
+                  : 'Toggle displaying (conservative price) below each intrinsic value'
+              }
+              className={`h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-xl sm:rounded-2xl font-medium text-xs sm:text-[13px] inline-flex items-center gap-1.5 border transition-all cursor-pointer select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071E3] whitespace-nowrap shrink-0 ${
+                showConservativePrice
+                  ? 'bg-[#0071E3]/10 dark:bg-[#2997FF]/15 border-[#0071E3]/30 dark:border-[#2997FF]/35 text-[#0071E3] dark:text-[#2997FF] font-semibold'
+                  : 'bg-[#F2F4F6] dark:bg-[#1C1C1E] hover:bg-[#E5E8EB] dark:hover:bg-[#2C2C2E] text-[#191F28] dark:text-[#F5F5F7] border-black/[0.06] dark:border-white/[0.08]'
+              }`}
+            >
+              <CheckCircle2
+                aria-hidden="true"
+                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 transition-colors ${
+                  showConservativePrice
+                    ? 'text-[#0071E3] dark:text-[#2997FF] stroke-[2.25]'
+                    : 'text-[#86868B] stroke-[2]'
+                }`}
+              />
+              <span>{ko ? '보수적 내재가치 보기' : 'Show conservative value'}</span>
+            </button>
           </div>
 
           {/* Right: Sorting Selector & Order Toggle */}
@@ -791,6 +883,8 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
               const rank = index + 1;
               const gradeInfo = getCoreGradeInfo(stock, language);
               const { minIntrinsicValue, minYear } = getLowestIntrinsicValue(stock.periodValuations);
+              const { minIntrinsicValue: minConservativeValue } =
+                getLowestIntrinsicValue(stock.periodValuations, 'conservative');
               const minPeriod = minYear ? stock.periodValuations?.[String(minYear)] : undefined;
               const ratioTitle = minYear
                 ? `${ko ? `5개년 최저 (${minYear}개년): ` : `5Y Min (${minYear}Y): `}${formatPrice(minIntrinsicValue, stock.currency)}${minPeriod ? ` · ${periodNote(minPeriod, ko)}` : ''}`
@@ -873,6 +967,11 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
                       {' · '}
                       <span className={priceToValueColor(stock.currentPrice, minIntrinsicValue)}>{valuationPriceToValueRatio(stock.currentPrice, minIntrinsicValue)}</span>
                     </div>
+                    {showConservativePrice && (
+                      <div className="text-[11px] font-mono tabular-nums text-[#86868B] dark:text-[#8E8E93]">
+                        ({formatPrice(minConservativeValue, stock.currency)} · <span className={priceToValueColor(stock.currentPrice, minConservativeValue)}>{valuationPriceToValueRatio(stock.currentPrice, minConservativeValue)}</span>)
+                      </div>
+                    )}
                     <div className={`text-xs font-mono font-bold ${confidenceColor(minPeriod?.dcf.confidence)}`}>{minPeriod?.dcf.confidence ?? '—'}</div>
                   </div>
                 </div>
@@ -919,9 +1018,15 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
                     const rank = index + 1;
                     const gradeInfo = getCoreGradeInfo(stock, language);
                     const { minIntrinsicValue, minYear } = getLowestIntrinsicValue(stock.periodValuations);
+                    const { minIntrinsicValue: minConservativeValue, minYear: minConservativeYear } =
+                      getLowestIntrinsicValue(stock.periodValuations, 'conservative');
                     const minPeriod = minYear ? stock.periodValuations?.[String(minYear)] : undefined;
                     const ratioTitle = minYear
-                      ? `${ko ? `5개년 최저 (${minYear}개년): ` : `5Y Min (${minYear}Y): `}${formatPrice(minIntrinsicValue, stock.currency)}${minPeriod ? ` · ${periodNote(minPeriod, ko)}` : ''}`
+                      ? `${ko ? `5개년 최저 (${minYear}개년): ` : `5Y Min (${minYear}Y): `}${formatPrice(minIntrinsicValue, stock.currency)}${
+                          showConservativePrice && minConservativeYear
+                            ? ` (${ko ? `보수적 최저 (${minConservativeYear}개년): ` : `Conservative Min (${minConservativeYear}Y): `}${formatPrice(minConservativeValue, stock.currency)})`
+                            : ''
+                        }${minPeriod ? ` · ${periodNote(minPeriod, ko)}` : ''}`
                       : (ko ? '내재가치 계산 불가' : 'Valuation unavailable');
 
                     return (
@@ -1033,12 +1138,40 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
                           const period = stock.periodValuations?.[String(year)];
                           const isLowest = year === minYear;
                           const hasWarning = period?.dcf.warnings.includes('INCOMPLETE_GROWTH_HISTORY');
-                          return <td key={year} title={periodNote(period, ko)} className={`py-3 px-1.5 lg:px-2 text-right font-mono tabular-nums whitespace-nowrap ${isLowest ? 'font-semibold text-[#0071E3] dark:text-[#2997FF]' : 'text-[#6E6E73] dark:text-[#A1A1A6]'}`}>
-                            {formatPrice(period?.dcf.scenarios?.base.intrinsicValuePerShare, stock.currency)}
-                            {hasWarning && <span className="ml-0.5 text-[#FF9500]">⚠</span>}
-                          </td>;
+                          const baseValue = period?.dcf.scenarios?.base.intrinsicValuePerShare;
+                          const conservativeValue = period?.dcf.scenarios?.conservative.intrinsicValuePerShare;
+                          return (
+                            <td
+                              key={year}
+                              title={periodNote(period, ko)}
+                              className={`py-3 px-1.5 lg:px-2 text-right font-mono tabular-nums whitespace-nowrap ${
+                                isLowest
+                                  ? 'font-semibold text-[#0071E3] dark:text-[#2997FF]'
+                                  : 'text-[#6E6E73] dark:text-[#A1A1A6]'
+                              }`}
+                            >
+                              <div>
+                                {formatPrice(baseValue, stock.currency)}
+                                {hasWarning && <span className="ml-0.5 text-[#FF9500]">⚠</span>}
+                              </div>
+                              {showConservativePrice && (
+                                <div className="text-[11px] font-normal text-[#86868B] dark:text-[#8E8E93] mt-0.5">
+                                  ({formatPrice(conservativeValue, stock.currency)})
+                                </div>
+                              )}
+                            </td>
+                          );
                         })}
-                        <td title={ratioTitle} className={`py-3 px-2 text-right font-mono tabular-nums whitespace-nowrap ${priceToValueColor(stock.currentPrice, minIntrinsicValue)}`}>{valuationPriceToValueRatio(stock.currentPrice, minIntrinsicValue)}</td>
+                        <td title={ratioTitle} className="py-3 px-2 text-right font-mono tabular-nums whitespace-nowrap">
+                          <div className={priceToValueColor(stock.currentPrice, minIntrinsicValue)}>
+                            {valuationPriceToValueRatio(stock.currentPrice, minIntrinsicValue)}
+                          </div>
+                          {showConservativePrice && (
+                            <div className={`text-[11px] font-normal mt-0.5 ${priceToValueColor(stock.currentPrice, minConservativeValue)}`}>
+                              ({valuationPriceToValueRatio(stock.currentPrice, minConservativeValue)})
+                            </div>
+                          )}
+                        </td>
 
                         {/* Confidence */}
                         <td className="py-3 pl-2 pr-3 sm:pr-4 text-center font-mono whitespace-nowrap">

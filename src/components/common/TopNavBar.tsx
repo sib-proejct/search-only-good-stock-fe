@@ -273,12 +273,20 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                         {renderThemeLanguageControls(true)}
                         <div className="space-y-2 text-xs px-0.5">
                           {user.role === 'admin' && (
-                            <Link
-                              className="block text-[#1D1D1F] dark:text-[#F5F5F7] hover:text-[#0071E3] dark:hover:text-[#2997FF] transition-colors"
-                              to="/admin/valuation"
-                            >
-                              {language === 'ko' ? '종목 관리' : 'Stock management'}
-                            </Link>
+                            <>
+                              <Link
+                                className="block text-[#1D1D1F] dark:text-[#F5F5F7] hover:text-[#0071E3] dark:hover:text-[#2997FF] transition-colors"
+                                to="/admin/valuation"
+                              >
+                                {language === 'ko' ? '종목 관리' : 'Stock management'}
+                              </Link>
+                              <Link
+                                className="block text-[#1D1D1F] dark:text-[#F5F5F7] hover:text-[#0071E3] dark:hover:text-[#2997FF] transition-colors"
+                                to="/config"
+                              >
+                                {language === 'ko' ? '계산 조건 설정' : 'Valuation settings'}
+                              </Link>
+                            </>
                           )}
                           <Link
                             className="block text-[#1D1D1F] dark:text-[#F5F5F7] hover:text-[#0071E3] dark:hover:text-[#2997FF] transition-colors"
