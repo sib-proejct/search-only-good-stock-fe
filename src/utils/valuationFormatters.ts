@@ -88,6 +88,8 @@ export function periodNote(period: PeriodValuation | undefined, ko: boolean): st
     CASH_FLOW_PROXY: ['현금흐름 기반 추정', 'Cash flow proxy'],
     ONE_YEAR_HISTORY: ['1개년 자료', 'One year of history'],
     ESTIMATED_CURRENT_SHARES: ['현재 주식수 추정치 사용', 'Estimated current shares'],
+    ESTIMATED_CURRENT_YEAR: ['올해 추정 실적(E) 포함', 'Includes current-year estimate (E)'],
+    CONSENSUS_EPS_INCOME_MISMATCH: ['컨센서스 EPS와 순이익·희석주식수 간 괴리 존재', 'Consensus EPS differs from net income / diluted shares'],
     CORE_RULE_FAIL: ['기업 품질 규칙 미충족', 'Quality rule failed'],
     CORE_RULE_NA: ['기업 품질 자료 부족', 'Quality data incomplete'],
     CAPITAL_ACTION_REVIEW: ['자본 변동 검토 필요', 'Capital action review'],

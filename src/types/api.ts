@@ -36,6 +36,7 @@ export type DcfScenarioDTO = Schemas['DcfScenarioDTO'];
 export type DcfScenariosDTO = Schemas['DcfScenariosDTO'];
 export type DcfResultDTO = Schemas['DcfResultDTO'];
 export type AnnualFinancialDTO = Schemas['AnnualFinancialInput'];
+export type EstimatedAnnualDTO = Schemas['EstimatedAnnualInput'];
 export type QuarterlyBookPriceDTO = Schemas['QuarterlyBookPriceInput'];
 export type BenchmarkPointDTO = Schemas['BenchmarkPointInput'];
 export type CurrentMarketDTO = Schemas['CurrentMarketInput'];

@@ -121,7 +121,7 @@ export function StockValuationPage({ ticker: panelTicker, market: panelMarket, y
       <header className="bg-white dark:bg-[#1C1C1E] rounded-3xl p-6 sm:p-8 border border-black/[0.06] dark:border-white/[0.08] shadow-sm transition-colors duration-300">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="flex items-center gap-3 flex-wrap"><h1 id={embedded ? "drawer-stock-title" : undefined} className="text-2xl sm:text-3xl font-bold tracking-tight">{stock.name}</h1><FavoriteButton stockId={stock.id} name={stock.name} onToggled={onFavoriteToggled} /><span className="font-mono text-base font-semibold text-[#86868B]">{ticker}</span><span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#86868B]"><Calendar className="w-3 h-3" />{result.dataAsOf.slice(0, 10)}</span>{stock.isStale && <span className="text-[10px] font-bold text-[#FF9500]">STALE</span>}</div>
+            <div className="flex items-center gap-3 flex-wrap"><h1 id={embedded ? "drawer-stock-title" : undefined} className="text-2xl sm:text-3xl font-bold tracking-tight">{stock.name}</h1><FavoriteButton stockId={stock.id} name={stock.name} onToggled={onFavoriteToggled} /><span className="font-mono text-base font-semibold text-[#86868B]">{ticker}</span><span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#86868B]"><Calendar className="w-3 h-3" />{result.dataAsOf.slice(0, 10)}</span>{stock.isStale && <span className="text-[10px] font-bold text-[#FF9500]">STALE</span>}{result.estimateApplied && result.estimatedAnnual && <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full">{result.estimatedAnnual.fiscalYear}E ({result.estimatedAnnual.basisQuarter}Q {ko ? '추정 반영' : 'Est.'})</span>}</div>
             <p className="text-xs sm:text-[13px] text-[#86868B]">{stock.market} · {stock.sector} · {ko ? '현재 내재가치 계산' : 'Current intrinsic value'}</p>
           </div>
           <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-5 sm:gap-7">
@@ -171,6 +171,36 @@ export function StockValuationPage({ ticker: panelTicker, market: panelMarket, y
           <label>{ko ? '성장률 방식' : 'Growth method'}<select className={input} disabled={financial} value={financial ? 'OEPS_WEIGHTED' : conditions.growthMethod} onChange={e => edit({ growthMethod: e.target.value as 'LOWER_BOUND'|'OEPS_WEIGHTED'|'EQUAL_BLEND' })}><option value="LOWER_BOUND">{ko ? '낮은 값' : 'Lower bound'}</option><option value="OEPS_WEIGHTED">{financial ? 'EPS CAGR' : 'OEPS 70% / EPS 30%'}</option><option value="EQUAL_BLEND">{ko ? '동일 비중' : 'Equal blend'}</option></select></label>
           <label>{ko ? '성장률 상한 (%)' : 'Growth cap (%)'}<input className={input} type="number" min={0} max={100} step="any" value={Number(conditions.growthRateCap) * 100} onChange={e => edit({ growthRateCap: String(Number(e.target.value) / 100) })}/></label>
           <label>{ko ? '성장률 하한 (%, 빈칸은 제한 없음)' : 'Growth floor (%, blank = none)'}<input className={input} type="number" min={-99.99} max={100} step="any" value={conditions.growthRateFloor == null ? '' : Number(conditions.growthRateFloor) * 100} onChange={e => edit({ growthRateFloor: e.target.value === '' ? null : String(Number(e.target.value) / 100) })}/></label>
+          <label className="sm:col-span-2 lg:col-span-3">
+            {ko ? '올해 추정 실적 (E) 반영' : 'Include current-year estimate (E)'}
+            <select
+              className={input}
+              value={conditions.includeEstimatedAnnual ? 'true' : 'false'}
+              onChange={e => edit({ includeEstimatedAnnual: e.target.value === 'true' })}
+            >
+              <option value="false">{ko ? '미반영 (확정 사업보고서 기준)' : 'Disabled (Confirmed annuals only)'}</option>
+              <option value="true">{ko ? '반영 (올해 반기/3분기 기반 연간 추정치 포함)' : 'Enabled (Include Q2/Q3-based annual estimate)'}</option>
+            </select>
+            {result.estimatedAnnual ? (
+              <span className="block text-[11px] text-[#0071E3] dark:text-[#2997FF] mt-1">
+                {ko
+                  ? `${result.estimatedAnnual.fiscalYear}E (${result.estimatedAnnual.basisQuarter}Q 누적 기준, 기준일 ${result.estimatedAnnual.basisPeriodEnd}) 추정 자료 사용 가능`
+                  : `${result.estimatedAnnual.fiscalYear}E (${result.estimatedAnnual.basisQuarter}Q YTD basis, as of ${result.estimatedAnnual.basisPeriodEnd}) estimate available`}
+              </span>
+            ) : result.estimatedAnnualUnavailableReason === 'ONLY_Q1_AVAILABLE' ? (
+              <span className="block text-[11px] text-[#FF9500] mt-1">
+                {ko
+                  ? '1분기 보고서만 공시되어 올해 연간 추정을 생성하지 않습니다 (반기·3분기 보고서부터 생성).'
+                  : 'Only Q1 filing is available; annual estimate requires at least Q2/H1 or Q3.'}
+              </span>
+            ) : (
+              <span className="block text-[11px] text-[#86868B] mt-1">
+                {ko
+                  ? '현재 회계연도의 반기(2Q) 또는 3분기 공시 자료가 수집되면 사용할 수 있습니다.'
+                  : 'Available when Q2/H1 or Q3 filings for the current fiscal year are collected.'}
+              </span>
+            )}
+          </label>
         </fieldset>
         <div className="flex flex-wrap items-center gap-3 mt-5">
           <button className={button} disabled={busy} onClick={() => run('preview')}>{ko ? '임시 재계산' : 'Recalculate preview'}</button>
@@ -206,12 +236,34 @@ export function StockValuationPage({ ticker: panelTicker, market: panelMarket, y
         <p className="mt-4 text-sm">{ko ? '누락 및 경고' : 'Missing inputs and warnings'}: {periodNote(period, ko)}</p>
         {!financial && <p className="mt-2 text-sm">{ko ? '정상화 주당 주주이익' : 'Normalized owner earnings per share'}: {money(dcf?.normalizedOeps)} · {ko ? '할인율' : 'Discount rate'}: {valuationPercent(dcf?.discountRate)}</p>}
       </section>
-      {financial && dcf && <FinancialValuationDetails dcf={dcf} currency={stock.currency} annuals={result.annualFinancials.map(row => ({ year: row.fiscalYear, netIncome: row.netIncomeCommon, equity: row.commonEquity }))} />}
+      {financial && dcf && <FinancialValuationDetails dcf={dcf} currency={stock.currency} annuals={[...result.annualFinancials, ...(result.estimateApplied && result.estimatedAnnual ? [result.estimatedAnnual] : [])].map(row => ({ year: row.fiscalYear, netIncome: row.netIncomeCommon, equity: row.commonEquity }))} />}
       {!financial && <section className={`${box} overflow-x-auto`}><h2 className="text-sm font-bold tracking-tight mb-3">{ko ? '연도별 게시 근거' : 'Published annual evidence'}</h2>
         <table className="w-full text-xs whitespace-nowrap"><thead className="text-[11px] font-medium text-[#86868B] border-b border-black/[0.05] dark:border-white/[0.06]"><tr>{(ko ? ['연도', 'CFO', '지급이자 / 분류', '선택 CAPEX', '주주이익', 'EPS', '희석주식수', 'CAPEX 출처'] : ['Year', 'CFO', 'Interest paid / classification', 'Selected CAPEX', 'Owner earnings', 'EPS', 'Diluted shares', 'CAPEX source']).map(label => <th className="py-3 px-4 text-left font-medium" key={label}>{label}</th>)}</tr></thead><tbody className="font-mono tabular-nums divide-y divide-black/[0.04] dark:divide-white/[0.06]">{result.annualFinancials.map(annual => {
           const evidence = result.capexEvidence.find(item => item.fiscalYear === annual.fiscalYear);
           return <tr key={annual.fiscalYear} className="hover:bg-[#F5F5F7]/80 dark:hover:bg-[#2C2C2E]/60 transition-colors"><td className="py-3 px-4">{annual.fiscalYear}</td><td className="py-3 px-4">{amount(annual.cfo)}</td><td className="py-3 px-4">{amount(annual.interestPaid)} / {annual.interestPaidClassification}</td><td className="py-3 px-4">{amount(annual.capex)}</td><td className="py-3 px-4">{amount(result.annualOwnerEarnings?.[String(annual.fiscalYear)])}</td><td className="py-3 px-4">{money(annual.dilutedEps == null ? null : Number(annual.dilutedEps))}</td><td className="py-3 px-4">{annual.dilutedShares == null ? '—' : Number(annual.dilutedShares).toLocaleString()}</td><td className="py-3 px-4">{evidence ? `${evidence.provider ?? '—'} / ${evidence.documentKey ?? '—'}` : ko ? '게시된 선택값만 보유' : 'Published selected value only'}</td></tr>;
-        })}</tbody></table>
+        })}{result.estimatedAnnual && (() => {
+          const est = result.estimatedAnnual;
+          const methods = est.fieldMethods ?? {};
+          const methodBadge = (field: string) => {
+            const m = methods[field];
+            if (!m) return null;
+            const text = m === 'CONSENSUS' ? 'CONSENSUS' : m === 'SEASONAL_BLEND' ? (ko ? '계절+추세' : 'BLEND') : m === 'TTM_FALLBACK' ? 'TTM' : m === 'RUNRATE_ONLY' ? 'RUNRATE' : m;
+            return <span className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded font-sans font-semibold ${m === 'CONSENSUS' ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300' : 'bg-amber-500/15 text-amber-700 dark:text-amber-300'}`}>{text}</span>;
+          };
+          return <tr key={`${est.fiscalYear}-est`} className={`transition-colors ${result.estimateApplied ? 'bg-amber-500/[0.06] dark:bg-amber-400/[0.08]' : 'opacity-60 hover:opacity-100'}`}>
+            <td className="py-3 px-4 font-bold text-amber-700 dark:text-amber-300">
+              {est.fiscalYear}E ({est.basisQuarter}Q)
+              {!result.estimateApplied && <span className="ml-1.5 text-[10px] font-normal text-[#86868B]">({ko ? '미반영' : 'Off'})</span>}
+            </td>
+            <td className="py-3 px-4">{amount(est.cfo)}{methodBadge('cfo')}</td>
+            <td className="py-3 px-4">{amount(est.interestPaid)} / {est.interestPaidClassification}</td>
+            <td className="py-3 px-4">{amount(est.capex)}{methodBadge('capex')}</td>
+            <td className="py-3 px-4">{amount(result.annualOwnerEarnings?.[String(est.fiscalYear)])}</td>
+            <td className="py-3 px-4">{money(est.dilutedEps == null ? null : Number(est.dilutedEps))}{methodBadge('diluted_eps')}</td>
+            <td className="py-3 px-4">{est.dilutedShares == null ? '—' : Number(est.dilutedShares).toLocaleString()}</td>
+            <td className="py-3 px-4">{est.documentKey ?? (ko ? `${est.basisQuarter}분기 누적 추정` : `${est.basisQuarter}Q YTD estimate`)}</td>
+          </tr>;
+        })()}</tbody></table>
         {result.capexEvidence.length > 0 && <details className="mt-4"><summary className="text-xs font-semibold cursor-pointer text-[#6E6E73] dark:text-[#86868B]">{ko ? 'CAPEX 공시 및 추정 근거' : 'Reported and estimated CAPEX'}</summary><div className="overflow-x-auto"><table className="text-xs w-full whitespace-nowrap"><thead className="text-[11px] font-medium text-[#86868B] border-b border-black/[0.05] dark:border-white/[0.06]"><tr>{(ko ? ['연도', '공시 총액', '유형', '무형', '유지 추정', '성장 추정'] : ['Year', 'Reported total', 'Tangible', 'Intangible', 'Maintenance estimate', 'Growth estimate']).map(label => <th className="py-3 px-4 text-left font-medium" key={label}>{label}</th>)}</tr></thead><tbody className="font-mono tabular-nums divide-y divide-black/[0.04] dark:divide-white/[0.06]">{result.capexEvidence.map(item => <tr key={item.fiscalYear}>{[item.fiscalYear, ...[item.reportedTotalCapex, item.tangibleCapex, item.intangibleCapex, item.maintenanceCapexEstimate, item.growthCapexEstimate].map(v => amount(v))].map((v, i) => <td className="py-3 px-4" key={i}>{v}</td>)}</tr>)}</tbody></table></div></details>}
       </section>}
     </>}

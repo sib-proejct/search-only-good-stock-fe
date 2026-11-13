@@ -147,6 +147,9 @@ function parseStoredConditions(raw: string | null): ValuationConditions | null {
       growthMethod: parsed.growthMethod,
       growthRateCap: String(parsed.growthRateCap),
       growthRateFloor: parsed.growthRateFloor == null ? null : String(parsed.growthRateFloor),
+      ...(typeof parsed.includeEstimatedAnnual === 'boolean'
+        ? { includeEstimatedAnnual: parsed.includeEstimatedAnnual }
+        : {}),
     };
   } catch {
     return null;

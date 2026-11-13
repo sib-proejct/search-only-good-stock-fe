@@ -117,12 +117,14 @@ describe('valuationConfig', () => {
       ...SYSTEM_DEFAULT_VALUATION_CONDITIONS,
       normalizationYears: 5 as const,
       growthRateCap: '0.25',
+      includeEstimatedAnnual: true,
     };
     const krCustom = {
       ...SYSTEM_DEFAULT_VALUATION_CONDITIONS,
       normalizationYears: 3 as const,
       capexMode: 'MAINTENANCE' as const,
       growthRateCap: '0.15',
+      includeEstimatedAnnual: false,
     };
 
     saveRegionalValuationConfigs({ us: usCustom, kr: krCustom });

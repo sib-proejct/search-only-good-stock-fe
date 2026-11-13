@@ -266,3 +266,64 @@ export async function bulkFillMaintenanceCapex(
     },
   );
 }
+
+export interface AnnualEstimateOverrideInput {
+  fiscal_year: number;
+  ebit?: string | number | null;
+  net_income_common?: string | number | null;
+  cfo?: string | number | null;
+  capex?: string | number | null;
+  diluted_eps?: string | number | null;
+  memo?: string | null;
+  provider?: string | null;
+  document_key?: string | null;
+}
+
+export interface AnnualEstimateOverrideRead {
+  stock_id: number;
+  fiscal_year: number;
+  ebit?: string | null;
+  net_income_common?: string | null;
+  cfo?: string | null;
+  capex?: string | null;
+  diluted_eps?: string | null;
+  memo?: string | null;
+  provider?: string | null;
+  document_key?: string | null;
+  updated_at: string;
+}
+
+export async function listEstimateOverrides(
+  stockId: number,
+  signal?: AbortSignal,
+): Promise<AnnualEstimateOverrideRead[]> {
+  return adminRequest<AnnualEstimateOverrideRead[]>(`/stocks/${stockId}/estimate-override`, {
+    method: 'GET',
+    signal,
+  });
+}
+
+export async function upsertEstimateOverride(
+  stockId: number,
+  payload: AnnualEstimateOverrideInput,
+  signal?: AbortSignal,
+): Promise<AnnualEstimateOverrideRead> {
+  return adminRequest<AnnualEstimateOverrideRead>(`/stocks/${stockId}/estimate-override`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    signal,
+  });
+}
+
+export async function deleteEstimateOverride(
+  stockId: number,
+  fiscalYear: number,
+  signal?: AbortSignal,
+): Promise<void> {
+  await adminRequest<void>(`/stocks/${stockId}/estimate-override/${fiscalYear}`, {
+    method: 'DELETE',
+    signal,
+  });
+}
+

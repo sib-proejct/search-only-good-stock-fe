@@ -14,10 +14,15 @@ import {
   adminRequest,
   calculateAdminValuation,
   changedValues,
+  deleteEstimateOverride,
   fieldDisplay,
   fieldValue,
+  listEstimateOverrides,
+  upsertEstimateOverride,
   type AdminStock,
   type AdminValuationCalculation,
+  type AnnualEstimateOverrideInput,
+  type AnnualEstimateOverrideRead,
   type Draft,
   type EditorTable,
   type FactRow,
@@ -188,6 +193,7 @@ function defaultValuationOptions(stock: AdminStockItem): ValuationOptions {
         ? stock.growth_rate_floor
         : (regional.growthRateFloor ?? '0.05'),
     statement_scope: stock.currency === 'USD' ? 'CONSOLIDATED_US_GAAP' : 'CFS',
+    include_estimated_annual: regional.includeEstimatedAnnual ?? false,
   };
 }
 
@@ -227,6 +233,9 @@ function storedValuationOptions(stock: AdminStockItem): ValuationOptions {
         || typeof stored.growth_rate_floor === 'number'
         ? stored.growth_rate_floor ?? null
         : defaults.growth_rate_floor,
+      include_estimated_annual: typeof stored.include_estimated_annual === 'boolean'
+        ? stored.include_estimated_annual
+        : defaults.include_estimated_annual,
     };
   } catch {
     return defaults;
@@ -463,9 +472,21 @@ export function AdminValuationPage() {
     growth_rate_cap: '0.20',
     growth_rate_floor: '0.05',
     statement_scope: 'CFS',
+    include_estimated_annual: false,
   });
   const [result, setResult] = useState<AdminValuationCalculation | null>(null);
   const [stale, setStale] = useState(false);
+  const [overrideRows, setOverrideRows] = useState<AnnualEstimateOverrideRead[]>([]);
+  const [overrideDraft, setOverrideDraft] = useState<AnnualEstimateOverrideInput>({
+    fiscal_year: new Date().getFullYear(),
+    ebit: '',
+    net_income_common: '',
+    cfo: '',
+    capex: '',
+    diluted_eps: '',
+    memo: '',
+  });
+  const [overrideBusy, setOverrideBusy] = useState(false);
   const fields = tables.find((item) => item.table === table)?.fields ?? [];
   const changes = draft ? changedValues(draft, original) : {};
   const dirty =
@@ -742,6 +763,101 @@ export function AdminValuationPage() {
       });
     return () => controller.abort();
   }, [stock, table, revision]);
+
+  useEffect(() => {
+    if (!stock) {
+      setOverrideRows([]);
+      return;
+    }
+    const controller = new AbortController();
+    listEstimateOverrides(stock.id, controller.signal)
+      .then((items) => {
+        if (controller.signal.aborted) return;
+        setOverrideRows(items);
+        if (items.length > 0) {
+          const latest = items[0];
+          setOverrideDraft({
+            fiscal_year: latest.fiscal_year,
+            ebit: latest.ebit ?? '',
+            net_income_common: latest.net_income_common ?? '',
+            cfo: latest.cfo ?? '',
+            capex: latest.capex ?? '',
+            diluted_eps: latest.diluted_eps ?? '',
+            memo: latest.memo ?? '',
+          });
+        } else {
+          setOverrideDraft({
+            fiscal_year: new Date().getFullYear(),
+            ebit: '',
+            net_income_common: '',
+            cfo: '',
+            capex: '',
+            diluted_eps: '',
+            memo: '',
+          });
+        }
+      })
+      .catch(() => {
+        // Ignore if not loaded
+      });
+    return () => controller.abort();
+  }, [stock, revision]);
+
+  async function saveEstimateOverride() {
+    if (!stock) return;
+    setOverrideBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const clean = (v: string | number | null | undefined) =>
+        v === '' || v == null ? null : String(v).trim();
+      const saved = await upsertEstimateOverride(stock.id, {
+        fiscal_year: Number(overrideDraft.fiscal_year),
+        ebit: clean(overrideDraft.ebit),
+        net_income_common: clean(overrideDraft.net_income_common),
+        cfo: clean(overrideDraft.cfo),
+        capex: clean(overrideDraft.capex),
+        diluted_eps: clean(overrideDraft.diluted_eps),
+        memo: clean(overrideDraft.memo),
+      });
+      setOverrideRows((prev) => [
+        saved,
+        ...prev.filter((r) => r.fiscal_year !== saved.fiscal_year),
+      ]);
+      setStale(true);
+      setNotice(`${saved.fiscal_year}E 컨센서스 오버라이드를 저장했습니다. 계산 및 반영을 눌러 결과를 갱신하세요.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '컨센서스 오버라이드 저장 실패');
+    } finally {
+      setOverrideBusy(false);
+    }
+  }
+
+  async function removeEstimateOverride(fiscalYear: number) {
+    if (!stock) return;
+    setOverrideBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      await deleteEstimateOverride(stock.id, fiscalYear);
+      setOverrideRows((prev) => prev.filter((r) => r.fiscal_year !== fiscalYear));
+      setOverrideDraft({
+        fiscal_year: fiscalYear,
+        ebit: '',
+        net_income_common: '',
+        cfo: '',
+        capex: '',
+        diluted_eps: '',
+        memo: '',
+      });
+      setStale(true);
+      setNotice(`${fiscalYear}E 컨센서스 오버라이드를 삭제했습니다 (수식 자동 추정치로 복원).`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '컨센서스 오버라이드 삭제 실패');
+    } finally {
+      setOverrideBusy(false);
+    }
+  }
 
   function edit(row: FactRow | null) {
     const values: Draft = {};
@@ -1324,6 +1440,7 @@ export function AdminValuationPage() {
                     growth_method: cfg.growthMethod,
                     growth_rate_cap: cfg.growthRateCap,
                     growth_rate_floor: cfg.growthRateFloor ?? undefined,
+                    include_estimated_annual: cfg.includeEstimatedAnnual ?? false,
                   });
                 }}
                 className="rounded-xl border border-black/15 dark:border-white/20 bg-[#F5F5F7] dark:bg-[#2C2C2E] hover:bg-[#EBEBED] dark:hover:bg-[#3A3A3C] px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
@@ -1395,6 +1512,25 @@ export function AdminValuationPage() {
                     >
                       <option value="TOTAL">유지보수 + 성장 (Total)</option>
                       <option value="MAINTENANCE">유지보수 전용 (Maintenance)</option>
+                    </select>
+                  </label>
+                  <label className="block min-w-0 space-y-2 text-sm sm:col-span-2 lg:col-span-3">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1 text-xs font-medium text-gray-600 dark:text-gray-300">
+                      <span>올해 추정 실적 (E) 반영 여부</span>
+                      <span className="font-mono text-[10px] font-normal text-gray-500 dark:text-gray-400">Include Estimated Annual (E)</span>
+                    </div>
+                    <select
+                      className={`${control} min-h-11 min-w-0 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                      disabled={busy}
+                      value={options.include_estimated_annual ? 'true' : 'false'}
+                      onChange={(e) =>
+                        changeOption({
+                          include_estimated_annual: e.target.value === 'true',
+                        })
+                      }
+                    >
+                      <option value="false">미반영 — 확정 사업보고서만 사용 (Default)</option>
+                      <option value="true">반영 — 올해 반기(2Q)/3분기 기반 연간 추정치(E) 포함</option>
                     </select>
                   </label>
                 </div>
@@ -1735,9 +1871,16 @@ export function AdminValuationPage() {
                     {result.annual_oe.map((row) => (
                       <tr
                         key={row.fiscal_year}
-                        className="border-t border-gray-200 dark:border-gray-700"
+                        className={`border-t border-gray-200 dark:border-gray-700 ${row.is_estimated ? 'bg-amber-500/[0.06] dark:bg-amber-400/[0.08]' : ''}`}
                       >
-                        <td className="py-2 font-mono">{row.fiscal_year}</td>
+                        <td className="py-2 font-mono">
+                          <span>{row.fiscal_year}{row.is_estimated ? 'E' : ''}</span>
+                          {row.is_estimated && row.basis_quarter && (
+                            <span className="ml-1.5 text-[10px] font-sans font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300">
+                              {row.basis_quarter}Q 추정
+                            </span>
+                          )}
+                        </td>
                         <td className="font-mono">
                           <div>
                             <span className="font-medium">
@@ -1806,6 +1949,127 @@ export function AdminValuationPage() {
               </details>
             </section>
           )}
+          <section className="rounded-2xl border border-amber-500/25 bg-amber-50/30 dark:border-amber-500/30 dark:bg-amber-950/10 p-6 space-y-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-bold text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  올해 추정 실적 · 컨센서스 오버라이드 (Annual Estimate Override)
+                </h2>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  올해 사업보고서가 아직 공시되지 않은 회계연도(예: 2026E)에 대해 증권사 컨센서스나 수동 추정치를 항목별로 덮어씁니다.
+                  비워둔 항목은 반기(2Q)/3분기 누적 실적 기반 수식 추정치가 유지되며, 정식 사업보고서가 공시되면 이 오버라이드는 자동으로 무시됩니다.
+                </p>
+              </div>
+              {overrideRows.length > 0 && (
+                <span className="text-xs font-mono font-semibold text-purple-700 dark:text-purple-300 bg-purple-500/15 px-2.5 py-1 rounded-full">
+                  저장된 오버라이드: {overrideRows.map((r) => `${r.fiscal_year}E`).join(', ')}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              <label className="space-y-1">
+                <span className="font-semibold text-gray-700 dark:text-gray-300">추정 회계연도 (Fiscal Year)</span>
+                <input
+                  type="number"
+                  className={control}
+                  disabled={overrideBusy || busy}
+                  value={overrideDraft.fiscal_year}
+                  onChange={(e) => setOverrideDraft({ ...overrideDraft, fiscal_year: Number(e.target.value) })}
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="font-semibold text-gray-700 dark:text-gray-300">영업이익 (EBIT, {stock.currency})</span>
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="비우면 수식 추정치 사용"
+                  className={control}
+                  disabled={overrideBusy || busy}
+                  value={overrideDraft.ebit ?? ''}
+                  onChange={(e) => setOverrideDraft({ ...overrideDraft, ebit: e.target.value })}
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="font-semibold text-gray-700 dark:text-gray-300">지배주주 순이익 (Net Income, {stock.currency})</span>
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="비우면 수식 추정치 사용"
+                  className={control}
+                  disabled={overrideBusy || busy}
+                  value={overrideDraft.net_income_common ?? ''}
+                  onChange={(e) => setOverrideDraft({ ...overrideDraft, net_income_common: e.target.value })}
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="font-semibold text-gray-700 dark:text-gray-300">희석 EPS ({stock.currency}/주)</span>
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="비우면 순이익÷주식수로 자동 산출"
+                  className={control}
+                  disabled={overrideBusy || busy}
+                  value={overrideDraft.diluted_eps ?? ''}
+                  onChange={(e) => setOverrideDraft({ ...overrideDraft, diluted_eps: e.target.value })}
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="font-semibold text-gray-700 dark:text-gray-300">영업현금흐름 (CFO, {stock.currency})</span>
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="비우면 수식 추정치 사용"
+                  className={control}
+                  disabled={overrideBusy || busy}
+                  value={overrideDraft.cfo ?? ''}
+                  onChange={(e) => setOverrideDraft({ ...overrideDraft, cfo: e.target.value })}
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="font-semibold text-gray-700 dark:text-gray-300">CAPEX ({stock.currency})</span>
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="비우면 수식 추정치 사용"
+                  className={control}
+                  disabled={overrideBusy || busy}
+                  value={overrideDraft.capex ?? ''}
+                  onChange={(e) => setOverrideDraft({ ...overrideDraft, capex: e.target.value })}
+                />
+              </label>
+              <label className="space-y-1 sm:col-span-2">
+                <span className="font-semibold text-gray-700 dark:text-gray-300">근거 메모 (Memo)</span>
+                <input
+                  type="text"
+                  placeholder="예: FnGuide 2026E 컨센서스"
+                  className={control}
+                  disabled={overrideBusy || busy}
+                  value={overrideDraft.memo ?? ''}
+                  onChange={(e) => setOverrideDraft({ ...overrideDraft, memo: e.target.value })}
+                />
+              </label>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                className={button}
+                disabled={overrideBusy || busy}
+                onClick={() => void saveEstimateOverride()}
+              >
+                {overrideBusy ? '저장 중…' : `${overrideDraft.fiscal_year}E 오버라이드 저장`}
+              </button>
+              {overrideRows.some((r) => r.fiscal_year === Number(overrideDraft.fiscal_year)) && (
+                <button
+                  type="button"
+                  className="rounded-lg border border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300 px-4 py-2 text-sm font-medium hover:bg-red-500/20 disabled:opacity-40"
+                  disabled={overrideBusy || busy}
+                  onClick={() => void removeEstimateOverride(Number(overrideDraft.fiscal_year))}
+                >
+                  {overrideDraft.fiscal_year}E 오버라이드 삭제 (수식 복원)
+                </button>
+              )}
+            </div>
+          </section>
           <section className="space-y-4">
             <div className="flex items-baseline justify-between">
               <h2 className="text-xl font-bold">원자료 편집</h2>

@@ -1010,6 +1010,15 @@ export interface components {
             /** Dilutedshares */
             dilutedShares: string | null;
         };
+        /** EstimatedAnnualInput */
+        EstimatedAnnualInput: components["schemas"]["AnnualFinancialInput"] & {
+            basisQuarter: 2 | 3;
+            basisPeriodEnd: string;
+            documentKey?: string | null;
+            fieldMethods?: {
+                [key: string]: string;
+            };
+        };
         /** AnnualOe */
         AnnualOe: {
             /** Fiscal Year */
@@ -1030,6 +1039,14 @@ export interface components {
             net_income_common?: string | null;
             /** Common Equity */
             common_equity?: string | null;
+            /** Is Estimated */
+            is_estimated?: boolean;
+            /** Basis Quarter */
+            basis_quarter?: (2 | 3) | null;
+            /** Field Methods */
+            field_methods?: {
+                [key: string]: string;
+            } | null;
         };
         /**
          * Applicability
@@ -1851,6 +1868,9 @@ export interface components {
             dcf: components["schemas"]["DcfResultDTO"];
             /** Warnings */
             warnings: string[];
+            estimatedAnnual?: components["schemas"]["EstimatedAnnualInput"] | null;
+            estimatedAnnualUnavailableReason?: string | null;
+            estimateApplied?: boolean;
         };
         /** StockListResponse */
         StockListResponse: {
@@ -1920,6 +1940,7 @@ export interface components {
             lastSuccessfulAt: string;
             /** Isstale */
             isStale: boolean;
+            estimateApplied?: boolean;
         };
         /** StocksRefreshRequest */
         StocksRefreshRequest: {
@@ -1987,6 +2008,11 @@ export interface components {
              * @default 0.05
              */
             growthRateFloor: number | string | null;
+            /**
+             * Includeestimatedannual
+             * @default false
+             */
+            includeEstimatedAnnual?: boolean;
         };
         /** ValuationConditions */
         "ValuationConditions-Output": {
@@ -2024,6 +2050,11 @@ export interface components {
              * @default 0.05
              */
             growthRateFloor: string | null;
+            /**
+             * Includeestimatedannual
+             * @default false
+             */
+            includeEstimatedAnnual?: boolean;
         };
         /** ValuationPreviewRequest */
         ValuationPreviewRequest: {
@@ -2083,6 +2114,11 @@ export interface components {
              * @default 0.05
              */
             growth_rate_floor: number | string | null;
+            /**
+             * Include Estimated Annual
+             * @default false
+             */
+            include_estimated_annual?: boolean;
         };
         /** ValuationRequest */
         "ValuationRequest-Output": {
@@ -2136,6 +2172,11 @@ export interface components {
              * @default 0.05
              */
             growth_rate_floor: string | null;
+            /**
+             * Include Estimated Annual
+             * @default false
+             */
+            include_estimated_annual?: boolean;
         };
         /** ValuationResponse */
         ValuationResponse: {
@@ -2154,6 +2195,9 @@ export interface components {
             sources?: {
                 [key: string]: string | null;
             };
+            estimated_annual?: components["schemas"]["EstimatedAnnualInput"] | null;
+            estimated_annual_unavailable_reason?: string | null;
+            estimate_applied?: boolean;
         };
         /**
          * ValuationStatus
@@ -2194,6 +2238,9 @@ export interface components {
              * @default false
              */
             published: boolean;
+            estimatedAnnual?: components["schemas"]["EstimatedAnnualInput"] | null;
+            estimatedAnnualUnavailableReason?: string | null;
+            estimateApplied?: boolean;
         };
     };
     responses: never;

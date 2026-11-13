@@ -937,6 +937,14 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
                             STALE
                           </span>
                         )}
+                        {stock.estimateApplied && (
+                          <span
+                            className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded-full font-mono"
+                            title={ko ? '올해 추정 실적(E)이 반영된 내재가치입니다' : 'Intrinsic value includes current-year estimate (E)'}
+                          >
+                            E
+                          </span>
+                        )}
                         <div className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold" title={gradeInfo.desc}>
                           <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${gradeInfo.dotClass}`} />
                           <span className={gradeInfo.textClass}>{gradeInfo.badgeLabel}</span>
@@ -1089,6 +1097,14 @@ export const ScreenerPage: React.FC<ScreenerPageProps> = ({
                                 title={`Last successful: ${stock.lastSuccessfulAt}`}
                               >
                                 STALE
+                              </span>
+                            )}
+                            {stock.estimateApplied && (
+                              <span
+                                className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono"
+                                title={ko ? '올해 추정 실적(E)이 반영된 내재가치입니다' : 'Intrinsic value includes current-year estimate (E)'}
+                              >
+                                E
                               </span>
                             )}
                             <HideStockButton

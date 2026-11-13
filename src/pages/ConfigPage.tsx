@@ -56,7 +56,8 @@ function formatConditionSummary(c: ValuationConditions, ko: boolean): string {
         ? '없음'
         : 'None'
       : `${Math.round(Number(c.growthRateFloor) * 1000) / 10}%`;
-  return `${c.normalizationYears}${ko ? '개년' : 'Y'} · ${c.normalizationMethod} · ${c.capexMode} · ${c.growthMethod} · ${cap}/${floor}`;
+  const est = c.includeEstimatedAnnual ? (ko ? ' · 올해추정(E)' : ' · Est(E)') : '';
+  return `${c.normalizationYears}${ko ? '개년' : 'Y'} · ${c.normalizationMethod} · ${c.capexMode} · ${c.growthMethod} · ${cap}/${floor}${est}`;
 }
 
 export const ConfigPage: React.FC = () => {
@@ -709,6 +710,35 @@ export const ConfigPage: React.FC = () => {
                 %
               </span>
             </div>
+          </div>
+
+          {/* 7. Include Estimated Annual */}
+          <div className="md:col-span-2 lg:col-span-3">
+            <label className={label}>
+              <Info className="w-3.5 h-3.5 text-[#0071E3] dark:text-[#2997FF]" />
+              <span>{ko ? '7. 올해 추정 실적 (E) 반영 여부' : '7. Include Current-Year Estimated Annual (E)'}</span>
+            </label>
+            <span className={sublabel}>
+              {ko
+                ? '반기(2Q) 또는 3분기 보고서가 공시된 경우, 기발표 누적 실적과 잔여 분기 추정치(계절성+추세 혼합 또는 컨센서스 오버라이드)를 합산해 올해 연간 추정치(E)를 내재가치 계산에 포함합니다. (1분기만 공시된 경우 미반영)'
+                : 'When Q2/H1 or Q3 filings are available, includes current-year full-year estimate (E) blending YTD actuals with remaining-quarter estimates or consensus overrides.'}
+            </span>
+            <select
+              className={input}
+              value={form.includeEstimatedAnnual ? 'true' : 'false'}
+              onChange={(e) =>
+                handleFieldChange({
+                  includeEstimatedAnnual: e.target.value === 'true',
+                })
+              }
+            >
+              <option value="false">
+                {ko ? '미반영 — 확정 사업보고서만 사용 (기본값)' : 'Disabled — Confirmed annual reports only (Default)'}
+              </option>
+              <option value="true">
+                {ko ? '반영 — 올해 추정 실적(E) 포함 (2Q/3Q 이상 공시 시)' : 'Enabled — Include current-year estimate (E) (when Q2/Q3 available)'}
+              </option>
+            </select>
           </div>
         </div>
 
